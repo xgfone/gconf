@@ -5,7 +5,7 @@ An extensible and powerful go configuration manager, which is inspired by [oslo.
 
 The current version is `v1`. See [DOC](https://godoc.org/github.com/xgfone/gconf).
 
-The supported Go version: `1.7+`.
+The supported Go version: `1.8+`.
 
 
 ## Goal
