@@ -18,7 +18,7 @@ The supported Go version: `1.7+`.
 
 ## Parser
 
-The parser is used to parse the configurations from many sources by a certain format. There have been implemented some parsers, such as `flag`, `env`, `INI`, `property`, etc. And `flag` is the CLI parser based on the stdlib `flag`.
+The parser is used to parse the configurations from many sources with a certain format. There have been implemented some parsers, such as `flag`, `env`, `INI`, `property`, etc. And `flag` is the CLI parser based on the stdlib `flag`.
 
 You can develop yourself parser, only needing to implement the interface `Parser` as follow.
 ```go
@@ -200,7 +200,7 @@ func main() {
 }
 ```
 
-#### Register a struct as the group and the option
+### Register a struct as the group and the option
 You also register a struct then use it.
 ```go
 package main
@@ -373,7 +373,7 @@ func main() {
 }
 ```
 
-#### Register the commands
+### Register the commands
 
 ```go
 package main

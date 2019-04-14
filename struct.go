@@ -21,7 +21,49 @@ import (
 	"time"
 )
 
-// RegisterStruct retusters the struct field as the option.
+// StructValidator is used to validate the struct value.
+type StructValidator interface {
+	Validate() error
+}
+
+// RegisterStruct retusters the struct fields as the options.
+//
+// The tag of the field supports "name"(string), "short"(string), "help"(string),
+// "default"(string), "group"(string), "cmd"(string) and "cli"(bool).
+//
+//   1. "name", "short", "default" and "help" are used to create a option
+//      with the name, the short name, the default value and the help doc.
+//   2. "cli" is used to indicate whether the option is the CLI option or not.
+//   3. "group" is used to change the group of the option to "group".
+//   4. "cmd" is used to indicate that the option belongs the command named
+//      by "cmd".
+//
+// If "name" is "-", that's `name:"-"`, the corresponding field will be ignored.
+//
+// The bool value may be one of "t", "T", "1", "on", "On", "ON", "true", "True",
+// "TRUE", "yes", "Yes", "YES" for true and "f", "F", "0", "off", "Off", "OFF",
+// "false", "False", "FALSE", "no", "No", "NO", "" for false.
+//
+// For the field that is a struct, it is a new sub-group of the current group,
+// and the lower-case of the field name is the name of the new sub-group.
+// But you can use the tag "group" or "name" to overwrite it, and "group" is
+// preference to "name".
+//
+// Notice: All the tags are optional.
+//
+// If the struct has implemented the interface StructValidator, this validator
+// will be called automatically after having parsed. But the individual field
+// does not support the validator by the tag. You maybe choose others, such as
+// github.com/asaskevich/govalidator. Beside, you can get the option from the
+// corresponding group, then add the validators for it by hand. All of the
+// builtin options support the validator chain.
+//
+// Notice:
+//   1. The struct must be a pointer to a struct variable, or panic.
+//   2. It must be called before being parsed, or panic.
+//   3. The struct supports the nested struct, but not the pointer field.
+//   4. For the struct option, you shouldn't call SetOptValue() because of concurrence.
+//
 func (c *Config) RegisterStruct(s interface{}) *Config {
 	return c.registerStruct(false, s)
 }
@@ -41,6 +83,10 @@ func (c *Config) registerStruct(cli bool, s interface{}) *Config {
 	}
 
 	c.registerStructByValue(nil, c.OptGroup, sv, cli)
+
+	if v, ok := s.(StructValidator); ok {
+		c.validators = append(c.validators, v.Validate)
+	}
 	return c
 }
 
