@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -52,6 +53,8 @@ type Config struct {
 	printf     func(string, ...interface{})
 
 	// CLI
+	name          string
+	help          string
 	vshort        string
 	vlong         string
 	vhelp         string
@@ -66,9 +69,25 @@ type Config struct {
 	observe    func(string, string, interface{}, interface{})
 }
 
-// New returns a new Config.
+// New is equal to NewConfig("", "").
 func New() *Config {
+	return NewConfig("", "")
+}
+
+// NewConfig returns a new Config with the name and the description of Config.
+//
+// If the name is "", it will be os.Args[0] by default.
+//
+// The name and the description are used as the name and the usage of the program
+// by the CLI parser in general.
+func NewConfig(name, description string) *Config {
+	if name == "" {
+		name = filepath.Base(os.Args[0])
+	}
+
 	c := &Config{
+		name:   name,
+		help:   description,
 		printf: func(f string, ss ...interface{}) { fmt.Printf(f+"\n", ss...) },
 
 		commands:   make(map[string]*Command),
@@ -80,6 +99,16 @@ func New() *Config {
 	c.SetGroupSeparator(DefaultGroupSeparator)
 	c.noticeNewGroup(c.OptGroup)
 	return c
+}
+
+// Name returns the config name.
+func (c *Config) Name() string {
+	return c.name
+}
+
+// Description returns the config description.
+func (c *Config) Description() string {
+	return c.help
 }
 
 func (c *Config) mergePaths(paths []string) string {

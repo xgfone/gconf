@@ -18,7 +18,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -52,33 +51,36 @@ func NewDefaultFlagCliParser(underlineToHyphen ...bool) Parser {
 //      flag.CommandLine, such as github.com/golang/glog, please use
 //      flag.CommandLine as flag.FlagSet.
 func NewFlagCliParser(flagSet *flag.FlagSet, underlineToHyphen bool) Parser {
-	if flagSet == nil {
-		flagSet = flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ContinueOnError)
-	}
-
-	return flagParser{
+	return &flagParser{
 		fset: flagSet,
 		utoh: underlineToHyphen,
 	}
 }
 
-func (f flagParser) Name() string {
+func (f *flagParser) Name() string {
 	return "flag"
 }
 
-func (f flagParser) Priority() int {
+func (f *flagParser) Priority() int {
 	return 0
 }
 
-func (f flagParser) Pre(c *Config) error {
+func (f *flagParser) Pre(c *Config) error {
+	if f.fset == nil {
+		f.fset = flag.NewFlagSet(c.Name(), flag.ExitOnError)
+	}
+
+	if f.fset.Usage == nil {
+		f.fset.Usage = func() { fmt.Println(c.Description()) }
+	}
 	return nil
 }
 
-func (f flagParser) Post(c *Config) error {
+func (f *flagParser) Post(c *Config) error {
 	return nil
 }
 
-func (f flagParser) Parse(c *Config) (err error) {
+func (f *flagParser) Parse(c *Config) (err error) {
 	// Convert the option name.
 	name2group := make(map[string]string, 8)
 	name2opt := make(map[string]string, 8)
