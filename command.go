@@ -24,6 +24,7 @@ type Command struct {
 	help string
 
 	parent    *Command
+	aliases   []string
 	commands  map[string]*Command
 	allGroups map[string]*OptGroup
 }
@@ -54,15 +55,31 @@ func (cmd *Command) Config() *Config {
 	return cmd.conf
 }
 
+// Description returns the description of the current command.
+func (cmd *Command) Description() string {
+	return cmd.help
+}
+
+// Aliases returns all the aliases of the current command.
+func (cmd *Command) Aliases() []string {
+	return cmd.aliases
+}
+
+// SetAliases sets the aliases of the current command and returns itself.
+func (cmd *Command) SetAliases(aliases []string) *Command {
+	cmd.aliases = aliases
+	return cmd
+}
+
 //////////////////////////////////////////////////////////////////////////////
 /// Command
 
-// NewCommand returns a new sub-command named name with the document help.
+// NewCommand returns a new sub-command named name with the description.
 //
 // Notice: if the command has existed, it will return the old.
-func (cmd *Command) NewCommand(name, help string) (c *Command) {
+func (cmd *Command) NewCommand(name, description string) (c *Command) {
 	if c = cmd.commands[name]; c == nil {
-		c = newCommand(cmd.conf, cmd, name, help, cmd.OptGroup.paths...)
+		c = newCommand(cmd.conf, cmd, name, description, cmd.OptGroup.paths...)
 		cmd.commands[name] = c
 	}
 	return
