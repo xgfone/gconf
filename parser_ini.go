@@ -23,28 +23,40 @@ import (
 
 type iniParser struct {
 	sep  string
-	opt  string
 	prio int
-	init func(*Config) error
+
+	init    func(*Config) error
+	getData func(*Config) ([]byte, error)
 }
 
-// NewSimpleIniParser returns a INI parser with the priority 100, which registers
-// the option, optName, before parsing the option.
-func NewSimpleIniParser(optName string) Parser {
-	return NewIniParser(100, optName, func(c *Config) error {
-		c.RegisterCliOpt(Str(optName, "", "The path of the INI config file."))
+// NewSimpleIniParser returns a INI parser with the priority 100,
+// which registers the CLI option, cliOptName, into the default group and reads
+// the data from the INI file appointed by cliOptName.
+func NewSimpleIniParser(cliOptName string) Parser {
+	return NewIniParser(100, func(c *Config) error {
+		c.RegisterCliOpt(Str(cliOptName, "", "The path of the INI config file."))
 		return nil
+	}, func(c *Config) ([]byte, error) {
+		// Read the content of the config file.
+		if filename := c.StringD(cliOptName, ""); filename == "" {
+			return nil, nil
+		} else if data, err := ioutil.ReadFile(filename); err != nil {
+			return nil, err
+		} else {
+			return data, nil
+		}
 	})
 }
 
 // NewIniParser returns a new ini parser based on the file.
 //
-// The first argument is used to customized the priority.
+// The first argument sets the Init function.
 //
-// The second argument is the option name which the parser needs. It will be
-// registered, and parsed before this parser runs.
+// The second argument sets the Init function to initialize the parser, such as
+// registering the CLI option.
 //
-// The third argument sets the Init function.
+// The third argument is used to read the data to be parsed, which will
+// be called at the start of calling the method Parse().
 //
 // The ini parser supports the line comments starting with "#", "//" or ";".
 // The key and the value is separated by an equal sign, that's =. The key must
@@ -53,11 +65,14 @@ func NewSimpleIniParser(optName string) Parser {
 //
 // If the value ends with "\", it will continue the next line. The lines will
 // be joined by "\n" together.
-//
-// Notice: the options that have not been assigned to a certain group will be
-// divided into the default group.
-func NewIniParser(priority int, optName string, init func(*Config) error) Parser {
-	return iniParser{prio: priority, opt: optName, sep: "=", init: init}
+func NewIniParser(priority int, init func(*Config) error, getData func(*Config) ([]byte, error)) Parser {
+	return iniParser{
+		sep:  "=",
+		prio: priority,
+
+		init:    init,
+		getData: getData,
+	}
 }
 
 func (p iniParser) Name() string {
@@ -80,14 +95,11 @@ func (p iniParser) Post(c *Config) error {
 }
 
 func (p iniParser) Parse(c *Config) error {
-	// Read the content of the config file.
-	filename := c.StringD(p.opt, "")
-	if filename == "" {
-		return nil
-	}
-	data, err := ioutil.ReadFile(filename)
+	data, err := p.getData(c)
 	if err != nil {
 		return err
+	} else if len(data) == 0 {
+		return nil
 	}
 
 	// Parse the config file.
