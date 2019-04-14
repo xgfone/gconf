@@ -101,44 +101,27 @@ func (f *flagParser) Parse(c *Config) (err error) {
 
 			switch opt.Zero().(type) {
 			case bool:
-				var _default bool
-				if v := opt.Default(); v != nil {
-					_default = v.(bool)
-				}
+				_default, _ := ToBool(opt.Default())
 				f.fset.Bool(name, _default, opt.Help())
 				c.Printf("[%s] Add the bool flag '%s'", f.Name(), name)
 			case int, int8, int16, int32, int64:
-				var _default int64
-				if v := opt.Default(); v != nil {
-					_default, _ = ToInt64(v)
-				}
+				_default, _ := ToInt64(opt.Default())
 				f.fset.Int64(name, _default, opt.Help())
 				c.Printf("[%s] Add the int flag '%s'", f.Name(), name)
 			case uint, uint8, uint16, uint32, uint64:
-				var _default uint64
-				if v := opt.Default(); v != nil {
-					_default, _ = ToUint64(v)
-				}
+				_default, _ := ToUint64(opt.Default())
 				f.fset.Uint64(name, _default, opt.Help())
+				c.Printf("[%s] Add the uint flag '%s'", f.Name(), name)
 			case float32, float64:
-				var _default float64
-				if v := opt.Default(); v != nil {
-					_default, _ = ToFloat64(v)
-				}
+				_default, _ := ToFloat64(opt.Default())
 				f.fset.Float64(name, _default, opt.Help())
 				c.Printf("[%s] Add the float flag '%s'", f.Name(), name)
 			case time.Duration:
-				var _default time.Duration
-				if v := opt.Default(); v != nil {
-					_default = v.(time.Duration)
-				}
+				_default, _ := ToDuration(opt.Default())
 				f.fset.Duration(name, _default, opt.Help())
 				c.Printf("[%s] Add the time.Duration flag '%s'", f.Name(), name)
 			default:
-				var _default string
-				if v := opt.Default(); v != nil {
-					_default = fmt.Sprintf("%v", v)
-				}
+				_default, _ := ToString(opt.Default())
 				f.fset.String(name, _default, opt.Help())
 				c.Printf("[%s] Add the string flag '%s'", f.Name(), name)
 			}
