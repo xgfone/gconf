@@ -82,13 +82,6 @@ func New() *Config {
 	return c
 }
 
-// Printf prints the message to os.Stdout if enabling debug.
-func (c *Config) Printf(format string, args ...interface{}) {
-	if c.debug {
-		c.printf(format, args...)
-	}
-}
-
 func (c *Config) mergePaths(paths []string) string {
 	return strings.TrimPrefix(strings.Join(paths, c.gsep), c.prefix)
 }
@@ -169,6 +162,29 @@ func (c *Config) SetZero(zero bool) *Config {
 	c.panicIsParsed(true)
 	c.zero = zero
 	return c
+}
+
+// SetPrintf sets the printf function, which should append a newline
+// after output, to print the debug log.
+//
+// The default printf is equal to `fmt.Printf(msg+"\n", args...)`.
+func (c *Config) SetPrintf(printf func(msg string, args ...interface{})) *Config {
+	if printf == nil {
+		panic("the printf must not be nil")
+	}
+
+	c.panicIsParsed(true)
+	c.printf = printf
+	return c
+}
+
+// Printf prints the log messages if enabling debug.
+//
+// It is output to os.Stdout by default, and append a newline, see SetPrintf().
+func (c *Config) Printf(format string, args ...interface{}) {
+	if c.debug {
+		c.printf(format, args...)
+	}
 }
 
 // SetRequired asks that all the registered options have a value.
