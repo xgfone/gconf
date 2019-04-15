@@ -1,3 +1,7 @@
 [[constraint]]
     name = "github.com/xgfone/go-tools"
     version = "v5.5.2"
+
+[[constraint]]
+    name = "github.com/urfave/cli"
+    version = "v1.20.0"

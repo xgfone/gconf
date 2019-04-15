@@ -103,6 +103,19 @@ func (g *OptGroup) FullName() string {
 	return g.fname
 }
 
+// OnlyGroupName returns the full name of the current group, but not contain
+// the prefix of the command that the current group belongs to if exists.
+//
+// Return "" if the current group is the default group of a command.
+func (g *OptGroup) OnlyGroupName() string {
+	if g.cmd == nil {
+		return g.fname
+	} else if g == g.cmd.OptGroup {
+		return ""
+	}
+	return strings.TrimPrefix(g.fname, g.cmd.OptGroup.fname+".")
+}
+
 // Config returns the Config that the current group belongs to.
 func (g *OptGroup) Config() *Config {
 	return g.conf
@@ -401,8 +414,8 @@ func (g *OptGroup) SetOptValue(priority int, name string, value interface{}) err
 	return g.setOptValue(priority, name, value)
 }
 
-// Check whether the required option has no value or a ZORE value.
-func (g *OptGroup) checkRequiredOption() (err error) {
+// CheckRequiredOption checks whether the required option has no value or a ZORE value.
+func (g *OptGroup) CheckRequiredOption() (err error) {
 	for name, option := range g.opts {
 		if option.value != nil {
 			continue

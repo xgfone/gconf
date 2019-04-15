@@ -33,6 +33,16 @@ var (
 	ToTime    = types.ToTime
 )
 
+// InStrings reports whether s is in ss.
+func InStrings(s string, ss []string) bool {
+	for _, _s := range ss {
+		if s == _s {
+			return true
+		}
+	}
+	return false
+}
+
 // ToDuration does the best to convert a certain value to time.Duration.
 func ToDuration(v interface{}) (d time.Duration, err error) {
 	switch _v := v.(type) {

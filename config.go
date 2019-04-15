@@ -63,10 +63,14 @@ type Config struct {
 	parsedCliArgs []string
 
 	parsers    []Parser
+	executed   *Command
+	actions    map[string]func() error
 	commands   map[string]*Command
 	allGroups  map[string]*OptGroup
 	validators []func() error
 	observe    func(string, string, interface{}, interface{})
+	action     func() error
+	check      func() error
 }
 
 // New is equal to NewConfig("", "").
@@ -90,6 +94,7 @@ func NewConfig(name, description string) *Config {
 		help:   description,
 		printf: func(f string, ss ...interface{}) { fmt.Printf(f+"\n", ss...) },
 
+		actions:    make(map[string]func() error),
 		commands:   make(map[string]*Command),
 		allGroups:  make(map[string]*OptGroup),
 		validators: make([]func() error, 0, 8),
@@ -97,6 +102,7 @@ func NewConfig(name, description string) *Config {
 
 	c.OptGroup = newOptGroup2(false, c, nil, DefaultGroupName)
 	c.SetGroupSeparator(DefaultGroupSeparator)
+	c.SetCheckRequiredOption(c.checkRequiredOption)
 	c.noticeNewGroup(c.OptGroup)
 	return c
 }
@@ -228,6 +234,22 @@ func (c *Config) SetRequired(required bool) *Config {
 	return c
 }
 
+// SetCheckRequiredOption sets the check function for the required options.
+//
+// It will check the options from all non-command groups and all the groups
+// of the executed commands.
+//
+// The default is enough.
+func (c *Config) SetCheckRequiredOption(check func() error) *Config {
+	if check == nil {
+		panic("the check function must not be nil")
+	}
+
+	c.panicIsParsed(true)
+	c.check = check
+	return c
+}
+
 // IgnoreReregister decides whether it will panic when reregistering an option
 // into a certain group.
 //
@@ -303,15 +325,39 @@ func (c *Config) Parse(args ...string) (err error) {
 	}
 
 	// Check whether all the groups have parsed all the required options.
-	for _, group := range c.AllGroups() {
-		if err = group.checkRequiredOption(); err != nil {
-			return err
-		}
+	if err = c.check(); err != nil {
+		return
 	}
 
 	for _, vf := range c.validators {
 		if err = vf(); err != nil {
 			return err
+		}
+	}
+
+	return
+}
+
+// CheckRequiredOption check whether all the required options have an value.
+func (c *Config) CheckRequiredOption() error {
+	return c.check()
+}
+
+func (c *Config) checkRequiredOption() (err error) {
+	for _, group := range c.AllNotCommandGroups() {
+		c.Printf("Check the required options for the global group '%s'", group.FullName())
+		if err = group.CheckRequiredOption(); err != nil {
+			return
+		}
+	}
+
+	if cmd := c.ExecutedCommand(); cmd != nil {
+		for _, group := range cmd.AllGroups() {
+			c.Printf("Check the required options for the group '%s' of the command '%s'",
+				group.FullName(), cmd.FullName())
+			if err = group.CheckRequiredOption(); err != nil {
+				return
+			}
 		}
 	}
 
@@ -358,6 +404,7 @@ func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newO
 // Notice: You cannot call SetOptValue() for the struct option, because we have
 // no way to promise that it's thread-safe.
 func (c *Config) SetOptValue(priority int, groupFullName, optName string, optValue interface{}) error {
+	c.panicIsParsed(false)
 	if priority < 0 {
 		return fmt.Errorf("the priority must not be the negative")
 	}
@@ -429,6 +476,49 @@ func (c *Config) Parsers() []Parser {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+/// Action
+
+// Action returns the action function of Config.
+//
+// In general, it is used by the CLI parser.
+func (c *Config) Action() func() error {
+	return c.action
+}
+
+// SetAction sets the action function for Config.
+func (c *Config) SetAction(action func() error) *Config {
+	if action == nil {
+		panic("the action must not be nil")
+	}
+	c.panicIsParsed(true)
+	c.action = action
+	return c
+}
+
+// RegisterAction registers a action of the command with the name.
+//
+// It may be used by the struct tag. See Config.RegisterStruct().
+func (c *Config) RegisterAction(name string, action func() error) *Config {
+	if name == "" {
+		panic("the action name must not be empty")
+	} else if action == nil {
+		panic("the action must not be nil")
+	}
+
+	c.panicIsParsed(true)
+	c.actions[name] = action
+	c.Printf("Register the action '%s'", name)
+	return c
+}
+
+// GetAction returns the action function by the name.
+//
+// Return nil if no action function.
+func (c *Config) GetAction(name string) func() error {
+	return c.actions[name]
+}
+
+//////////////////////////////////////////////////////////////////////////////
 /// Command
 
 // NewCommand news a Command to register the CLI sub-command.
@@ -460,6 +550,20 @@ func (c *Config) Commands() []*Command {
 	return cmds
 }
 
+// ExecutedCommand returns the executed command and return nil if no command
+// is executed.
+func (c *Config) ExecutedCommand() *Command {
+	return c.executed
+}
+
+// SetExecutedCommand sets the executed command.
+func (c *Config) SetExecutedCommand(cmd *Command) *Config {
+	c.panicIsParsed(false)
+	c.executed = cmd
+	c.Printf("Set the executed command '%s'", cmd.FullName())
+	return c
+}
+
 //////////////////////////////////////////////////////////////////////////////
 /// Group
 
@@ -469,6 +573,10 @@ func (c *Config) noticeNewGroup(group *OptGroup) {
 	}
 
 	c.allGroups[group.FullName()] = group
+	if group.cmd != nil {
+		group.cmd.noticeNewGroup(group)
+	}
+
 	gnames := strings.Split(group.FullName(), c.gsep)
 	if len(gnames) == 1 {
 		return
@@ -480,10 +588,6 @@ func (c *Config) noticeNewGroup(group *OptGroup) {
 			group := newOptGroup2(false, c, group.cmd, gname, gnames[:i]...)
 			c.allGroups[fullName] = group
 		}
-	}
-
-	if group.cmd != nil {
-		group.cmd.noticeNewGroup(group)
 	}
 }
 

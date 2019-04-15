@@ -25,6 +25,7 @@ type Command struct {
 
 	parent    *Command
 	aliases   []string
+	action    func() error
 	commands  map[string]*Command
 	allGroups map[string]*OptGroup
 }
@@ -35,6 +36,7 @@ func newCommand(conf *Config, parent *Command, name, help string, parents ...str
 	} else if name == "" {
 		panic("the group name must not be empty")
 	}
+	conf.panicIsParsed(true)
 
 	cmd := &Command{
 		conf:   conf,
@@ -67,7 +69,26 @@ func (cmd *Command) Aliases() []string {
 
 // SetAliases sets the aliases of the current command and returns itself.
 func (cmd *Command) SetAliases(aliases []string) *Command {
+	cmd.conf.panicIsParsed(true)
 	cmd.aliases = aliases
+	return cmd
+}
+
+// Action returns the action function of the current command.
+//
+// Return nil if it has not been set.
+//
+// Notice: it will be used by the CLI parser supporting the command.
+func (cmd *Command) Action() func() error {
+	return cmd.action
+}
+
+// SetAction sets the action function of the current command.
+//
+// Notice: it will be used by the CLI parser supporting the command.
+func (cmd *Command) SetAction(action func() error) *Command {
+	cmd.conf.panicIsParsed(true)
+	cmd.action = action
 	return cmd
 }
 
@@ -113,8 +134,8 @@ func (cmd *Command) ParentCommand() *Command {
 /// Group
 
 func (cmd *Command) noticeNewGroup(group *OptGroup) {
-	if _, ok := cmd.allGroups[group.name]; !ok {
-		cmd.allGroups[group.name] = group
+	if _, ok := cmd.allGroups[group.fname]; !ok {
+		cmd.allGroups[group.fname] = group
 	}
 }
 

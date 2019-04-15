@@ -29,7 +29,8 @@ type StructValidator interface {
 // RegisterStruct retusters the struct fields as the options.
 //
 // The tag of the field supports "name"(string), "short"(string), "help"(string),
-// "default"(string), "group"(string), "cmd"(string) and "cli"(bool).
+// "default"(string), "cli"(bool), "group"(string), "cmd"(string) and
+// "action"(string).
 //
 //   1. "name", "short", "default" and "help" are used to create a option
 //      with the name, the short name, the default value and the help doc.
@@ -37,6 +38,9 @@ type StructValidator interface {
 //   3. "group" is used to change the group of the option to "group".
 //   4. "cmd" is used to indicate that the option belongs the command named
 //      by "cmd".
+//   5. "action" is the action function of the command, the type of which is
+//      `func() error`, and which must be registered into Config.
+//      Noitce: "action" must be used with "cmd" together.
 //
 // If "name" is "-", that's `name:"-"`, the corresponding field will be ignored.
 //
@@ -136,6 +140,16 @@ func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv 
 				cmd = c.NewCommand(_cmd, help)
 			} else {
 				cmd = command.NewCommand(_cmd, help)
+			}
+
+			// Parse the tag "action": the action of the current command.
+			if action := strings.TrimSpace(field.Tag.Get("action")); action != "" {
+				actionf := c.GetAction(action)
+				if actionf == nil {
+					panic(fmt.Errorf("no the action function named '%s'", action))
+				}
+				cmd.SetAction(actionf)
+				c.Printf("Set the action of the command '%s' to '%s'", cmd.FullName(), action)
 			}
 
 			isCli = true
