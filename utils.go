@@ -15,6 +15,7 @@
 package gconf
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -31,6 +32,24 @@ var (
 	ToString  = types.ToString
 	ToTime    = types.ToTime
 )
+
+// ToDuration does the best to convert a certain value to time.Duration.
+func ToDuration(v interface{}) (d time.Duration, err error) {
+	switch _v := v.(type) {
+	case string:
+		return time.ParseDuration(_v)
+	case []byte:
+		return time.ParseDuration(string(_v))
+	case fmt.Stringer:
+		return time.ParseDuration(_v.String())
+	}
+
+	_v, err := ToInt64(v)
+	if err != nil {
+		return
+	}
+	return time.Duration(_v), nil
+}
 
 // ToStringSlice does the best to convert a certain value to []string.
 //
