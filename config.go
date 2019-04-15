@@ -343,6 +343,20 @@ func (c *Config) CheckRequiredOption() error {
 	return c.check()
 }
 
+func (c *Config) checkRequiredOptionByCmd(cmd *Command) (err error) {
+	if cmd != nil {
+		for _, group := range cmd.AllGroups() {
+			c.Printf("Checking the required options from the group '%s' of the command '%s'",
+				group.FullName(), cmd.FullName())
+			if err = group.CheckRequiredOption(); err != nil {
+				return
+			}
+		}
+		return c.checkRequiredOptionByCmd(cmd.ParentCommand())
+	}
+	return
+}
+
 func (c *Config) checkRequiredOption() (err error) {
 	for _, group := range c.AllNotCommandGroups() {
 		c.Printf("Check the required options for the global group '%s'", group.FullName())
@@ -351,17 +365,7 @@ func (c *Config) checkRequiredOption() (err error) {
 		}
 	}
 
-	if cmd := c.ExecutedCommand(); cmd != nil {
-		for _, group := range cmd.AllGroups() {
-			c.Printf("Check the required options for the group '%s' of the command '%s'",
-				group.FullName(), cmd.FullName())
-			if err = group.CheckRequiredOption(); err != nil {
-				return
-			}
-		}
-	}
-
-	return
+	return c.checkRequiredOptionByCmd(c.ExecutedCommand())
 }
 
 //////////////////////////////////////////////////////////////////////////////

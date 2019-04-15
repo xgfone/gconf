@@ -42,6 +42,11 @@ func NewDefaultCliParser(underlineToHyphen ...bool) Parser {
 }
 
 // NewCliParser returns a new cli parser based on "github.com/urfave/cli".
+//
+// Notice: The method Parse() of this parser will call os.Exit(0) instead of
+// return an error. So Config must set the action to run the main logic.
+//
+// If something is wrong, you maybe open the debug mode of Config.
 func NewCliParser(app *cli.App, underlineToHyphen bool, pre, post func(*Config, *cli.App) error) Parser {
 	if app == nil {
 		app = cli.NewApp()
@@ -81,12 +86,21 @@ func (cp *cliParser) Post(conf *Config) error {
 	return cp.post(conf, cp.app)
 }
 
-func (cp *cliParser) updateConfigOpt(names []string, global bool, ctx *cli.Context,
+func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 	conf *Config, flag2opts map[string]*groupOpt) (err error) {
 
 	for _, name := range names {
 		gopt := flag2opts[name]
 		if gopt.Ok {
+			continue
+		}
+
+		var global bool
+		if ctx.GlobalGeneric(name) != nil {
+			global = true
+		} else if ctx.Generic(name) == nil {
+			conf.Printf("WARNING: the context '%s' has no value of the flag '%s'",
+				ctx.Command.FullName(), name)
 			continue
 		}
 
@@ -152,20 +166,20 @@ func (cp *cliParser) updateConfig(ctx *cli.Context, conf *Config,
 	origCtx := ctx
 
 	// For the current command
-	if err = cp.updateConfigOpt(ctx.FlagNames(), false, ctx, conf, flag2opts); err != nil {
+	if err = cp.updateConfigOpt(ctx.FlagNames(), ctx, conf, flag2opts); err != nil {
 		return
 	}
 
 	// For the parent command
 	for ctx.Parent() != nil {
-		if err = cp.updateConfigOpt(ctx.GlobalFlagNames(), true, ctx, conf, flag2opts); err != nil {
+		if err = cp.updateConfigOpt(ctx.GlobalFlagNames(), ctx, conf, flag2opts); err != nil {
 			return
 		}
 		ctx = ctx.Parent()
 	}
 
 	// For the global, that's non-command.
-	if err = cp.updateConfigOpt(ctx.GlobalFlagNames(), true, ctx, conf, flag2opts); err != nil {
+	if err = cp.updateConfigOpt(ctx.GlobalFlagNames(), ctx, conf, flag2opts); err != nil {
 		return
 	}
 
@@ -256,6 +270,8 @@ func (cp *cliParser) getCmdAction(cmd *Command, flag2opts map[string]*groupOpt) 
 				cmd.Config().Printf("[%s] Calling the action of the command '%s'",
 					cp.Name(), cmd.FullName())
 				err = action()
+			} else {
+				cmd.Config().Printf("WARNING: no action of the command '%s'", cmd.FullName())
 			}
 		}
 		return
