@@ -385,6 +385,22 @@ func (g *OptGroup) setOptValue(priority int, name string, value interface{}) (er
 	return
 }
 
+// SetOptValue sets the value of the option in the current group. It's thread-safe.
+//
+// "priority" should be the priority of the parser. It only set the option value
+// successfully for the priority higher than the last. So you can use 0
+// to update it coercively.
+//
+// Notice: You cannot call SetOptValue() for the struct option, because we have
+// no way to promise that it's thread-safe.
+func (g *OptGroup) SetOptValue(priority int, name string, value interface{}) error {
+	g.conf.panicIsParsed(false)
+	if priority < 0 {
+		return fmt.Errorf("the priority must not be the negative")
+	}
+	return g.setOptValue(priority, name, value)
+}
+
 // Check whether the required option has no value or a ZORE value.
 func (g *OptGroup) checkRequiredOption() (err error) {
 	for name, option := range g.opts {
