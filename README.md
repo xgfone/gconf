@@ -448,3 +448,123 @@ func main() {
 	// |   |   |--- opt2*
 }
 ```
+
+### Parse Cli Command
+
+The `flag` parser cannot understand the command and the sub-command, so it will ignore them. But `cli` parser based on `github.com/urfave/cli` can understand them. For example,
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/xgfone/gconf"
+)
+
+type OptGroup struct {
+	Opt3 string
+	Opt4 int
+}
+
+type Command1 struct {
+	Opt5 int
+	Opt6 string
+}
+
+type Command2 struct {
+	Opt7 string `default:"abc"`
+	Opt8 int    `cmd:"cmd3" help:"test sub-command" action:"cmd3_action"`
+}
+
+type Config struct {
+	Opt1  int
+	Opt2  string   `default:"hij"`
+	Group OptGroup `cli:"false"`
+
+	Cmd1 Command1 `cmd:"cmd1" help:"test cmd1" action:"cmd1_action"`
+	Cmd2 Command2 `cmd:"cmd2" help:"test cmd2" action:"cmd2_action"`
+}
+
+func main() {
+	conf := gconf.NewConfig("", "the cli command").AddParser(gconf.NewDefaultCliParser(true))
+	// conf.SetDebug(true)
+
+	// In order to let the help/version option work correctly, you should set
+	// the actions for the main and the commands.
+	conf.SetAction(func() error { // the main, that's, the non-command.
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterAction("cmd1_action", func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd1.opt5=%d\n", conf.Command("cmd1").Int("opt5"))
+		fmt.Printf("cmd1.opt6=%s\n", conf.Command("cmd1").String("opt6"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterAction("cmd2_action", func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterAction("cmd3_action", func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
+		fmt.Printf("cmd2.cmd3.opt8=%d\n", conf.Command("cmd2").Command("cmd3").Int("opt8"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterCliStruct(new(Config)).Parse()
+
+	// RUN Example 1: the main
+	// $ PROGRAM -h
+	// NAME:
+	//    PROGRAM - the cli command
+	//
+	// USAGE:
+	//    main [global options] command [command options] [arguments...]
+	//
+	// VERSION:
+	//    0.0.0
+	//
+	// COMMANDS:
+	//      cmd1     test cmd1
+	//      cmd2     test cmd2
+	//      help, h  Shows a list of commands or help for one command
+	//
+	// GLOBAL OPTIONS:
+	//    --opt1 value   (default: 0)
+	//    --opt2 value   (default: "hij")
+	//    --help, -h     show help
+	//    --version, -v  print the version
+
+	// RUN Example 2: the command "cmd2"
+	// $ PROGRAM cmd2 -h
+	// NAME:
+	//    main cmd2 - test cmd2
+	//
+	// USAGE:
+	//    main cmd2 command [command options] [arguments...]
+	//
+	// COMMANDS:
+	//      cmd3  test sub-command
+	//
+	// OPTIONS:
+	//    --opt7 value  (default: "abc")
+	//    --help, -h    show help
+
+	// RUN Example 3: the sub-command "cmd3"
+	// $ PROGRAM cmd1 cmd3 -h
+	// NAME:
+	//    main cmd2 cmd3 - test sub-command
+	//
+	// USAGE:
+	//    main cmd2 cmd3 [command options] [arguments...]
+	//
+	// OPTIONS:
+	//    --opt8 value  test sub-command (default: 0)
+}
+```
