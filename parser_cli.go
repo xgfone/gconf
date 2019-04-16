@@ -43,8 +43,10 @@ func NewDefaultCliParser(underlineToHyphen ...bool) Parser {
 
 // NewCliParser returns a new cli parser based on "github.com/urfave/cli".
 //
-// Notice: The method Parse() of this parser will call os.Exit(0) instead of
-// return an error. So Config must set the action to run the main logic.
+// Notice: You should set the action for each command and the app main,
+// because "cli" does not only return an error but also call os.Exit()
+// for the help and the version option. So there is no way to distinguish it,
+// that's, you should not run other logic codes after calling Parse().
 //
 // If something is wrong, you maybe open the debug mode of Config.
 func NewCliParser(app *cli.App, underlineToHyphen bool, pre, post func(*Config, *cli.App) error) Parser {
@@ -260,18 +262,16 @@ func (cp *cliParser) getAppFlags(groups []*OptGroup, flag2opts map[string]*group
 
 func (cp *cliParser) getCmdAction(cmd *Command, flag2opts map[string]*groupOpt) func(*cli.Context) error {
 	return func(ctx *cli.Context) (err error) {
-		cmd.Config().SetExecutedCommand(cmd)
-		if err = cp.updateConfig(ctx, cmd.Config(), flag2opts); err == nil {
+		conf := cmd.Config()
+		conf.SetExecutedCommand(cmd)
+		if err = cp.updateConfig(ctx, conf, flag2opts); err == nil {
 			if action := cmd.Action(); action != nil {
-				if err = cmd.Config().CheckRequiredOption(); err != nil {
-					return err
+				if err = conf.CheckRequiredOption(); err == nil {
+					conf.Printf("[%s] Calling the action of the command '%s'", cp.Name(), cmd.FullName())
+					err = action()
 				}
-
-				cmd.Config().Printf("[%s] Calling the action of the command '%s'",
-					cp.Name(), cmd.FullName())
-				err = action()
 			} else {
-				cmd.Config().Printf("WARNING: no action of the command '%s'", cmd.FullName())
+				conf.Printf("WARNING: no action of the command '%s'", cmd.FullName())
 			}
 		}
 		return
@@ -301,31 +301,24 @@ type groupOpt struct {
 }
 
 func (cp *cliParser) Parse(conf *Config) (err error) {
+	flag2opts := make(map[string]*groupOpt, 8)
 	action := conf.Action()
 	if action == nil {
-		fmt.Println("Config is short of Action")
-		cli.OsExiter(1)
+		conf.Printf("WARNING: Config is short of Action")
 	}
-
-	flag2opts := make(map[string]*groupOpt, 8)
 
 	cp.app.Flags = cp.getAppFlags(conf.AllNotCommandGroups(), flag2opts)
 	cp.app.Commands = cp.getAppCommands(conf.Commands(), flag2opts)
 	cp.app.Action = func(ctx *cli.Context) (err error) {
-		if err = cp.updateConfig(ctx, conf, flag2opts); err != nil {
-			return
-		} else if err = conf.CheckRequiredOption(); err != nil {
-			return
+		if err = cp.updateConfig(ctx, conf, flag2opts); err == nil {
+			if err = conf.CheckRequiredOption(); err == nil {
+				if action != nil {
+					err = action()
+				}
+			}
 		}
-		return action()
+		return
 	}
 
-	err = cp.app.Run(append([]string{conf.Name()}, conf.ParsedCliArgs()...))
-	if err != nil {
-		fmt.Println(err)
-		cli.OsExiter(1)
-	} else {
-		cli.OsExiter(0)
-	}
-	return
+	return cp.app.Run(append([]string{conf.Name()}, conf.ParsedCliArgs()...))
 }
