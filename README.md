@@ -16,7 +16,7 @@ The supported Go version: `1.8+`.
 
 ## Parser
 
-The parser is used to parse the configurations from many sources with a certain format. There have been implemented some parsers, such as `flag`, `env`, `INI`, `property`, etc. And `flag` is the CLI parser based on the stdlib `flag`.
+The parser is used to parse the configurations from many sources with a certain format. There have been implemented some parsers, such as `cli`, `flag`, `env`, `INI`, `property`, etc. Of these, `flag` is the CLI parser based on the stdlib `flag`, and `cli` is another CLI parser based on `github.com/urfave/cli`.
 
 You can develop yourself parser, only needing to implement the interface `Parser` as follow.
 ```go
@@ -566,5 +566,75 @@ func main() {
 	//
 	// OPTIONS:
 	//    --opt8 value  test sub-command (default: 0)
+}
+```
+
+Beside, you maybe build the commands by hand instead of using the struct. So the program above is equal to that below.
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/xgfone/gconf"
+)
+
+func main() {
+	conf := gconf.NewConfig("", "the cli command").AddParser(gconf.NewDefaultCliParser(true))
+	// conf.SetDebug(true)
+
+	// Build the main
+	conf.SetAction(func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterOpts([]gconf.Opt{
+		gconf.Int("opt1", 0, ""),
+		gconf.Str("opt2", "hij", ""),
+	}).NewGroup("group").RegisterOpts([]gconf.Opt{
+		gconf.Str("opt3", "", ""),
+		gconf.Int("opt4", 0, ""),
+	})
+
+	// Build the command "cmd1"
+	conf.NewCommand("cmd1", "test cmd1").SetAction(func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd1.opt5=%d\n", conf.Command("cmd1").Int("opt5"))
+		fmt.Printf("cmd1.opt6=%s\n", conf.Command("cmd1").String("opt6"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterCliOpts([]gconf.Opt{
+		gconf.Int("opt5", 0, ""),
+		gconf.Str("opt6", "", ""),
+	})
+
+	type Command2 struct {
+		Opt8 int `cmd:"cmd3" help:"test sub-command" action:"cmd3_action"`
+	}
+
+	// Build the command "cmd2"
+	conf.NewCommand("cmd2", "test cmd2").SetAction(func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterCliOpt(gconf.Str("opt7", "abc", ""))
+
+	// Build the sub-command "cmd3" of the command "cmd2".
+	conf.NewCommand("cmd3", "test sub-command").SetAction(func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
+		fmt.Printf("cmd2.cmd3.opt8=%d\n", conf.Command("cmd2").Command("cmd3").Int("opt8"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterCliOpt(gconf.Int("opt8", 0, ""))
+
+	// Parse and run the command.
+	conf.Parse()
 }
 ```
