@@ -44,6 +44,7 @@ type Config struct {
 	parsed int32
 
 	// Common Settings
+	stop       bool
 	zero       bool
 	debug      bool
 	required   bool
@@ -280,6 +281,16 @@ func (c *Config) Parsed() bool {
 	return atomic.LoadInt32(&c.parsed) == 1
 }
 
+// Stop stops the subsequent parsing.
+//
+// In general, it is used by the parser to stop the subsequent operation
+// after its Parse() is called.
+func (c *Config) Stop() *Config {
+	c.panicIsParsed(false)
+	c.stop = true
+	return c
+}
+
 // Parse parses the options, including CLI, the config file, or others.
 //
 // if no any arguments, it's equal to os.Args[1:].
@@ -314,6 +325,9 @@ func (c *Config) Parse(args ...string) (err error) {
 		if err = parser.Parse(c); err != nil {
 			return fmt.Errorf("The '%s' parser failed: %s", parser.Name(), err)
 		}
+		if c.stop {
+			break
+		}
 	}
 
 	// Postprocess the parsers.
@@ -324,14 +338,10 @@ func (c *Config) Parse(args ...string) (err error) {
 		}
 	}
 
-	// Check whether all the groups have parsed all the required options.
-	if err = c.check(); err != nil {
-		return
-	}
-
-	for _, vf := range c.validators {
-		if err = vf(); err != nil {
-			return err
+	if !c.stop {
+		// Check whether all the groups have parsed all the required options.
+		if err = c.check(); err != nil {
+			return
 		}
 	}
 
@@ -365,7 +375,17 @@ func (c *Config) checkRequiredOption() (err error) {
 		}
 	}
 
-	return c.checkRequiredOptionByCmd(c.ExecutedCommand())
+	if err = c.checkRequiredOptionByCmd(c.ExecutedCommand()); err != nil {
+		return
+	}
+
+	for _, vf := range c.validators {
+		if err = vf(); err != nil {
+			return err
+		}
+	}
+
+	return
 }
 
 //////////////////////////////////////////////////////////////////////////////
