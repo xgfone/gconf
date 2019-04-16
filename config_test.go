@@ -356,3 +356,71 @@ func ExampleCommand() {
 	// |   |   |--- opt1*
 	// |   |   |--- opt2*
 }
+
+func ExampleNewCliParser() {
+	type OptGroup struct {
+		Opt3 string
+		Opt4 int
+	}
+
+	type Command1 struct {
+		Opt5 int
+		Opt6 string
+	}
+
+	type Command2 struct {
+		Opt7 string `default:"abc"`
+		Opt8 int    `cmd:"cmd3" help:"test sub-command" action:"cmd3_action"`
+	}
+
+	type Config struct {
+		Opt1  int
+		Opt2  string   `default:"hij"`
+		Group OptGroup `cli:"false"`
+
+		Cmd1 Command1 `cmd:"cmd1" help:"test cmd1" action:"cmd1_action"`
+		Cmd2 Command2 `cmd:"cmd2" help:"test cmd2" action:"cmd2_action"`
+	}
+
+	conf := NewConfig("", "the cli command").AddParser(NewDefaultCliParser(true))
+
+	// conf.SetDebug(true)
+	conf.SetAction(func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterAction("cmd1_action", func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd1.opt5=%d\n", conf.Command("cmd1").Int("opt5"))
+		fmt.Printf("cmd1.opt6=%s\n", conf.Command("cmd1").String("opt6"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterAction("cmd2_action", func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterAction("cmd3_action", func() error {
+		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+		fmt.Printf("opt2=%s\n", conf.String("opt2"))
+		fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
+		fmt.Printf("cmd2.cmd3.opt8=%d\n", conf.Command("cmd2").Command("cmd3").Int("opt8"))
+		fmt.Printf("args=%v\n", conf.CliArgs())
+		return nil
+	}).RegisterCliStruct(new(Config)).Parse(
+		"--opt1", "123", // Global Options
+		"cmd2", "--opt7=xyz", // The command "cmd2" and its options
+		"cmd3", "-opt8", "456", // The sub-command "cmd3" and its options
+		"arg1", "arg2", "arg3", // The rest arguments
+	)
+
+	// Output:
+	// opt1=123
+	// opt2=hij
+	// cmd2.opt7=xyz
+	// cmd2.cmd3.opt8=456
+	// args=[arg1 arg2 arg3]
+}
