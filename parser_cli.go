@@ -59,18 +59,18 @@ func NewCliParser(app *cli.App, underlineToHyphen bool, pre, post func(*Config, 
 	if post == nil {
 		post = func(*Config, *cli.App) error { return nil }
 	}
-	return &cliParser{app: app, utoh: underlineToHyphen, pre: pre, post: post}
+	return cliParser{app: app, utoh: underlineToHyphen, pre: pre, post: post}
 }
 
-func (cp *cliParser) Name() string {
+func (cp cliParser) Name() string {
 	return "cli"
 }
 
-func (cp *cliParser) Priority() int {
+func (cp cliParser) Priority() int {
 	return 0
 }
 
-func (cp *cliParser) Pre(conf *Config) error {
+func (cp cliParser) Pre(conf *Config) error {
 	cp.app.Name = conf.Name()
 
 	if help := conf.Description(); help != "" {
@@ -84,11 +84,11 @@ func (cp *cliParser) Pre(conf *Config) error {
 	return cp.pre(conf, cp.app)
 }
 
-func (cp *cliParser) Post(conf *Config) error {
+func (cp cliParser) Post(conf *Config) error {
 	return cp.post(conf, cp.app)
 }
 
-func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
+func (cp cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 	conf *Config, flag2opts map[string]*groupOpt) (err error) {
 
 	for _, name := range names {
@@ -101,8 +101,8 @@ func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 		if ctx.GlobalGeneric(name) != nil {
 			global = true
 		} else if ctx.Generic(name) == nil {
-			conf.Printf("WARNING: the context '%s' has no value of the flag '%s'",
-				ctx.Command.FullName(), name)
+			conf.Printf("[%s] WARNING: the context '%s' has no value of the flag '%s'",
+				cp.Name(), ctx.Command.FullName(), name)
 			continue
 		}
 
@@ -163,7 +163,7 @@ func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 	return nil
 }
 
-func (cp *cliParser) updateConfig(ctx *cli.Context, conf *Config,
+func (cp cliParser) updateConfig(ctx *cli.Context, conf *Config,
 	flag2opts map[string]*groupOpt) (err error) {
 	origCtx := ctx
 
@@ -191,7 +191,7 @@ func (cp *cliParser) updateConfig(ctx *cli.Context, conf *Config,
 	return nil
 }
 
-func (cp *cliParser) getAppFlags(groups []*OptGroup, flag2opts map[string]*groupOpt) (flags []cli.Flag) {
+func (cp cliParser) getAppFlags(groups []*OptGroup, flag2opts map[string]*groupOpt) (flags []cli.Flag) {
 	for _, group := range groups {
 		conf := group.Config()
 		gname := group.OnlyGroupName()
@@ -260,25 +260,25 @@ func (cp *cliParser) getAppFlags(groups []*OptGroup, flag2opts map[string]*group
 	return
 }
 
-func (cp *cliParser) getCmdAction(cmd *Command, flag2opts map[string]*groupOpt) func(*cli.Context) error {
+func (cp cliParser) getCmdAction(cmd *Command, flag2opts map[string]*groupOpt) func(*cli.Context) error {
 	return func(ctx *cli.Context) (err error) {
 		conf := cmd.Config()
 		conf.SetExecutedCommand(cmd)
-		if err = cp.updateConfig(ctx, conf, flag2opts); err == nil {
+		if err = cp.handleConfigOption(ctx, conf, flag2opts); err == nil {
 			if action := cmd.Action(); action != nil {
-				if err = conf.CheckRequiredOption(); err == nil {
-					conf.Printf("[%s] Calling the action of the command '%s'", cp.Name(), cmd.FullName())
-					err = action()
-				}
+				conf.Printf("[%s] Calling the action of the command '%s'",
+					cp.Name(), cmd.FullName())
+				err = action()
 			} else {
-				conf.Printf("WARNING: no action of the command '%s'", cmd.FullName())
+				conf.Printf("[%s] WARNING: no action of the command '%s'",
+					cp.Name(), cmd.FullName())
 			}
 		}
 		return
 	}
 }
 
-func (cp *cliParser) getAppCommands(cmds []*Command, flag2opts map[string]*groupOpt) (commands []cli.Command) {
+func (cp cliParser) getAppCommands(cmds []*Command, flag2opts map[string]*groupOpt) (commands []cli.Command) {
 	for _, cmd := range cmds {
 		commands = append(commands, cli.Command{
 			Name:    cmd.Name(),
@@ -300,25 +300,52 @@ type groupOpt struct {
 	Opt   Opt
 }
 
-func (cp *cliParser) Parse(conf *Config) (err error) {
+func (cp cliParser) Parse(conf *Config) (err error) {
 	flag2opts := make(map[string]*groupOpt, 8)
 	action := conf.Action()
 	if action == nil {
-		conf.Printf("WARNING: Config is short of Action")
+		conf.Printf("[%s] WARNING: Config is short of Action", cp.Name())
 	}
 
 	cp.app.Flags = cp.getAppFlags(conf.AllNotCommandGroups(), flag2opts)
 	cp.app.Commands = cp.getAppCommands(conf.Commands(), flag2opts)
 	cp.app.Action = func(ctx *cli.Context) (err error) {
-		if err = cp.updateConfig(ctx, conf, flag2opts); err == nil {
-			if err = conf.CheckRequiredOption(); err == nil {
-				if action != nil {
-					err = action()
-				}
+		if err = cp.handleConfigOption(ctx, conf, flag2opts); err == nil {
+			if action != nil {
+				err = action()
 			}
 		}
 		return
 	}
 
+	conf.Stop() // Stop the subsequent parsing
 	return cp.app.Run(append([]string{conf.Name()}, conf.ParsedCliArgs()...))
+}
+
+func (cp cliParser) handleConfigOption(ctx *cli.Context, conf *Config,
+	flag2opts map[string]*groupOpt) (err error) {
+	if err = cp.updateConfig(ctx, conf, flag2opts); err == nil {
+		// Call other parsers.
+		for _, parser := range conf.Parsers() {
+			if parser.Name() == cp.Name() {
+				continue
+			}
+			conf.Printf("[%s] Calling the parser '%s'", cp.Name(), parser.Name())
+			if err = parser.Parse(conf); err != nil {
+				return
+			}
+		}
+
+		// Clean all the parsers.
+		for _, parser := range conf.Parsers() {
+			conf.Printf("[%s] Cleaning the parser '%s'", cp.Name(), parser.Name())
+			if err = parser.Post(conf); err != nil {
+				return
+			}
+		}
+
+		// Check and validate the options.
+		return conf.CheckRequiredOption()
+	}
+	return nil
 }
