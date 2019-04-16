@@ -611,10 +611,6 @@ func main() {
 		gconf.Str("opt6", "", ""),
 	})
 
-	type Command2 struct {
-		Opt8 int `cmd:"cmd3" help:"test sub-command" action:"cmd3_action"`
-	}
-
 	// Build the command "cmd2"
 	conf.NewCommand("cmd2", "test cmd2").SetAction(func() error {
 		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
