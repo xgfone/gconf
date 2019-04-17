@@ -39,8 +39,9 @@ type StructValidator interface {
 //   4. "cmd" is used to indicate that the option belongs the command named
 //      by "cmd".
 //   5. "action" is the action function of the command, the type of which is
-//      `func() error`, and which must be registered into Config.
-//      Noitce: "action" must be used with "cmd" together.
+//      `func() error`, and which must be registered into Config or an exported
+//      method of the topmost struct. Beside, "action" need to be used with
+//      "cmd" together.
 //
 // If "name" is "-", that's `name:"-"`, the corresponding field will be ignored.
 //
@@ -86,7 +87,7 @@ func (c *Config) registerStruct(cli bool, s interface{}) *Config {
 		panic("the struct is not a struct")
 	}
 
-	c.registerStructByValue(nil, c.OptGroup, sv, cli)
+	c.registerStructByValue(nil, c.OptGroup, sv, sv, cli)
 
 	if v, ok := s.(StructValidator); ok {
 		c.validators = append(c.validators, v.Validate)
@@ -94,7 +95,16 @@ func (c *Config) registerStruct(cli bool, s interface{}) *Config {
 	return c
 }
 
-func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv reflect.Value, cli bool) {
+func (c *Config) getActionMethod(orig reflect.Value, method string) func() error {
+	if m := orig.MethodByName(method).Interface(); m == nil {
+		return nil
+	} else if action, ok := m.(func() error); ok {
+		return action
+	}
+	return nil
+}
+
+func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv, orig reflect.Value, cli bool) {
 	if sv.Kind() == reflect.Ptr {
 		sv = sv.Elem()
 	}
@@ -146,7 +156,9 @@ func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv 
 			if action := strings.TrimSpace(field.Tag.Get("action")); action != "" {
 				actionf := c.GetAction(action)
 				if actionf == nil {
-					panic(fmt.Errorf("no the action function named '%s'", action))
+					if actionf = c.getActionMethod(orig, action); actionf == nil {
+						panic(fmt.Errorf("no the action named '%s'", action))
+					}
 				}
 				cmd.SetAction(actionf)
 				c.Printf("Set the action of the command '%s' to '%s'", cmd.FullName(), action)
@@ -171,7 +183,7 @@ func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv 
 				if cmd == nil && command != nil {
 					cmd = command
 				}
-				c.registerStructByValue(cmd, group, fieldV, isCli)
+				c.registerStructByValue(cmd, group, fieldV, orig, isCli)
 				continue
 			}
 		}

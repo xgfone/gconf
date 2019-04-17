@@ -462,6 +462,8 @@ import (
 	"github.com/xgfone/gconf"
 )
 
+var conf *gconf.Config
+
 type OptGroup struct {
 	Opt3 string
 	Opt4 int
@@ -474,7 +476,7 @@ type Command1 struct {
 
 type Command2 struct {
 	Opt7 string `default:"abc"`
-	Opt8 int    `cmd:"cmd3" help:"test sub-command" action:"cmd3_action"`
+	Opt8 int    `cmd:"cmd3" help:"test sub-command" action:"Cmd3Action"`
 }
 
 type Config struct {
@@ -486,8 +488,27 @@ type Config struct {
 	Cmd2 Command2 `cmd:"cmd2" help:"test cmd2" action:"cmd2_action"`
 }
 
+// You can define a method as the action except that registering it into Config.
+//
+// Notice: the type of the method must be `func() error`.
+func (c Config) Cmd3Action() error {
+	fmt.Printf("opt1=%d\n", c.Opt1)
+	fmt.Printf("opt2=%s\n", c.Opt2)
+	fmt.Printf("cmd2.opt7=%s\n", c.Cmd2.Opt7)
+	fmt.Printf("cmd2.cmd3.opt8=%d\n", c.Cmd2.Opt8)
+
+	fmt.Println("----------------")
+
+	fmt.Printf("opt1=%d\n", conf.Int("opt1"))
+	fmt.Printf("opt2=%s\n", conf.String("opt2"))
+	fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
+	fmt.Printf("cmd2.cmd3.opt8=%d\n", conf.Command("cmd2").Command("cmd3").Int("opt8"))
+	fmt.Printf("args=%v\n", conf.CliArgs())
+	return nil
+}
+
 func main() {
-	conf := gconf.NewConfig("", "the cli command").AddParser(gconf.NewDefaultCliParser(true))
+	conf = gconf.NewConfig("", "the cli command").AddParser(gconf.NewDefaultCliParser(true))
 	// conf.SetDebug(true)
 
 	// In order to let the help/version option work correctly, you should set
@@ -508,13 +529,6 @@ func main() {
 		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
 		fmt.Printf("opt2=%s\n", conf.String("opt2"))
 		fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
-		fmt.Printf("args=%v\n", conf.CliArgs())
-		return nil
-	}).RegisterAction("cmd3_action", func() error {
-		fmt.Printf("opt1=%d\n", conf.Int("opt1"))
-		fmt.Printf("opt2=%s\n", conf.String("opt2"))
-		fmt.Printf("cmd2.opt7=%s\n", conf.Command("cmd2").String("opt7"))
-		fmt.Printf("cmd2.cmd3.opt8=%d\n", conf.Command("cmd2").Command("cmd3").Int("opt8"))
 		fmt.Printf("args=%v\n", conf.CliArgs())
 		return nil
 	}).RegisterCliStruct(new(Config)).Parse()
