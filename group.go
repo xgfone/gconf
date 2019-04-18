@@ -90,6 +90,10 @@ func newOptGroup2(notice bool, conf *Config, cmd *Command, name string, parents 
 	return group
 }
 
+func (g *OptGroup) fixOptName(name string) string {
+	return strings.Replace(name, "-", "_", -1)
+}
+
 //////////////////////////////////////////////////////////////////////////////
 /// MetaData
 
@@ -225,19 +229,17 @@ func (g *OptGroup) G(group string) *OptGroup {
 // Return -1 if the option does not exist.
 func (g *OptGroup) Priority(name string) int {
 	priority := -1
-
-	if option := g.opts[name]; option != nil {
+	if option := g.opts[g.fixOptName(name)]; option != nil {
 		option.lock.RLock()
 		priority = option.prio
 		option.lock.RUnlock()
 	}
-
 	return priority
 }
 
 // HasOpt reports whether the group contains the option named 'name'.
 func (g *OptGroup) HasOpt(name string) bool {
-	_, ok := g.opts[name]
+	_, ok := g.opts[g.fixOptName(name)]
 	return ok
 }
 
@@ -245,7 +247,7 @@ func (g *OptGroup) HasOpt(name string) bool {
 //
 // Return nil if the option does not exist.
 func (g *OptGroup) Opt(name string) Opt {
-	if option, ok := g.opts[name]; ok {
+	if option, ok := g.opts[g.fixOptName(name)]; ok {
 		return option.opt
 	}
 	return nil
@@ -310,7 +312,7 @@ func (g *OptGroup) registerOpt(cli bool, opt Opt) *OptGroup {
 		panic("the option must not be nil")
 	}
 
-	name := strings.Replace(opt.Name(), "-", "_", -1)
+	name := g.fixOptName(opt.Name())
 	if _, ok := g.opts[name]; ok {
 		if g.conf.reregister {
 			g.conf.Printf("WARNING: Ingore to reregister the option '%s' into the group '%s'",
@@ -396,7 +398,7 @@ func (g *OptGroup) _setOptValue(priority int, name string, value interface{}) {
 }
 
 func (g *OptGroup) setOptValue(priority int, name string, value interface{}) (err error) {
-	name = strings.Replace(name, "-", "_", -1)
+	name = g.fixOptName(name)
 	if value, err = g.parseOptValue(name, value); err == nil {
 		g._setOptValue(priority, name, value)
 	}
@@ -461,7 +463,7 @@ func (g *OptGroup) CheckRequiredOption() (err error) {
 //
 // Return nil if the option does not exist, too.
 func (g *OptGroup) Value(name string) (v interface{}) {
-	if option := g.opts[name]; option != nil {
+	if option := g.opts[g.fixOptName(name)]; option != nil {
 		option.lock.RLock()
 		v = option.value
 		option.lock.RUnlock()
