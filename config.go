@@ -105,6 +105,15 @@ func NewConfig(name, description string) *Config {
 	c.SetGroupSeparator(DefaultGroupSeparator)
 	c.SetCheckRequiredOption(c.checkRequiredOption)
 	c.noticeNewGroup(c.OptGroup)
+
+	for _, name := range os.Environ() {
+		if name = strings.ToLower(name); name == "debug" {
+			v, _ := ToBool(name)
+			c.SetDebug(v)
+			break
+		}
+	}
+
 	return c
 }
 
@@ -184,6 +193,10 @@ func (c *Config) IsDebug() bool {
 // You should set it before registering any options.
 //
 // If parsed, it will panic when calling it.
+//
+// If the environment "debug" is set to the true value, such as t", "T", "1",
+// "on", "On", "ON", "true", "True", "TRUE", "yes", "Yes" or "YES", it will
+// set the debug mode automatically.
 func (c *Config) SetDebug(debug bool) *Config {
 	c.panicIsParsed(true)
 	c.debug = debug
