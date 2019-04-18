@@ -106,10 +106,16 @@ func NewConfig(name, description string) *Config {
 	c.SetCheckRequiredOption(c.checkRequiredOption)
 	c.noticeNewGroup(c.OptGroup)
 
-	for _, name := range os.Environ() {
-		if name = strings.ToLower(name); name == "debug" {
-			v, _ := ToBool(name)
-			c.SetDebug(v)
+	for _, env := range os.Environ() {
+		index := strings.IndexByte(env, '=')
+		if index == -1 {
+			continue
+		}
+
+		if strings.ToUpper(env[:index]) == "DEBUG" {
+			if v, _ := ToBool(env[index+1:]); v {
+				c.SetDebug(true)
+			}
 			break
 		}
 	}
