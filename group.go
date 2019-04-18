@@ -297,6 +297,9 @@ func (g *OptGroup) RegisterOpts(opts []Opt) *OptGroup {
 }
 
 // RegisterOpt registers the option into the current group.
+//
+// the characters "-" and "_" in the option name are equal, that's, "abcd-efg"
+// is equal to "abcd_efg".
 func (g *OptGroup) RegisterOpt(opt Opt) *OptGroup {
 	return g.registerOpt(false, opt)
 }
@@ -307,7 +310,8 @@ func (g *OptGroup) registerOpt(cli bool, opt Opt) *OptGroup {
 		panic("the option must not be nil")
 	}
 
-	if _, ok := g.opts[opt.Name()]; ok {
+	name := strings.Replace(opt.Name(), "-", "_", -1)
+	if _, ok := g.opts[name]; ok {
 		if g.conf.reregister {
 			g.conf.Printf("WARNING: Ingore to reregister the option '%s' into the group '%s'",
 				opt.Name(), g.fname)
@@ -316,7 +320,7 @@ func (g *OptGroup) registerOpt(cli bool, opt Opt) *OptGroup {
 		panic(fmt.Errorf("the option '%s' has been registered into the group '%s'", opt.Name(), g.fname))
 	}
 
-	g.opts[opt.Name()] = &option{isCli: cli, opt: opt, prio: InitValuePriority}
+	g.opts[name] = &option{isCli: cli, opt: opt, prio: InitValuePriority}
 	g.conf.Printf("Register group=%s, option=%s, cli=%v", g.fname, opt.Name(), cli)
 	return g
 }
@@ -392,6 +396,7 @@ func (g *OptGroup) _setOptValue(priority int, name string, value interface{}) {
 }
 
 func (g *OptGroup) setOptValue(priority int, name string, value interface{}) (err error) {
+	name = strings.Replace(name, "-", "_", -1)
 	if value, err = g.parseOptValue(name, value); err == nil {
 		g._setOptValue(priority, name, value)
 	}
@@ -403,6 +408,9 @@ func (g *OptGroup) setOptValue(priority int, name string, value interface{}) (er
 // "priority" should be the priority of the parser. It only set the option value
 // successfully for the priority higher than the last. So you can use 0
 // to update it coercively.
+//
+// For the option name, the characters "-" and "_" are equal, that's, "abcd-efg"
+// is equal to "abcd_efg".
 //
 // Notice: You cannot call SetOptValue() for the struct option, because we have
 // no way to promise that it's thread-safe.

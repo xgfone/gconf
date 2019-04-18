@@ -425,6 +425,9 @@ func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newO
 //     "Command.SubGroup1.SubSubGroup2"
 //     "Command1.SubCommand2.SubGroup1.SubGroup2"
 //
+// For the option name, the characters "-" and "_" are equal, that's, "abcd-efg"
+// is equal to "abcd_efg".
+//
 // Notice: You cannot call SetOptValue() for the struct option, because we have
 // no way to promise that it's thread-safe.
 func (c *Config) SetOptValue(priority int, groupFullName, optName string, optValue interface{}) error {
