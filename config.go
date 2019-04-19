@@ -34,7 +34,7 @@ var (
 )
 
 // DefaultGroupSeparator is the default separator between the group names.
-var DefaultGroupSeparator = "."
+const DefaultGroupSeparator = "."
 
 // Config is used to manage the configuration options.
 type Config struct {
