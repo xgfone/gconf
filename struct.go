@@ -208,6 +208,8 @@ func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv,
 		short := strings.TrimSpace(field.Tag.Get("short"))
 
 		group.registerOpt(isCli, newBaseOpt(short, name, _default, help, _type))
-		group.fields[name] = fieldV
+		group.fields[group.fixOptName(name)] = fieldV
 	}
 }
+
+
