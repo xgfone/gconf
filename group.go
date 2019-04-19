@@ -150,7 +150,9 @@ func (g *OptGroup) newGroup(name string, paths []string) (group *OptGroup) {
 
 // NewGroup returns a sub-group named name.
 //
-// Notice: if the sub-group has existed, it will the old.
+// Notice:
+//   1. If the sub-group has existed, it will the old.
+//   2. The command name should only contain the characters, [-_a-zA-Z0-9].
 func (g *OptGroup) NewGroup(name string) *OptGroup {
 	return g.newGroup(name, g.paths)
 }

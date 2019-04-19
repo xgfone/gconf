@@ -97,7 +97,9 @@ func (cmd *Command) SetAction(action func() error) *Command {
 
 // NewCommand returns a new sub-command named name with the description.
 //
-// Notice: if the command has existed, it will return the old.
+// Notice:
+//   1. If the command has existed, it will return the old.
+//   2. The command name should only contain the characters, [-_a-zA-Z0-9].
 func (cmd *Command) NewCommand(name, description string) (c *Command) {
 	if c = cmd.commands[name]; c == nil {
 		c = newCommand(cmd.conf, cmd, name, description, cmd.OptGroup.paths...)

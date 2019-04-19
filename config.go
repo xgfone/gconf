@@ -569,7 +569,9 @@ func (c *Config) GetAction(name string) func() error {
 
 // NewCommand news a Command to register the CLI sub-command.
 //
-// Notice: if the command exists, it returns the old, not a new one.
+// Notice:
+//   1. If the command exists, it returns the old, not a new one.
+//   2. The command name should only contain the characters, [-_a-zA-Z0-9].
 func (c *Config) NewCommand(name, help string) (cmd *Command) {
 	c.panicIsParsed(true)
 	if cmd = c.commands[name]; cmd == nil {
