@@ -18,9 +18,69 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 )
+
+// isZeroValue determines whether the string represents the zero
+// value for a flag.
+func isZeroValue(_flag *flag.Flag, value string) bool {
+	// Build a zero value of the flag's Value type, and see if the
+	// result of calling its String method equals the value passed in.
+	// This works unless the Value type is itself an interface type.
+	typ := reflect.TypeOf(_flag.Value)
+	var z reflect.Value
+	if typ.Kind() == reflect.Ptr {
+		z = reflect.New(typ.Elem())
+	} else {
+		z = reflect.Zero(typ)
+	}
+	return value == z.Interface().(flag.Value).String()
+}
+
+// PrintFlagUsage prints the usage of flag.FlagSet, which is almost equal to
+// flag.FlagSet.PrintDefaults(), but print the double prefixes "--"
+// for the long name of the option.
+func PrintFlagUsage(fset *flag.FlagSet, exceptDefault bool) {
+	fset.VisitAll(func(_flag *flag.Flag) {
+		// Two spaces before -; see next two comments.
+		prefix := "  -"
+		if len(_flag.Name) > 1 {
+			prefix += "-"
+		}
+
+		s := fmt.Sprintf(prefix+"%s", _flag.Name)
+		name, usage := flag.UnquoteUsage(_flag)
+		if len(name) > 0 {
+			s += " " + name
+		}
+		// Boolean flags of one ASCII letter are so common we
+		// treat them specially, putting their usage on the same line.
+		if len(s) <= 4 { // space, space, '-', 'x'.
+			s += "\t"
+		} else {
+			// Four spaces before the tab triggers good alignment
+			// for both 4- and 8-space tab stops.
+			s += "\n    \t"
+		}
+		s += strings.ReplaceAll(usage, "\n", "\n    \t")
+
+		if !exceptDefault || !isZeroValue(_flag, _flag.DefValue) {
+			vf := reflect.ValueOf(_flag.Value)
+			if vf.Kind() == reflect.Ptr {
+				vf = vf.Elem()
+			}
+			if vf.Kind() == reflect.String {
+				// put quotes on the value
+				s += fmt.Sprintf(" (default %q)", _flag.DefValue)
+			} else {
+				s += fmt.Sprintf(" (default %s)", _flag.DefValue)
+			}
+		}
+		fmt.Fprint(fset.Output(), s, "\n")
+	})
+}
 
 type flagParser struct {
 	utoh bool
@@ -33,6 +93,14 @@ func NewDefaultFlagCliParser(underlineToHyphen ...bool) Parser {
 	var u2h bool
 	if len(underlineToHyphen) > 0 {
 		u2h = underlineToHyphen[0]
+	}
+	flag.CommandLine.Usage = func() {
+		if flag.CommandLine.Name() == "" {
+			fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n")
+		} else {
+			fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", flag.CommandLine.Name())
+		}
+		PrintFlagUsage(flag.CommandLine, false)
 	}
 	return NewFlagCliParser(flag.CommandLine, u2h)
 }
