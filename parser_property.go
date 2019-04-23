@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"unicode"
 )
 
 type propertyParser struct {
@@ -126,6 +127,15 @@ func (p propertyParser) Parse(c *Config) error {
 		}
 
 		key := strings.TrimSpace(ss[0])
+		if len(key) == 0 {
+			return fmt.Errorf("empty identifier key")
+		}
+		for _, r := range key {
+			if unicode.IsSpace(r) || !unicode.IsPrint(r) {
+				return fmt.Errorf("invalid identifier key '%s'", key)
+			}
+		}
+
 		value := strings.TrimSpace(ss[1])
 		if value != "" {
 			for index < maxIndex && value[len(value)-1] == '\\' {

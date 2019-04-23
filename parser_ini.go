@@ -137,8 +137,11 @@ func (p iniParser) Parse(c *Config) error {
 		}
 
 		key := strings.TrimSpace(line[0:n])
+		if len(key) == 0 {
+			return fmt.Errorf("empty identifier key")
+		}
 		for _, r := range key {
-			if r != '_' && r != '-' && !unicode.IsNumber(r) && !unicode.IsLetter(r) {
+			if unicode.IsSpace(r) || !unicode.IsPrint(r) {
 				return fmt.Errorf("invalid identifier key '%s'", key)
 			}
 		}
