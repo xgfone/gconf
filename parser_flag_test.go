@@ -17,6 +17,7 @@ func ExamplePrintFlagUsage() {
 		// }
 		// PrintFlagUsage(fset.Output(), fset, false)
 
+		// Here only for test
 		fmt.Fprintf(os.Stdout, "Usage: app\n")
 		PrintFlagUsage(os.Stdout, fset, false)
 	}
