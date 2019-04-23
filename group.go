@@ -117,7 +117,7 @@ func (g *OptGroup) OnlyGroupName() string {
 	} else if g == g.cmd.OptGroup {
 		return ""
 	}
-	return strings.TrimPrefix(g.fname, g.cmd.OptGroup.fname+".")
+	return strings.TrimPrefix(g.fname, g.cmd.OptGroup.fname+g.conf.gsep)
 }
 
 // Config returns the Config that the current group belongs to.
