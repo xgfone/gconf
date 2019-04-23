@@ -30,6 +30,7 @@ var Conf = NewDefault()
 // The default Config only contains the Flag parser and the INI parser.
 func NewDefault(fset ...*flag.FlagSet) *Config {
 	_fset := flag.CommandLine
+	_fset.Usage = func() { printDefaultFlagUsage(flag.CommandLine) }
 	if len(fset) > 0 {
 		_fset = fset[0]
 	}
