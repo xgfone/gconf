@@ -7,15 +7,18 @@ import (
 )
 
 func ExamplePrintFlagUsage() {
-	fset := flag.NewFlagSet("", flag.ContinueOnError)
-	fset.SetOutput(os.Stdout)
+	fset := flag.NewFlagSet("app", flag.ContinueOnError)
 	fset.Usage = func() {
-		if fset.Name() == "" {
-			fmt.Fprintf(fset.Output(), "Usage:\n")
-		} else {
-			fmt.Fprintf(fset.Output(), "Usage of %s:\n", fset.Name())
-		}
-		PrintFlagUsage(fset, false)
+		/// For Go1.10+
+		// if fset.Name() == "" {
+		//     fmt.Fprintf(fset.Output(), "Usage:\n")
+		// } else {
+		//     fmt.Fprintf(fset.Output(), "Usage of %s:\n", fset.Name())
+		// }
+		// PrintFlagUsage(fset.Output(), fset, false)
+
+		fmt.Fprintf(os.Stdout, "Usage: app\n")
+		PrintFlagUsage(os.Stdout, fset, false)
 	}
 
 	fset.String("v", "", "test short string name")
@@ -26,7 +29,7 @@ func ExamplePrintFlagUsage() {
 	fset.Parse([]string{"-h"})
 
 	// Output:
-	// Usage:
+	// Usage: app
 	//   -i int
 	//     	test short int name (default 123)
 	//   --int int

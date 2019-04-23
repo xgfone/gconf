@@ -51,7 +51,7 @@ func NewDefaultFlagCliParser(underlineToHyphen ...bool) Parser {
 	if len(underlineToHyphen) > 0 {
 		u2h = underlineToHyphen[0]
 	}
-	flag.CommandLine.Usage = printDefaultFlagUsage
+	flag.CommandLine.Usage = func() { printDefaultFlagUsage(flag.CommandLine) }
 	return NewFlagCliParser(flag.CommandLine, u2h)
 }
 

@@ -19,25 +19,26 @@ package gconf
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 )
 
-func printDefaultFlagUsage() {
+func printDefaultFlagUsage(fset *flag.FlagSet) {
 	if name := filepath.Base(os.Args[0]); name == "" {
 		fmt.Fprintf(os.Stderr, "Usage:\n")
 	} else {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", name)
 	}
-	PrintFlagUsage(flag.CommandLine, false)
+	PrintFlagUsage(os.Stderr, fset, false)
 }
 
 // PrintFlagUsage prints the usage of flag.FlagSet, which is almost equal to
 // flag.FlagSet.PrintDefaults(), but print the double prefixes "--"
 // for the long name of the option.
-func PrintFlagUsage(fset *flag.FlagSet, exceptDefault bool) {
+func PrintFlagUsage(w io.Writer, fset *flag.FlagSet, exceptDefault bool) {
 	fset.VisitAll(func(_flag *flag.Flag) {
 		// Two spaces before -; see next two comments.
 		prefix := "  -"
@@ -73,6 +74,6 @@ func PrintFlagUsage(fset *flag.FlagSet, exceptDefault bool) {
 				s += fmt.Sprintf(" (default %s)", _flag.DefValue)
 			}
 		}
-		fmt.Fprint(os.Stderr, s, "\n")
+		fmt.Fprint(w, s, "\n")
 	})
 }

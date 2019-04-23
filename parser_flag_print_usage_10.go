@@ -19,23 +19,24 @@ package gconf
 import (
 	"flag"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 )
 
-func printDefaultFlagUsage() {
-	if flag.CommandLine.Name() == "" {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage:\n")
+func printDefaultFlagUsage(fset *flag.FlagSet) {
+	if fset.Name() == "" {
+		fmt.Fprintf(fset.Output(), "Usage:\n")
 	} else {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", flag.CommandLine.Name())
+		fmt.Fprintf(fset.Output(), "Usage of %s:\n", fset.Name())
 	}
-	PrintFlagUsage(flag.CommandLine, false)
+	PrintFlagUsage(fset.Output(), fset, false)
 }
 
 // PrintFlagUsage prints the usage of flag.FlagSet, which is almost equal to
 // flag.FlagSet.PrintDefaults(), but print the double prefixes "--"
 // for the long name of the option.
-func PrintFlagUsage(fset *flag.FlagSet, exceptDefault bool) {
+func PrintFlagUsage(w io.Writer, fset *flag.FlagSet, exceptDefault bool) {
 	fset.VisitAll(func(_flag *flag.Flag) {
 		// Two spaces before -; see next two comments.
 		prefix := "  -"
@@ -71,6 +72,6 @@ func PrintFlagUsage(fset *flag.FlagSet, exceptDefault bool) {
 				s += fmt.Sprintf(" (default %s)", _flag.DefValue)
 			}
 		}
-		fmt.Fprint(fset.Output(), s, "\n")
+		fmt.Fprint(w, s, "\n")
 	})
 }
