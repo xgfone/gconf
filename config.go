@@ -365,10 +365,11 @@ func (c *Config) Parse(args ...string) (err error) {
 	}
 
 	// Postprocess the parsers.
-	for _, parser := range c.parsers {
+	for index := len(c.parsers) - 1; index >= 0; index-- {
+		parser := c.parsers[index]
 		c.Printf("Cleaning the parser '%s'", parser.Name())
 		if err = parser.Post(c); err != nil {
-			return err
+			return
 		}
 	}
 
