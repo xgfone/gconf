@@ -374,10 +374,9 @@ func (g *OptGroup) _setOptValue(priority int, name string, value interface{}) {
 	var old interface{}
 
 	func() {
-		g.lock.Lock()
-		defer g.lock.Unlock()
-
 		option := g.opts[name]
+		option.lock.Lock()
+		defer option.lock.Unlock()
 		if priority > option.prio {
 			g.conf.Printf("Ignore the option [%s]:[%s]: %d > %d",
 				g.FullName(), name, priority, option.prio)
