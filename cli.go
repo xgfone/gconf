@@ -62,7 +62,6 @@ func (c *Config) CliArgs() []string {
 //
 // Notice: this method should only be called by the CLI parser.
 func (c *Config) SetCliArgs(args []string) *Config {
-	c.panicIsParsed(false)
 	c.cliArgs = args
 	return c
 }

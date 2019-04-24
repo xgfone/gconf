@@ -322,7 +322,6 @@ func (c *Config) Parsed() bool {
 // In general, it is used by the parser to stop the subsequent operation
 // after its Parse() is called.
 func (c *Config) Stop() *Config {
-	c.panicIsParsed(false)
 	c.stop = true
 	return c
 }
@@ -480,8 +479,6 @@ func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newO
 // Notice: You cannot call UpdateOptValue() for the struct option and access them
 // by the struct field, because we have no way to promise that it's goroutine-safe.
 func (c *Config) UpdateOptValue(groupFullName, optName string, optValue interface{}) error {
-	c.panicIsParsed(false)
-
 	if groupFullName == "" {
 		groupFullName = c.OptGroup.name
 	}
@@ -639,7 +636,6 @@ func (c *Config) ExecutedCommand() *Command {
 
 // SetExecutedCommand sets the executed command.
 func (c *Config) SetExecutedCommand(cmd *Command) *Config {
-	c.panicIsParsed(false)
 	c.executed = cmd
 	c.Debugf("Set the executed command '%s'", cmd.FullName())
 	return c
