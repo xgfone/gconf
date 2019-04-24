@@ -32,8 +32,8 @@ func ExampleConfig_Observe() {
 	conf.Parse()
 
 	// Set the option vlaue during the program is running.
-	conf.SetOptValue(0, "", "watchval", 456)
-	conf.SetOptValue(0, "test", "watchval", "123")
+	conf.UpdateOptValue("", "watchval", 456)
+	conf.UpdateOptValue("test", "watchval", "123")
 
 	// Output:
 	// group=DEFAULT, option=watchval, old=<nil>, new=123

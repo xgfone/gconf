@@ -28,7 +28,7 @@ type Parser interface {
 	// a natural number.
 	//
 	// The smaller the number, the higher the priority. And the higher priority
-	// parser can cover the option value set by the lower priority parser.
+	// parser will be called to parse the option.
 	//
 	// For the cli parser, it maybe return 0 to indicate the highest priority.
 	Priority() int
@@ -42,7 +42,7 @@ type Parser interface {
 	// The parser can get any information from the argument, config.
 	//
 	// When the parser parsed out the option value, it should call
-	// config.SetOptValue(), which will set the group option.
+	// config.UpdateOptValue(), which will set the group option.
 	// For the default group, the group name may be "" instead,
 	//
 	// For the CLI parser, it should get the parsed CLI argument by calling
@@ -76,12 +76,12 @@ type Parser interface {
 
 You can get the group or sub-group by calling `Group(name)`, then get the option value again by calling `Bool("optionName")`, `String("optionName")`, `Int("optionName")`, etc. However, if you don't known whether the option has a value, you can call `Value("optionName")`, which returns `nil` if no value, or call `BoolE()`, `BoolD()`, `StringE()`, `StringD()`, `IntE()`, `IntD()`, etc.
 
-Beside, you can update the value of the option dynamically by calling `SetOptValue(priority int, groupFullName, optName, newOptValue) error`, during the program is running. For the default group, `groupFullName` may be `""`. If the setting fails, it will return an error.
+Beside, you can update the value of the option dynamically by calling `UpdateOptValue(groupFullName, optName, newOptValue) error`, during the program is running. For the default group, `groupFullName` may be `""`. If the setting fails, it will return an error.
 
 **Notce:**
 1. All of Reading and Updating are goroutine-safe.
-2. For the modifiable type, such as slice or map, in order to update them, you should clone them firstly, then update the cloned option vlaue and call `SetOptValue` with it.
-3. For updating the value of the option, you can use the priority `0`, which is the highest priority and will overwrite any other value.
+2. For the modifiable type, such as slice or map, in order to update them, you should clone them firstly, then update the cloned option vlaue and call `UpdateOptValue` with it.
+3. In order to forbid the option to be updated, you can call `LockOpt()` to lock it, then call `UnlockOpt()` to unlock it.
 
 
 ## Observe the changed configuration
@@ -190,7 +190,7 @@ func main() {
 	conf.Parse()
 
 	// Set the option vlaue during the program is running.
-	conf.SetOptValue(0, "test", "watchval", "123")
+	conf.UpdateOptValue("test", "watchval", "123")
 
 	// Output:
 	// [Observer] group=test, option=watchval, old=<nil>, new=abc

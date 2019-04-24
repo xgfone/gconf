@@ -67,7 +67,8 @@ type StructValidator interface {
 //   1. The struct must be a pointer to a struct variable, or panic.
 //   2. It must be called before being parsed, or panic.
 //   3. The struct supports the nested struct, but not the pointer field.
-//   4. For the struct option, you shouldn't call SetOptValue() because of concurrence.
+//   4. For the struct option, you shouldn't call UpdateOptValue() because of
+//      concurrence.
 //
 func (c *Config) RegisterStruct(s interface{}) *Config {
 	return c.registerStruct(false, s)
@@ -211,5 +212,3 @@ func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv,
 		group.fields[group.fixOptName(name)] = fieldV
 	}
 }
-
-

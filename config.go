@@ -443,7 +443,7 @@ func (c *Config) watchChangedOption(group *OptGroup, opt string, old, new interf
 //
 // When the option value is changed, the function f will be called.
 //
-// If SetOptValue() is used in the multi-thread, you should promise
+// If UpdateOptValue() is used in the multi-thread, you should promise
 // that the callback function f is goroutine-safe and reenterable.
 //
 // Notice: you can get the group by calling `config.Group(groupFullName)`
@@ -454,12 +454,8 @@ func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newO
 	c.lock.RUnlock()
 }
 
-// SetOptValue parses and sets the value of the option in the group,
+// UpdateOptValue parses and sets the value of the option in the group,
 // which is goroutine-safe.
-//
-// "priority" should be the priority of the parser. It only set the option value
-// successfully for the priority higher than the last. So you can use 0
-// to update it coercively.
 //
 // For the command or multi-groups, you should unite them using the separator.
 // the command itself is considered as a group, for example,
@@ -471,22 +467,25 @@ func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newO
 // For the option name, the characters "-" and "_" are equal, that's, "abcd-efg"
 // is equal to "abcd_efg".
 //
-// Notice: You cannot call SetOptValue() for the struct option, because we have
-// no way to promise that it's goroutine-safe.
-func (c *Config) SetOptValue(priority int, groupFullName, optName string, optValue interface{}) error {
+// Notice: You cannot call UpdateOptValue() for the struct option and access them
+// by the struct field, because we have no way to promise that it's goroutine-safe.
+func (c *Config) UpdateOptValue(groupFullName, optName string, optValue interface{}) error {
 	c.panicIsParsed(false)
-	if priority < 0 {
-		return fmt.Errorf("the priority must not be the negative")
-	}
 
 	if groupFullName == "" {
 		groupFullName = c.OptGroup.name
 	}
 
 	if group := c.allGroups[groupFullName]; group != nil {
-		return group.setOptValue(priority, optName, optValue)
+		return group.setOptValue(optName, optValue)
 	}
 	return fmt.Errorf("no group '%s'", groupFullName)
+}
+
+// SetOptValue is equal to UpdateOptValue(groupFullName, optName, value),
+// which is deprecated.
+func (c *Config) SetOptValue(priority int, groupFullName, optName string, optValue interface{}) error {
+	return c.UpdateOptValue(groupFullName, optName, optValue)
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -26,17 +26,11 @@ import (
 // DefaultGroupName is the name of the default group.
 const DefaultGroupName = "DEFAULT"
 
-// Some priorities.
-const (
-	InitValuePriority    = 1 << 31
-	DefaultValuePriority = 65535
-)
-
 type option struct {
 	lock sync.RWMutex
 
 	opt   Opt
-	prio  int
+	unmut int
 	isCli bool
 	value interface{}
 }
@@ -228,21 +222,47 @@ func (g *OptGroup) G(group string) *OptGroup {
 
 // Priority returns the priority of the option named name.
 //
-// Return -1 if the option does not exist.
+// DEPRECATED!!! it always returns 0.
 func (g *OptGroup) Priority(name string) int {
-	priority := -1
-	if option := g.opts[g.fixOptName(name)]; option != nil {
-		option.lock.RLock()
-		priority = option.prio
-		option.lock.RUnlock()
-	}
-	return priority
+	return 0
 }
 
 // HasOpt reports whether the group contains the option named 'name'.
 func (g *OptGroup) HasOpt(name string) bool {
 	_, ok := g.opts[g.fixOptName(name)]
 	return ok
+}
+
+// LockOpt locks the option and forbid it to be updated.
+//
+// If the option does not exist, it does nothing and returns false.
+// Or return true.
+//
+// Notice: you should call UnlockOpt once only if calling LockOpt once.
+func (g *OptGroup) LockOpt(name string) (ok bool) {
+	if opt, ok := g.opts[g.fixOptName(name)]; ok {
+		opt.lock.Lock()
+		opt.unmut++
+		opt.lock.Unlock()
+		return true
+	}
+	return false
+}
+
+// UnlockOpt unlocks the option and allow it to be updated.
+//
+// If the option does not exist or is unlocked, it does nothing and returns false.
+// Or return true.
+func (g *OptGroup) UnlockOpt(name string) (ok bool) {
+	if opt, ok := g.opts[g.fixOptName(name)]; ok {
+		opt.lock.Lock()
+		if opt.unmut > 0 {
+			opt.unmut--
+		}
+		opt.lock.Unlock()
+		return true
+	}
+	return false
 }
 
 // Opt returns the option named name.
@@ -324,7 +344,7 @@ func (g *OptGroup) registerOpt(cli bool, opt Opt) *OptGroup {
 		panic(fmt.Errorf("the option '%s' has been registered into the group '%s'", opt.Name(), g.fname))
 	}
 
-	g.opts[name] = &option{isCli: cli, opt: opt, prio: InitValuePriority}
+	g.opts[name] = &option{isCli: cli, opt: opt}
 	g.conf.Printf("Register group=%s, option=%s, cli=%v", g.fname, opt.Name(), cli)
 	return g
 }
@@ -369,7 +389,7 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 	return value, nil
 }
 
-func (g *OptGroup) _setOptValue(priority int, name string, value interface{}) {
+func (g *OptGroup) _setOptValue(name string, value interface{}) {
 	var ok bool
 	var old interface{}
 
@@ -377,15 +397,14 @@ func (g *OptGroup) _setOptValue(priority int, name string, value interface{}) {
 		option := g.opts[name]
 		option.lock.Lock()
 		defer option.lock.Unlock()
-		if priority > option.prio {
-			g.conf.Printf("Ignore the option [%s]:[%s]: %d > %d",
-				g.FullName(), name, priority, option.prio)
+
+		if option.unmut > 0 {
+			g.conf.Printf("Ignore the option [%s]:[%s] because the option is locked", g.FullName(), name)
 			return
 		}
 
 		ok = true
 		old = option.value
-		option.prio = priority
 		option.value = value
 
 		if field, ok := g.fields[name]; ok {
@@ -404,32 +423,30 @@ func (g *OptGroup) ParseOptValue(name string, value interface{}) (interface{}, e
 	return g.parseOptValue(g.fixOptName(name), value)
 }
 
-func (g *OptGroup) setOptValue(priority int, name string, value interface{}) (err error) {
+func (g *OptGroup) setOptValue(name string, value interface{}) (err error) {
 	name = g.fixOptName(name)
 	if value, err = g.parseOptValue(name, value); err == nil {
-		g._setOptValue(priority, name, value)
+		g._setOptValue(name, value)
 	}
 	return
 }
 
-// SetOptValue parses and sets the value of the option in the current group,
+// UpdateOptValue parses and sets the value of the option in the current group,
 // which is goroutine-safe.
-//
-// "priority" should be the priority of the parser. It only set the option value
-// successfully for the priority higher than the last. So you can use 0
-// to update it coercively.
 //
 // For the option name, the characters "-" and "_" are equal, that's, "abcd-efg"
 // is equal to "abcd_efg".
 //
-// Notice: You cannot call SetOptValue() for the struct option, because we have
-// no way to promise that it's goroutine-safe.
-func (g *OptGroup) SetOptValue(priority int, name string, value interface{}) error {
+// Notice: You cannot call UpdateOptValue() for the struct option and access them
+// by the struct field, because we have no way to promise that it's goroutine-safe.
+func (g *OptGroup) UpdateOptValue(name string, value interface{}) error {
 	g.conf.panicIsParsed(false)
-	if priority < 0 {
-		return fmt.Errorf("the priority must not be the negative")
-	}
-	return g.setOptValue(priority, name, value)
+	return g.setOptValue(name, value)
+}
+
+// SetOptValue is equal to UpdateOptValue(name, value), which is deprecated.
+func (g *OptGroup) SetOptValue(priority int, name string, value interface{}) error {
+	return g.UpdateOptValue(name, value)
 }
 
 // CheckRequiredOption checks whether the required option has no value or a ZORE value.
@@ -441,7 +458,7 @@ func (g *OptGroup) CheckRequiredOption() (err error) {
 
 		// Set the default value.
 		if v := option.opt.Default(); v != nil {
-			if err = g.setOptValue(DefaultValuePriority, name, v); err != nil {
+			if err = g.setOptValue(name, v); err != nil {
 				return
 			}
 			continue
@@ -449,7 +466,7 @@ func (g *OptGroup) CheckRequiredOption() (err error) {
 
 		if g.conf.zero {
 			if v := option.opt.Zero(); v != nil {
-				if err = g.setOptValue(DefaultValuePriority, name, v); err != nil {
+				if err = g.setOptValue(name, v); err != nil {
 					return
 				}
 				continue

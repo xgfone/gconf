@@ -25,6 +25,7 @@ type envVarParser struct {
 	stop     int32
 	prefix   string
 	priority int
+	opts     []parserOpt
 }
 
 // NewEnvVarParser returns a new environment variable parser.
@@ -53,6 +54,12 @@ func (e *envVarParser) Pre(c *Config) error {
 }
 
 func (e *envVarParser) Post(c *Config) error {
+	for _, opt := range e.opts {
+		opt.Group.UnlockOpt(opt.OptName)
+		c.Printf("[%s] Unlocked the option [%s]:[%s]",
+			e.Name(), opt.Group.FullName(), opt.OptName)
+	}
+	e.opts = nil
 	return nil
 }
 
@@ -88,9 +95,13 @@ func (e *envVarParser) Parse(c *Config) (err error) {
 		if len(items) == 2 {
 			if info, ok := env2opts[items[0]]; ok {
 				c.Printf("[%s] Parsing Env '%s'", e.Name(), env)
-				if err = c.SetOptValue(e.priority, info[0], info[1], items[1]); err != nil {
+				group := c.Group(info[0])
+				if err = group.UpdateOptValue(info[1], items[1]); err != nil {
 					return err
 				}
+				group.LockOpt(info[1])
+				e.opts = append(e.opts, parserOpt{Group: group, OptName: info[1]})
+				c.Printf("[%s] Locked the option [%s]:[%s]", e.Name(), info[0], info[1])
 			}
 		}
 	}

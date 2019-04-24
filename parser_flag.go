@@ -96,6 +96,7 @@ type flagParser struct {
 	stop int32
 	utoh bool
 	fset *flag.FlagSet
+	opts []parserOpt
 }
 
 // NewDefaultFlagCliParser returns a new CLI parser based on flag,
@@ -149,6 +150,12 @@ func (f *flagParser) Pre(c *Config) error {
 }
 
 func (f *flagParser) Post(c *Config) error {
+	for _, opt := range f.opts {
+		opt.Group.UnlockOpt(opt.OptName)
+		c.Printf("[%s] Unlocked the option [%s]:[%s]",
+			f.Name(), opt.Group.FullName(), opt.OptName)
+	}
+	f.opts = nil
 	return nil
 }
 
@@ -230,7 +237,13 @@ func (f *flagParser) Parse(c *Config) (err error) {
 		gname := name2group[fg.Name]
 		optname := name2opt[fg.Name]
 		if gname != "" && optname != "" && fg.Name != vname {
-			c.SetOptValue(0, gname, optname, fg.Value.String())
+			group := c.Group(gname)
+			if err = group.UpdateOptValue(optname, fg.Value.String()); err != nil {
+				return
+			}
+			group.LockOpt(optname)
+			f.opts = append(f.opts, parserOpt{Group: group, OptName: optname})
+			c.Printf("[%s] Locked the option [%s]:[%s]", f.Name(), gname, optname)
 		}
 	})
 

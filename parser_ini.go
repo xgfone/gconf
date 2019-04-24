@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	"sync/atomic"
 	"unicode"
 )
 
@@ -97,11 +96,6 @@ func (p *iniParser) Post(c *Config) error {
 }
 
 func (p *iniParser) Parse(c *Config) error {
-	priority := p.Priority()
-	if !atomic.CompareAndSwapInt32(&p.parsed, 0, 1) {
-		priority = 0
-	}
-
 	data, err := p.getData(c)
 	if err != nil {
 		return err
@@ -182,7 +176,7 @@ func (p *iniParser) Parse(c *Config) error {
 	}
 
 	for _, opt := range opts {
-		opt[0].(*OptGroup).SetOptValue(priority, opt[1].(string), opt[2])
+		opt[0].(*OptGroup).UpdateOptValue(opt[1].(string), opt[2])
 	}
 
 	return nil

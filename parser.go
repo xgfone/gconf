@@ -23,7 +23,7 @@ type Parser interface {
 	// a natural number.
 	//
 	// The smaller the number, the higher the priority. And the higher priority
-	// parser can cover the option value set by the lower priority parser.
+	// parser will be called to parse the option.
 	//
 	// For the cli parser, it maybe return 0 to indicate the highest priority.
 	Priority() int
@@ -37,7 +37,7 @@ type Parser interface {
 	// The parser can get any information from the argument, config.
 	//
 	// When the parser parsed out the option value, it should call
-	// config.SetOptValue(), which will set the group option.
+	// config.UpdateOptValue(), which will set the group option.
 	// For the default group, the group name may be "" instead,
 	//
 	// For the CLI parser, it should get the parsed CLI argument by calling
@@ -59,4 +59,15 @@ type Parser interface {
 	// Pre is called before parsing the configuration, so it may be used to
 	// clean the parser.
 	Post(*Config) error
+}
+
+type parserOpt struct {
+	Opt   Opt
+	Group *OptGroup
+
+	OptName   string
+	GroupName string
+
+	Value interface{}
+	Other interface{}
 }

@@ -29,6 +29,7 @@ type cliParser struct {
 	app  *cli.App
 	pre  func(*Config, *cli.App) error
 	post func(*Config, *cli.App) error
+	opts []parserOpt
 }
 
 // NewDefaultCliParser is equal to NewCliParser(nil, underlineToHyphen[0]).
@@ -87,6 +88,12 @@ func (cp *cliParser) Pre(conf *Config) error {
 }
 
 func (cp *cliParser) Post(conf *Config) error {
+	for _, opt := range cp.opts {
+		opt.Group.UnlockOpt(opt.Opt.Name())
+		conf.Printf("[%s] Unlocked the option [%s]:[%s]",
+			cp.Name(), opt.Group.FullName(), opt.Opt.Name())
+	}
+	cp.opts = nil
 	return cp.post(conf, cp.app)
 }
 
@@ -155,10 +162,14 @@ func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 		}
 
 		if value != nil {
-			if err = gopt.Group.SetOptValue(cp.Priority(), gopt.Opt.Name(), value); err != nil {
+			if err = gopt.Group.UpdateOptValue(gopt.Opt.Name(), value); err != nil {
 				return err
 			}
 			gopt.Ok = true
+			gopt.Group.LockOpt(gopt.Opt.Name())
+			cp.opts = append(cp.opts, parserOpt{Group: gopt.Group, Opt: gopt.Opt})
+			conf.Printf("[%s] Locked the option [%s]:[%s]",
+				cp.Name(), gopt.Group.FullName(), gopt.Opt.Name())
 		}
 	}
 
@@ -332,8 +343,9 @@ func (cp *cliParser) Parse(conf *Config) (err error) {
 func (cp *cliParser) handleConfigOption(ctx *cli.Context, conf *Config,
 	flag2opts map[string]*groupOpt) (err error) {
 	if err = cp.updateConfig(ctx, conf, flag2opts); err == nil {
+		parsers := conf.Parsers()
 		// Call other parsers.
-		for _, parser := range conf.Parsers() {
+		for _, parser := range parsers {
 			if parser.Name() == cp.Name() {
 				continue
 			}
@@ -344,7 +356,8 @@ func (cp *cliParser) handleConfigOption(ctx *cli.Context, conf *Config,
 		}
 
 		// Clean all the parsers.
-		for _, parser := range conf.Parsers() {
+		for index := len(parsers) - 1; index >= 0; index-- {
+			parser := parsers[index]
 			conf.Printf("[%s] Cleaning the parser '%s'", cp.Name(), parser.Name())
 			if err = parser.Post(conf); err != nil {
 				return
