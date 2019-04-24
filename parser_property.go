@@ -18,10 +18,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"sync/atomic"
 	"unicode"
 )
 
 type propertyParser struct {
+	parsed int32
+
 	sep  string
 	prio int
 
@@ -60,13 +63,12 @@ func NewSimplePropertyParser(cliOptName string) Parser {
 //
 // The property parser supports the line comments starting with "#", "//" or ";".
 // The key and the value is separated by an equal sign, that's =. The key must
-// be in one of ., :, _, -, number and letter. If giving fmtKey, it can convert
-// the key in the property file to the new one.
+// be in one of ., :, _, -, number and letter.
 //
 // If the value ends with "\", it will continue the next line. The lines will
 // be joined by "\n" together.
 func NewPropertyParser(priority int, init func(*Config) error, getData func(*Config) ([]byte, error)) Parser {
-	return propertyParser{
+	return &propertyParser{
 		sep:  "=",
 		prio: priority,
 
@@ -75,26 +77,31 @@ func NewPropertyParser(priority int, init func(*Config) error, getData func(*Con
 	}
 }
 
-func (p propertyParser) Name() string {
+func (p *propertyParser) Name() string {
 	return "property"
 }
 
-func (p propertyParser) Priority() int {
+func (p *propertyParser) Priority() int {
 	return p.prio
 }
 
-func (p propertyParser) Pre(c *Config) error {
+func (p *propertyParser) Pre(c *Config) error {
 	if p.init != nil {
 		return p.init(c)
 	}
 	return nil
 }
 
-func (p propertyParser) Post(c *Config) error {
+func (p *propertyParser) Post(c *Config) error {
 	return nil
 }
 
-func (p propertyParser) Parse(c *Config) error {
+func (p *propertyParser) Parse(c *Config) error {
+	priority := p.Priority()
+	if !atomic.CompareAndSwapInt32(&p.parsed, 0, 1) {
+		priority = 0
+	}
+
 	data, err := p.getData(c)
 	if err != nil {
 		return err
@@ -103,6 +110,7 @@ func (p propertyParser) Parse(c *Config) error {
 	}
 
 	// Parse the config file.
+	opts := make([][3]interface{}, 0)
 	lines := strings.Split(string(data), "\n")
 	for index, maxIndex := 0, len(lines); index < maxIndex; {
 		line := strings.TrimSpace(lines[index])
@@ -145,17 +153,29 @@ func (p propertyParser) Parse(c *Config) error {
 			}
 		}
 
+		var gname, optname string
 		ss = strings.Split(key, c.GetGroupSeparator())
 		switch _len := len(ss) - 1; _len {
 		case 0:
-			err = c.SetOptValue(p.prio, "", key, value)
+			optname = key
 		default:
-			err = c.SetOptValue(p.prio, strings.Join(ss[:_len], c.GetGroupSeparator()), ss[_len], value)
+			gname = strings.Join(ss[:_len], c.GetGroupSeparator())
+			optname = ss[_len]
 		}
 
-		if err != nil {
+		if group := c.Group(gname); group == nil {
+			continue
+		} else if opt := group.Opt(optname); opt == nil {
+			continue
+		} else if v, err := opt.Parse(value); err != nil {
 			return err
+		} else {
+			opts = append(opts, [3]interface{}{group, optname, v})
 		}
+	}
+
+	for _, opt := range opts {
+		opt[0].(*OptGroup).SetOptValue(priority, opt[1].(string), opt[2])
 	}
 
 	return nil

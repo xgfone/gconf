@@ -18,10 +18,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"sync/atomic"
 	"unicode"
 )
 
 type iniParser struct {
+	parsed int32
+
 	sep  string
 	prio int
 
@@ -60,13 +63,12 @@ func NewSimpleIniParser(cliOptName string) Parser {
 //
 // The ini parser supports the line comments starting with "#", "//" or ";".
 // The key and the value is separated by an equal sign, that's =. The key must
-// be in one of ., :, _, -, number and letter. If giving fmtKey, it can convert
-// the key in the ini file to the new one.
+// be in one of ., :, _, -, number and letter.
 //
 // If the value ends with "\", it will continue the next line. The lines will
 // be joined by "\n" together.
 func NewIniParser(priority int, init func(*Config) error, getData func(*Config) ([]byte, error)) Parser {
-	return iniParser{
+	return &iniParser{
 		sep:  "=",
 		prio: priority,
 
@@ -75,26 +77,31 @@ func NewIniParser(priority int, init func(*Config) error, getData func(*Config) 
 	}
 }
 
-func (p iniParser) Name() string {
+func (p *iniParser) Name() string {
 	return "ini"
 }
 
-func (p iniParser) Priority() int {
+func (p *iniParser) Priority() int {
 	return p.prio
 }
 
-func (p iniParser) Pre(c *Config) error {
+func (p *iniParser) Pre(c *Config) error {
 	if p.init != nil {
 		return p.init(c)
 	}
 	return nil
 }
 
-func (p iniParser) Post(c *Config) error {
+func (p *iniParser) Post(c *Config) error {
 	return nil
 }
 
-func (p iniParser) Parse(c *Config) error {
+func (p *iniParser) Parse(c *Config) error {
+	priority := p.Priority()
+	if !atomic.CompareAndSwapInt32(&p.parsed, 0, 1) {
+		priority = 0
+	}
+
 	data, err := p.getData(c)
 	if err != nil {
 		return err
@@ -103,6 +110,7 @@ func (p iniParser) Parse(c *Config) error {
 	}
 
 	// Parse the config file.
+	opts := make([][3]interface{}, 0)
 	gname := c.GetDefaultGroupName()
 	lines := strings.Split(string(data), "\n")
 	for index, maxIndex := 0, len(lines); index < maxIndex; {
@@ -162,9 +170,19 @@ func (p iniParser) Parse(c *Config) error {
 			value = strings.TrimSpace(strings.Join(vs, "\n"))
 		}
 
-		if err = c.SetOptValue(p.prio, gname, key, value); err != nil {
+		if group := c.Group(gname); group == nil {
+			continue
+		} else if opt := group.Opt(key); opt == nil {
+			continue
+		} else if v, err := opt.Parse(value); err != nil {
 			return err
+		} else {
+			opts = append(opts, [3]interface{}{group, key, v})
 		}
+	}
+
+	for _, opt := range opts {
+		opt[0].(*OptGroup).SetOptValue(priority, opt[1].(string), opt[2])
 	}
 
 	return nil
