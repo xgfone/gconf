@@ -17,6 +17,7 @@ package gconf
 import (
 	"fmt"
 	"os"
+	"testing"
 )
 
 func ExampleConfig_Observe() {
@@ -423,4 +424,37 @@ func ExampleNewCliParser() {
 	// cmd2.opt7=xyz
 	// cmd2.cmd3.opt8=456
 	// args=[arg1 arg2 arg3]
+}
+
+func TestNewSimpleIniParser(t *testing.T) {
+	conf := NewDefault(nil)
+	conf.RegisterCliOpt(Str("opt1", "", ""))
+	conf.RegisterCliOpt(Str("opt2", "abc", ""))
+	conf.RegisterCliOpt(Str("opt3", "opq", ""))
+
+	// Write the test config data into the file.
+	filename := "test_new_simple_ini_parser.ini"
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	file.WriteString("[DEFAULT]\nopt1=123\nopt2=456\nopt3=789")
+	file.Close()
+	defer os.Remove(filename)
+
+	if err = conf.Parse("--config-file", filename, "--opt3=xyz"); err != nil {
+		t.Error(err)
+		return
+	}
+
+	if opt1 := conf.String("opt1"); opt1 != "123" {
+		t.Error(opt1)
+	}
+	if opt2 := conf.String("opt2"); opt2 != "456" {
+		t.Error(opt2)
+	}
+	if opt3 := conf.String("opt3"); opt3 != "xyz" {
+		t.Error(opt3)
+	}
 }
