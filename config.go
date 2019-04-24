@@ -270,11 +270,9 @@ func (c *Config) SetRequired(required bool) *Config {
 // of the executed commands.
 //
 // The default is enough.
+//
+// If check is nil, it will disable the check.
 func (c *Config) SetCheckRequiredOption(check func() error) *Config {
-	if check == nil {
-		panic("the check function must not be nil")
-	}
-
 	c.panicIsParsed(true)
 	c.check = check
 	return c
@@ -384,7 +382,7 @@ func (c *Config) Parse(args ...string) (err error) {
 
 	if !c.stop {
 		// Check whether all the groups have parsed all the required options.
-		if err = c.check(); err != nil {
+		if err = c.CheckRequiredOption(); err != nil {
 			return
 		}
 	}
@@ -395,8 +393,11 @@ func (c *Config) Parse(args ...string) (err error) {
 }
 
 // CheckRequiredOption check whether all the required options have an value.
-func (c *Config) CheckRequiredOption() error {
-	return c.check()
+func (c *Config) CheckRequiredOption() (err error) {
+	if c.check != nil {
+		err = c.check()
+	}
+	return
 }
 
 func (c *Config) checkRequiredOptionByCmd(cmd *Command) (err error) {
