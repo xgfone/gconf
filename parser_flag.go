@@ -21,6 +21,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -92,6 +93,7 @@ func PrintFlagUsage(w io.Writer, fset *flag.FlagSet, exceptDefault bool) {
 }
 
 type flagParser struct {
+	stop int32
 	utoh bool
 	fset *flag.FlagSet
 }
@@ -151,6 +153,11 @@ func (f *flagParser) Post(c *Config) error {
 }
 
 func (f *flagParser) Parse(c *Config) (err error) {
+	// Avoid parsing the cli arguments again.
+	if !atomic.CompareAndSwapInt32(&f.stop, 0, 1) {
+		return
+	}
+
 	// Convert the option name.
 	name2group := make(map[string]string, 8)
 	name2opt := make(map[string]string, 8)

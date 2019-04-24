@@ -17,12 +17,14 @@ package gconf
 import (
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/urfave/cli"
 )
 
 type cliParser struct {
+	stop int32
 	utoh bool
 	app  *cli.App
 	pre  func(*Config, *cli.App) error
@@ -59,18 +61,18 @@ func NewCliParser(app *cli.App, underlineToHyphen bool, pre, post func(*Config, 
 	if post == nil {
 		post = func(*Config, *cli.App) error { return nil }
 	}
-	return cliParser{app: app, utoh: underlineToHyphen, pre: pre, post: post}
+	return &cliParser{app: app, utoh: underlineToHyphen, pre: pre, post: post}
 }
 
-func (cp cliParser) Name() string {
+func (cp *cliParser) Name() string {
 	return "cli"
 }
 
-func (cp cliParser) Priority() int {
+func (cp *cliParser) Priority() int {
 	return 0
 }
 
-func (cp cliParser) Pre(conf *Config) error {
+func (cp *cliParser) Pre(conf *Config) error {
 	cp.app.Name = conf.Name()
 
 	if help := conf.Description(); help != "" {
@@ -84,11 +86,11 @@ func (cp cliParser) Pre(conf *Config) error {
 	return cp.pre(conf, cp.app)
 }
 
-func (cp cliParser) Post(conf *Config) error {
+func (cp *cliParser) Post(conf *Config) error {
 	return cp.post(conf, cp.app)
 }
 
-func (cp cliParser) updateConfigOpt(names []string, ctx *cli.Context,
+func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 	conf *Config, flag2opts map[string]*groupOpt) (err error) {
 
 	for _, name := range names {
@@ -163,7 +165,7 @@ func (cp cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 	return nil
 }
 
-func (cp cliParser) updateConfig(ctx *cli.Context, conf *Config,
+func (cp *cliParser) updateConfig(ctx *cli.Context, conf *Config,
 	flag2opts map[string]*groupOpt) (err error) {
 	origCtx := ctx
 
@@ -191,7 +193,7 @@ func (cp cliParser) updateConfig(ctx *cli.Context, conf *Config,
 	return nil
 }
 
-func (cp cliParser) getAppFlags(groups []*OptGroup, flag2opts map[string]*groupOpt) (flags []cli.Flag) {
+func (cp *cliParser) getAppFlags(groups []*OptGroup, flag2opts map[string]*groupOpt) (flags []cli.Flag) {
 	for _, group := range groups {
 		conf := group.Config()
 		gname := group.OnlyGroupName()
@@ -260,7 +262,7 @@ func (cp cliParser) getAppFlags(groups []*OptGroup, flag2opts map[string]*groupO
 	return
 }
 
-func (cp cliParser) getCmdAction(cmd *Command, flag2opts map[string]*groupOpt) func(*cli.Context) error {
+func (cp *cliParser) getCmdAction(cmd *Command, flag2opts map[string]*groupOpt) func(*cli.Context) error {
 	return func(ctx *cli.Context) (err error) {
 		conf := cmd.Config()
 		conf.SetExecutedCommand(cmd)
@@ -278,7 +280,7 @@ func (cp cliParser) getCmdAction(cmd *Command, flag2opts map[string]*groupOpt) f
 	}
 }
 
-func (cp cliParser) getAppCommands(cmds []*Command, flag2opts map[string]*groupOpt) (commands []cli.Command) {
+func (cp *cliParser) getAppCommands(cmds []*Command, flag2opts map[string]*groupOpt) (commands []cli.Command) {
 	for _, cmd := range cmds {
 		commands = append(commands, cli.Command{
 			Name:    cmd.Name(),
@@ -300,7 +302,12 @@ type groupOpt struct {
 	Opt   Opt
 }
 
-func (cp cliParser) Parse(conf *Config) (err error) {
+func (cp *cliParser) Parse(conf *Config) (err error) {
+	// Avoid parsing the cli arguments again.
+	if !atomic.CompareAndSwapInt32(&cp.stop, 0, 1) {
+		return
+	}
+
 	flag2opts := make(map[string]*groupOpt, 8)
 	action := conf.Action()
 	if action == nil {
@@ -322,7 +329,7 @@ func (cp cliParser) Parse(conf *Config) (err error) {
 	return cp.app.Run(append([]string{conf.Name()}, conf.ParsedCliArgs()...))
 }
 
-func (cp cliParser) handleConfigOption(ctx *cli.Context, conf *Config,
+func (cp *cliParser) handleConfigOption(ctx *cli.Context, conf *Config,
 	flag2opts map[string]*groupOpt) (err error) {
 	if err = cp.updateConfig(ctx, conf, flag2opts); err == nil {
 		// Call other parsers.
