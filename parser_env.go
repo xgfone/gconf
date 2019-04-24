@@ -18,9 +18,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync/atomic"
 )
 
 type envVarParser struct {
+	stop     int32
 	prefix   string
 	priority int
 }
@@ -35,26 +37,31 @@ type envVarParser struct {
 // Notice: the prefix, the group name and the option name will be converted to
 // the upper, and the group separator will be converted to "_".
 func NewEnvVarParser(priority int, prefix string) Parser {
-	return envVarParser{prefix: prefix, priority: priority}
+	return &envVarParser{prefix: prefix, priority: priority}
 }
 
-func (e envVarParser) Name() string {
+func (e *envVarParser) Name() string {
 	return "env"
 }
 
-func (e envVarParser) Priority() int {
+func (e *envVarParser) Priority() int {
 	return e.priority
 }
 
-func (e envVarParser) Pre(c *Config) error {
+func (e *envVarParser) Pre(c *Config) error {
 	return nil
 }
 
-func (e envVarParser) Post(c *Config) error {
+func (e *envVarParser) Post(c *Config) error {
 	return nil
 }
 
-func (e envVarParser) Parse(c *Config) (err error) {
+func (e *envVarParser) Parse(c *Config) (err error) {
+	// Avoid parsing the cli arguments again.
+	if !atomic.CompareAndSwapInt32(&e.stop, 0, 1) {
+		return
+	}
+
 	// Initialize the prefix
 	prefix := e.prefix
 	if prefix != "" {
@@ -77,10 +84,10 @@ func (e envVarParser) Parse(c *Config) (err error) {
 	// Get the option value from the environment variable.
 	envs := os.Environ()
 	for _, env := range envs {
-		c.Printf("[%s] Parsing Env '%s'", e.Name(), env)
 		items := strings.SplitN(env, "=", 2)
 		if len(items) == 2 {
 			if info, ok := env2opts[items[0]]; ok {
+				c.Printf("[%s] Parsing Env '%s'", e.Name(), env)
 				if err = c.SetOptValue(e.priority, info[0], info[1], items[1]); err != nil {
 					return err
 				}
