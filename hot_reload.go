@@ -31,7 +31,7 @@ func ReloadConfigBySignal(sig os.Signal, conf *Config, parsers ...Parser) {
 	for {
 		<-ss
 		for _, parser := range parsers {
-			conf.Printf("[HotReload] Calling the parser '%s'", parser.Name())
+			conf.Debugf("[HotReload] Calling the parser '%s'", parser.Name())
 			if err := parser.Parse(conf); err != nil {
 				conf.Printf("[HotReload] the parser '%s' failed to reload: %v",
 					parser.Name(), err)
