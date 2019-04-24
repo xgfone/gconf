@@ -35,8 +35,11 @@ type envVarParser struct {
 // "PREFIX_OPTION". When the prefix is empty and the group is the default,
 // it's "OPTION". "GROUP" is the group name, and "OPTION" is the option name.
 //
-// Notice: the prefix, the group name and the option name will be converted to
-// the upper, and the group separator will be converted to "_".
+// Notice:
+//   1. It does not support the hot-reloading.
+//   2. The prefix, the group name and the option name will be converted to
+//      the upper, and the group separator will be converted to "_".
+//
 func NewEnvVarParser(priority int, prefix string) Parser {
 	return &envVarParser{prefix: prefix, priority: priority}
 }
@@ -56,7 +59,7 @@ func (e *envVarParser) Pre(c *Config) error {
 func (e *envVarParser) Post(c *Config) error {
 	for _, opt := range e.opts {
 		opt.Group.UnlockOpt(opt.OptName)
-		c.Printf("[%s] Unlocked the option [%s]:[%s]",
+		c.Debugf("[%s] Unlocked the option [%s]:[%s]",
 			e.Name(), opt.Group.FullName(), opt.OptName)
 	}
 	e.opts = nil
@@ -94,14 +97,14 @@ func (e *envVarParser) Parse(c *Config) (err error) {
 		items := strings.SplitN(env, "=", 2)
 		if len(items) == 2 {
 			if info, ok := env2opts[items[0]]; ok {
-				c.Printf("[%s] Parsing Env '%s'", e.Name(), env)
+				c.Debugf("[%s] Parsing Env '%s'", e.Name(), env)
 				group := c.Group(info[0])
 				if err = group.UpdateOptValue(info[1], items[1]); err != nil {
 					return err
 				}
 				group.LockOpt(info[1])
 				e.opts = append(e.opts, parserOpt{Group: group, OptName: info[1]})
-				c.Printf("[%s] Locked the option [%s]:[%s]", e.Name(), info[0], info[1])
+				c.Debugf("[%s] Locked the option [%s]:[%s]", e.Name(), info[0], info[1])
 			}
 		}
 	}

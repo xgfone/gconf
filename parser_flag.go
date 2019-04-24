@@ -152,7 +152,7 @@ func (f *flagParser) Pre(c *Config) error {
 func (f *flagParser) Post(c *Config) error {
 	for _, opt := range f.opts {
 		opt.Group.UnlockOpt(opt.OptName)
-		c.Printf("[%s] Unlocked the option [%s]:[%s]",
+		c.Debugf("[%s] Unlocked the option [%s]:[%s]",
 			f.Name(), opt.Group.FullName(), opt.OptName)
 	}
 	f.opts = nil
@@ -187,27 +187,27 @@ func (f *flagParser) Parse(c *Config) (err error) {
 			case bool:
 				_default, _ := ToBool(opt.Default())
 				f.fset.Bool(name, _default, opt.Help())
-				c.Printf("[%s] Add the bool flag '%s'", f.Name(), name)
+				c.Debugf("[%s] Add the bool flag '%s'", f.Name(), name)
 			case int, int8, int16, int32, int64:
 				_default, _ := ToInt64(opt.Default())
 				f.fset.Int64(name, _default, opt.Help())
-				c.Printf("[%s] Add the int flag '%s'", f.Name(), name)
+				c.Debugf("[%s] Add the int flag '%s'", f.Name(), name)
 			case uint, uint8, uint16, uint32, uint64:
 				_default, _ := ToUint64(opt.Default())
 				f.fset.Uint64(name, _default, opt.Help())
-				c.Printf("[%s] Add the uint flag '%s'", f.Name(), name)
+				c.Debugf("[%s] Add the uint flag '%s'", f.Name(), name)
 			case float32, float64:
 				_default, _ := ToFloat64(opt.Default())
 				f.fset.Float64(name, _default, opt.Help())
-				c.Printf("[%s] Add the float flag '%s'", f.Name(), name)
+				c.Debugf("[%s] Add the float flag '%s'", f.Name(), name)
 			case time.Duration:
 				_default, _ := ToDuration(opt.Default())
 				f.fset.Duration(name, _default, opt.Help())
-				c.Printf("[%s] Add the time.Duration flag '%s'", f.Name(), name)
+				c.Debugf("[%s] Add the time.Duration flag '%s'", f.Name(), name)
 			default:
 				_default, _ := ToString(opt.Default())
 				f.fset.String(name, _default, opt.Help())
-				c.Printf("[%s] Add the string flag '%s'", f.Name(), name)
+				c.Debugf("[%s] Add the string flag '%s'", f.Name(), name)
 			}
 		}
 	}
@@ -217,7 +217,7 @@ func (f *flagParser) Parse(c *Config) (err error) {
 	_, vname, version, vhelp := c.GetCliVersion()
 	if version != "" {
 		_version = f.fset.Bool(vname, false, vhelp)
-		c.Printf("[%s] Add the version flag '%s'", f.Name(), vname)
+		c.Debugf("[%s] Add the version flag '%s'", f.Name(), vname)
 	}
 
 	// Parse the CLI arguments.
@@ -233,7 +233,7 @@ func (f *flagParser) Parse(c *Config) (err error) {
 	// Acquire the result.
 	c.SetCliArgs(f.fset.Args())
 	f.fset.Visit(func(fg *flag.Flag) {
-		c.Printf("[%s] Parsing flag '%s'", f.Name(), fg.Name)
+		c.Debugf("[%s] Parsing flag '%s'", f.Name(), fg.Name)
 		gname := name2group[fg.Name]
 		optname := name2opt[fg.Name]
 		if gname != "" && optname != "" && fg.Name != vname {
@@ -243,7 +243,7 @@ func (f *flagParser) Parse(c *Config) (err error) {
 			}
 			group.LockOpt(optname)
 			f.opts = append(f.opts, parserOpt{Group: group, OptName: optname})
-			c.Printf("[%s] Locked the option [%s]:[%s]", f.Name(), gname, optname)
+			c.Debugf("[%s] Locked the option [%s]:[%s]", f.Name(), gname, optname)
 		}
 	})
 

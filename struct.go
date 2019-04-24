@@ -162,7 +162,7 @@ func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv,
 					}
 				}
 				cmd.SetAction(actionf)
-				c.Printf("Set the action of the command '%s' to '%s'", cmd.FullName(), action)
+				c.Debugf("Set the action of the command '%s' to '%s'", cmd.FullName(), action)
 			}
 
 			isCli = true

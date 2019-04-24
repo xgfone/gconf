@@ -230,18 +230,26 @@ func (c *Config) SetPrintf(printf func(msg string, args ...interface{})) *Config
 		panic("the printf must not be nil")
 	}
 
-	c.panicIsParsed(true)
+	c.lock.Lock()
 	c.printf = printf
+	c.lock.Unlock()
 	return c
 }
 
-// Printf prints the log messages if enabling debug.
+// Debugf prints the log messages by calling Printf() if enabling debug.
+func (c *Config) Debugf(format string, args ...interface{}) {
+	if c.debug {
+		c.Printf(format, args...)
+	}
+}
+
+// Printf prints the log messages.
 //
 // It is output to os.Stdout by default, and append a newline, see SetPrintf().
 func (c *Config) Printf(format string, args ...interface{}) {
-	if c.debug {
-		c.printf(format, args...)
-	}
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	c.printf(format, args...)
 }
 
 // SetRequired asks that all the registered options have a value.
@@ -337,7 +345,7 @@ func (c *Config) Parse(args ...string) (err error) {
 	}
 
 	// Initialize all the options
-	c.Printf("Starting to initialize all the options: set the default or zero value")
+	c.Debugf("Starting to initialize all the options: set the default or zero value")
 	for _, group := range c.AllGroups() {
 		if err = group.initAllOpts(); err != nil {
 			return
@@ -346,7 +354,7 @@ func (c *Config) Parse(args ...string) (err error) {
 
 	// Preprocess the parsers.
 	for _, parser := range c.parsers {
-		c.Printf("Initializing the parser '%s'", parser.Name())
+		c.Debugf("Initializing the parser '%s'", parser.Name())
 		if err = parser.Pre(c); err != nil {
 			return err
 		}
@@ -357,7 +365,7 @@ func (c *Config) Parse(args ...string) (err error) {
 
 	// Call the parsers to parse the options.
 	for _, parser := range c.parsers {
-		c.Printf("Calling the parser '%s'", parser.Name())
+		c.Debugf("Calling the parser '%s'", parser.Name())
 		if err = parser.Parse(c); err != nil {
 			return fmt.Errorf("The '%s' parser failed: %s", parser.Name(), err)
 		}
@@ -369,7 +377,7 @@ func (c *Config) Parse(args ...string) (err error) {
 	// Postprocess the parsers.
 	for index := len(c.parsers) - 1; index >= 0; index-- {
 		parser := c.parsers[index]
-		c.Printf("Cleaning the parser '%s'", parser.Name())
+		c.Debugf("Cleaning the parser '%s'", parser.Name())
 		if err = parser.Post(c); err != nil {
 			return
 		}
@@ -395,7 +403,7 @@ func (c *Config) CheckRequiredOption() error {
 func (c *Config) checkRequiredOptionByCmd(cmd *Command) (err error) {
 	if cmd != nil {
 		for _, group := range cmd.AllGroups() {
-			c.Printf("Checking the required options from the group '%s' of the command '%s'",
+			c.Debugf("Checking the required options from the group '%s' of the command '%s'",
 				group.FullName(), cmd.FullName())
 			if err = group.CheckRequiredOption(); err != nil {
 				return
@@ -408,7 +416,7 @@ func (c *Config) checkRequiredOptionByCmd(cmd *Command) (err error) {
 
 func (c *Config) checkRequiredOption() (err error) {
 	for _, group := range c.AllNotCommandGroups() {
-		c.Printf("Check the required options for the global group '%s'", group.FullName())
+		c.Debugf("Check the required options for the global group '%s'", group.FullName())
 		if err = group.CheckRequiredOption(); err != nil {
 			return
 		}
@@ -431,7 +439,7 @@ func (c *Config) checkRequiredOption() (err error) {
 /// Set the option value and Observe the change of the option value
 
 func (c *Config) watchChangedOption(group *OptGroup, opt string, old, new interface{}) {
-	c.Printf("Set [%s]:[%s] from [%v] to [%v]", group.fname, opt, old, new)
+	c.Debugf("Set [%s]:[%s] from [%v] to [%v]", group.fname, opt, old, new)
 	c.lock.Lock()
 	observe := c.observe
 	c.lock.Unlock()
@@ -578,7 +586,7 @@ func (c *Config) RegisterAction(name string, action func() error) *Config {
 
 	c.panicIsParsed(true)
 	c.actions[name] = action
-	c.Printf("Register the action '%s'", name)
+	c.Debugf("Register the action '%s'", name)
 	return c
 }
 
@@ -633,7 +641,7 @@ func (c *Config) ExecutedCommand() *Command {
 func (c *Config) SetExecutedCommand(cmd *Command) *Config {
 	c.panicIsParsed(false)
 	c.executed = cmd
-	c.Printf("Set the executed command '%s'", cmd.FullName())
+	c.Debugf("Set the executed command '%s'", cmd.FullName())
 	return c
 }
 

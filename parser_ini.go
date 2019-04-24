@@ -111,7 +111,7 @@ func (p *iniParser) Parse(c *Config) error {
 		line := strings.TrimSpace(lines[index])
 		index++
 
-		c.Printf("[%s] Parsing %dth line: '%s'", p.Name(), index, line)
+		c.Debugf("[%s] Parsing %dth line: '%s'", p.Name(), index, line)
 
 		// Ignore the empty line.
 		if len(line) == 0 {
@@ -156,7 +156,7 @@ func (p *iniParser) Parse(c *Config) error {
 				value = strings.TrimSpace(lines[index])
 				vs = append(vs, strings.TrimSpace(strings.TrimRight(value, "\\")))
 				index++
-				c.Printf("[%s] Parsing %dth line: '%s'", p.Name(), index, value)
+				c.Debugf("[%s] Parsing %dth line: '%s'", p.Name(), index, value)
 				if value == "" || value[len(value)-1] != '\\' {
 					break
 				}

@@ -110,7 +110,7 @@ func (p *propertyParser) Parse(c *Config) error {
 		line := strings.TrimSpace(lines[index])
 		index++
 
-		c.Printf("[%s] Parsing %dth line: '%s'", p.Name(), index, line)
+		c.Debugf("[%s] Parsing %dth line: '%s'", p.Name(), index, line)
 
 		// Ignore the empty line.
 		if len(line) == 0 {
@@ -143,7 +143,7 @@ func (p *propertyParser) Parse(c *Config) error {
 			for index < maxIndex && value[len(value)-1] == '\\' {
 				value = strings.TrimRight(value, "\\") + strings.TrimSpace(lines[index])
 				index++
-				c.Printf("[%s] Parsing %dth line: '%s'", p.Name(), index, lines[index])
+				c.Debugf("[%s] Parsing %dth line: '%s'", p.Name(), index, lines[index])
 			}
 		}
 

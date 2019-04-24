@@ -48,7 +48,7 @@ func newCommand(conf *Config, parent *Command, name, help string, parents ...str
 	}
 	cmd.OptGroup = newOptGroup(conf, cmd, name, parents...)
 
-	conf.Printf("Creating the command '%s'", cmd.FullName())
+	conf.Debugf("Creating the command '%s'", cmd.FullName())
 	return cmd
 }
 

@@ -90,7 +90,7 @@ func (cp *cliParser) Pre(conf *Config) error {
 func (cp *cliParser) Post(conf *Config) error {
 	for _, opt := range cp.opts {
 		opt.Group.UnlockOpt(opt.Opt.Name())
-		conf.Printf("[%s] Unlocked the option [%s]:[%s]",
+		conf.Debugf("[%s] Unlocked the option [%s]:[%s]",
 			cp.Name(), opt.Group.FullName(), opt.Opt.Name())
 	}
 	cp.opts = nil
@@ -110,7 +110,7 @@ func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 		if ctx.GlobalGeneric(name) != nil {
 			global = true
 		} else if ctx.Generic(name) == nil {
-			conf.Printf("[%s] WARNING: the context '%s' has no value of the flag '%s'",
+			conf.Debugf("[%s] WARNING: the context '%s' has no value of the flag '%s'",
 				cp.Name(), ctx.Command.FullName(), name)
 			continue
 		}
@@ -168,7 +168,7 @@ func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 			gopt.Ok = true
 			gopt.Group.LockOpt(gopt.Opt.Name())
 			cp.opts = append(cp.opts, parserOpt{Group: gopt.Group, Opt: gopt.Opt})
-			conf.Printf("[%s] Locked the option [%s]:[%s]",
+			conf.Debugf("[%s] Locked the option [%s]:[%s]",
 				cp.Name(), gopt.Group.FullName(), gopt.Opt.Name())
 		}
 	}
@@ -241,27 +241,27 @@ func (cp *cliParser) getAppFlags(groups []*OptGroup, flag2opts map[string]*group
 				} else {
 					flag = cli.BoolFlag{Name: name, Usage: help}
 				}
-				conf.Printf("[%s] Add the bool flag '%s'%s", cp.Name(), name, cmdStr)
+				conf.Debugf("[%s] Add the bool flag '%s'%s", cp.Name(), name, cmdStr)
 			case int, int8, int16, int32, int64:
 				v, _ := ToInt64(opt.Default())
 				flag = cli.Int64Flag{Name: name, Usage: help, Value: v}
-				conf.Printf("[%s] Add the int flag '%s'%s", cp.Name(), name, cmdStr)
+				conf.Debugf("[%s] Add the int flag '%s'%s", cp.Name(), name, cmdStr)
 			case uint, uint8, uint16, uint32, uint64:
 				v, _ := ToUint64(opt.Default())
 				flag = cli.Uint64Flag{Name: name, Usage: help, Value: v}
-				conf.Printf("[%s] Add the uint flag '%s'%s", cp.Name(), name, cmdStr)
+				conf.Debugf("[%s] Add the uint flag '%s'%s", cp.Name(), name, cmdStr)
 			case float32, float64:
 				v, _ := ToFloat64(opt.Default())
 				flag = cli.Float64Flag{Name: name, Usage: help, Value: v}
-				conf.Printf("[%s] Add the float flag '%s'%s", cp.Name(), name, cmdStr)
+				conf.Debugf("[%s] Add the float flag '%s'%s", cp.Name(), name, cmdStr)
 			case time.Duration:
 				v, _ := ToDuration(opt.Default())
 				flag = cli.DurationFlag{Name: name, Usage: help, Value: v}
-				conf.Printf("[%s] Add the time.Duration flag '%s'%s", cp.Name(), name, cmdStr)
+				conf.Debugf("[%s] Add the time.Duration flag '%s'%s", cp.Name(), name, cmdStr)
 			default: // Default for string
 				v, _ := ToString(opt.Default())
 				flag = cli.StringFlag{Name: name, Usage: help, Value: v}
-				conf.Printf("[%s] Add the string flag '%s'%s", cp.Name(), name, cmdStr)
+				conf.Debugf("[%s] Add the string flag '%s'%s", cp.Name(), name, cmdStr)
 			}
 
 			flags = append(flags, flag)
@@ -279,11 +279,11 @@ func (cp *cliParser) getCmdAction(cmd *Command, flag2opts map[string]*groupOpt) 
 		conf.SetExecutedCommand(cmd)
 		if err = cp.handleConfigOption(ctx, conf, flag2opts); err == nil {
 			if action := cmd.Action(); action != nil {
-				conf.Printf("[%s] Calling the action of the command '%s'",
+				conf.Debugf("[%s] Calling the action of the command '%s'",
 					cp.Name(), cmd.FullName())
 				err = action()
 			} else {
-				conf.Printf("[%s] WARNING: no action of the command '%s'",
+				conf.Debugf("[%s] WARNING: no action of the command '%s'",
 					cp.Name(), cmd.FullName())
 			}
 		}
@@ -322,7 +322,7 @@ func (cp *cliParser) Parse(conf *Config) (err error) {
 	flag2opts := make(map[string]*groupOpt, 8)
 	action := conf.Action()
 	if action == nil {
-		conf.Printf("[%s] WARNING: Config is short of Action", cp.Name())
+		conf.Debugf("[%s] WARNING: Config is short of Action", cp.Name())
 	}
 
 	cp.app.Flags = cp.getAppFlags(conf.AllNotCommandGroups(), flag2opts)
@@ -349,7 +349,7 @@ func (cp *cliParser) handleConfigOption(ctx *cli.Context, conf *Config,
 			if parser.Name() == cp.Name() {
 				continue
 			}
-			conf.Printf("[%s] Calling the parser '%s'", cp.Name(), parser.Name())
+			conf.Debugf("[%s] Calling the parser '%s'", cp.Name(), parser.Name())
 			if err = parser.Parse(conf); err != nil {
 				return
 			}
@@ -358,7 +358,7 @@ func (cp *cliParser) handleConfigOption(ctx *cli.Context, conf *Config,
 		// Clean all the parsers.
 		for index := len(parsers) - 1; index >= 0; index-- {
 			parser := parsers[index]
-			conf.Printf("[%s] Cleaning the parser '%s'", cp.Name(), parser.Name())
+			conf.Debugf("[%s] Cleaning the parser '%s'", cp.Name(), parser.Name())
 			if err = parser.Post(conf); err != nil {
 				return
 			}

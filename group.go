@@ -80,7 +80,7 @@ func newOptGroup2(notice bool, conf *Config, cmd *Command, name string, parents 
 		conf.noticeNewGroup(group)
 	}
 
-	conf.Printf("Creating the group '%s'", group.fname)
+	conf.Debugf("Creating the group '%s'", group.fname)
 	return group
 }
 
@@ -337,7 +337,7 @@ func (g *OptGroup) registerOpt(cli bool, opt Opt) *OptGroup {
 	name := g.fixOptName(opt.Name())
 	if _, ok := g.opts[name]; ok {
 		if g.conf.reregister {
-			g.conf.Printf("WARNING: Ingore to reregister the option '%s' into the group '%s'",
+			g.conf.Debugf("WARNING: Ingore to reregister the option '%s' into the group '%s'",
 				opt.Name(), g.fname)
 			return g
 		}
@@ -345,7 +345,7 @@ func (g *OptGroup) registerOpt(cli bool, opt Opt) *OptGroup {
 	}
 
 	g.opts[name] = &option{isCli: cli, opt: opt}
-	g.conf.Printf("Register group=%s, option=%s, cli=%v", g.fname, opt.Name(), cli)
+	g.conf.Debugf("Register group=%s, option=%s, cli=%v", g.fname, opt.Name(), cli)
 	return g
 }
 
@@ -399,7 +399,7 @@ func (g *OptGroup) _setOptValue(name string, value interface{}) {
 		defer option.lock.Unlock()
 
 		if option.unmut > 0 {
-			g.conf.Printf("Ignore the option [%s]:[%s] because the option is locked", g.FullName(), name)
+			g.conf.Debugf("Ignore the option [%s]:[%s] because the option is locked", g.FullName(), name)
 			return
 		}
 
