@@ -289,12 +289,6 @@ func (c *Config) SetHotReload(parsers ...Parser) *Config {
 	return c
 }
 
-// // SetConfigWatch
-// func (c *Config) SetConfigWatch(watch bool) *Config {
-// 	c.panicIsParsed(true)
-// 	return c
-// }
-
 //////////////////////////////////////////////////////////////////////////////
 /// Parse
 
@@ -340,6 +334,14 @@ func (c *Config) Parse(args ...string) (err error) {
 		c.parsedCliArgs = os.Args[1:]
 	} else {
 		c.parsedCliArgs = args
+	}
+
+	// Initialize all the options
+	c.Printf("Starting to initialize all the options: set the default or zero value")
+	for _, group := range c.AllGroups() {
+		if err = group.initAllOpts(); err != nil {
+			return
+		}
 	}
 
 	// Preprocess the parsers.

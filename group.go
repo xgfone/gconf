@@ -456,7 +456,17 @@ func (g *OptGroup) CheckRequiredOption() (err error) {
 			continue
 		}
 
-		// Set the default value.
+		if g.conf.required {
+			return fmt.Errorf("the option '%s' in the group '%s' has no value", name, g.fname)
+		}
+	}
+
+	return nil
+}
+
+func (g *OptGroup) initAllOpts() (err error) {
+	for name, option := range g.opts {
+		// Set the default value if exists.
 		if v := option.opt.Default(); v != nil {
 			if err = g.setOptValue(name, v); err != nil {
 				return
@@ -464,21 +474,16 @@ func (g *OptGroup) CheckRequiredOption() (err error) {
 			continue
 		}
 
+		// Set the zero value if it is enabled.
 		if g.conf.zero {
 			if v := option.opt.Zero(); v != nil {
 				if err = g.setOptValue(name, v); err != nil {
 					return
 				}
-				continue
 			}
 		}
-
-		if g.conf.required {
-			return fmt.Errorf("the option '%s' in the group '%s' has no value", name, g.fname)
-		}
 	}
-
-	return nil
+	return
 }
 
 ///////////////////////////////////////////////////////////////////////////////

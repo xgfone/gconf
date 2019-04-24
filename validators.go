@@ -178,7 +178,7 @@ func NewStrLenValidator(min, max int) Validator {
 
 		_len := len(s)
 		if _len > max || _len < min {
-			return NewValidatorErrorf(group, name,
+			return NewValidatorErrorf(group, name, v,
 				"the length of '%s' is %d, not between %d and %d",
 				s, _len, min, max)
 		}
@@ -215,7 +215,7 @@ func NewStrArrayValidator(array []string) Validator {
 				return nil
 			}
 		}
-		return NewValidatorErrorf(group, name, "the value '%s' is not in %v", s, array)
+		return NewValidatorErrorf(group, name, v, "the value '%s' is not in %v", s, array)
 	})
 }
 
@@ -233,7 +233,7 @@ func NewRegexpValidator(pattern string) Validator {
 		if ok, err := regexp.MatchString(pattern, s); err != nil {
 			return NewValidatorError(group, name, v, err)
 		} else if !ok {
-			return NewValidatorErrorf(group, name,
+			return NewValidatorErrorf(group, name, v,
 				"'%s' doesn't match the value '%s'", s, pattern)
 		}
 		return nil

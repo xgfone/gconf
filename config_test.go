@@ -72,7 +72,7 @@ func ExampleNewEnvVarParser() {
 
 func ExampleConfig() {
 	cliOpts1 := []Opt{
-		StrOpt("", "required", "", "required").SetValidators(NewStrLenValidator(1, 10)),
+		StrOpt("", "required", "s", "required").SetValidators(NewStrLenValidator(1, 10)),
 		BoolOpt("", "yes", true, "test bool option"),
 	}
 
