@@ -398,6 +398,12 @@ func (g *OptGroup) _setOptValue(priority int, name string, value interface{}) {
 	}
 }
 
+// ParseOptValue parses the value of the option named name.
+func (g *OptGroup) ParseOptValue(name string, value interface{}) (interface{}, error) {
+	g.conf.panicIsParsed(false)
+	return g.parseOptValue(g.fixOptName(name), value)
+}
+
 func (g *OptGroup) setOptValue(priority int, name string, value interface{}) (err error) {
 	name = g.fixOptName(name)
 	if value, err = g.parseOptValue(name, value); err == nil {
@@ -406,7 +412,8 @@ func (g *OptGroup) setOptValue(priority int, name string, value interface{}) (er
 	return
 }
 
-// SetOptValue sets the value of the option in the current group. It's thread-safe.
+// SetOptValue parses and sets the value of the option in the current group,
+// which is goroutine-safe.
 //
 // "priority" should be the priority of the parser. It only set the option value
 // successfully for the priority higher than the last. So you can use 0
@@ -416,7 +423,7 @@ func (g *OptGroup) setOptValue(priority int, name string, value interface{}) (er
 // is equal to "abcd_efg".
 //
 // Notice: You cannot call SetOptValue() for the struct option, because we have
-// no way to promise that it's thread-safe.
+// no way to promise that it's goroutine-safe.
 func (g *OptGroup) SetOptValue(priority int, name string, value interface{}) error {
 	g.conf.panicIsParsed(false)
 	if priority < 0 {

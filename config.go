@@ -443,7 +443,7 @@ func (c *Config) watchChangedOption(group *OptGroup, opt string, old, new interf
 // When the option value is changed, the function f will be called.
 //
 // If SetOptValue() is used in the multi-thread, you should promise
-// that the callback function f is thread-safe and reenterable.
+// that the callback function f is goroutine-safe and reenterable.
 //
 // Notice: you can get the group by calling `config.Group(groupFullName)`
 // and the option by calling `config.Group(groupFullName).Opt(optName)`.
@@ -453,7 +453,8 @@ func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newO
 	c.lock.RUnlock()
 }
 
-// SetOptValue sets the value of the option in the group. It's thread-safe.
+// SetOptValue parses and sets the value of the option in the group,
+// which is goroutine-safe.
 //
 // "priority" should be the priority of the parser. It only set the option value
 // successfully for the priority higher than the last. So you can use 0
@@ -470,7 +471,7 @@ func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newO
 // is equal to "abcd_efg".
 //
 // Notice: You cannot call SetOptValue() for the struct option, because we have
-// no way to promise that it's thread-safe.
+// no way to promise that it's goroutine-safe.
 func (c *Config) SetOptValue(priority int, groupFullName, optName string, optValue interface{}) error {
 	c.panicIsParsed(false)
 	if priority < 0 {
