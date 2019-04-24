@@ -437,8 +437,12 @@ func (c *Config) checkRequiredOption() (err error) {
 
 func (c *Config) watchChangedOption(group *OptGroup, opt string, old, new interface{}) {
 	c.Printf("Set [%s]:[%s] from [%v] to [%v]", group.fname, opt, old, new)
-	if c.observe != nil {
-		c.observe(group.fname, opt, old, new)
+	c.lock.Lock()
+	observe := c.observe
+	c.lock.Unlock()
+
+	if observe != nil {
+		observe(group.fname, opt, old, new)
 	}
 }
 
@@ -449,11 +453,12 @@ func (c *Config) watchChangedOption(group *OptGroup, opt string, old, new interf
 // If SetOptValue() is used in the multi-thread, you should promise
 // that the callback function f is thread-safe and reenterable.
 //
-// Notice: you can get the group by calling `config.Group(groupFullName)``
-// and the option by calling `config.Group(groupFullName).Opt(optName)``.
+// Notice: you can get the group by calling `config.Group(groupFullName)`
+// and the option by calling `config.Group(groupFullName).Opt(optName)`.
 func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newOptValue interface{})) {
-	c.panicIsParsed(true)
+	c.lock.RLock()
 	c.observe = f
+	c.lock.RUnlock()
 }
 
 // SetOptValue sets the value of the option in the group. It's thread-safe.
