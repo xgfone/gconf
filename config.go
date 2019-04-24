@@ -53,7 +53,7 @@ type Config struct {
 	gsep       string // The separator between the group names.
 	prefix     string // ==> OptGroup.name + "."
 	printf     func(string, ...interface{})
-	hotReloads []string // Hot Reload
+	hotReloads []Parser // Hot Reload
 
 	// CLI
 	name          string
@@ -283,9 +283,9 @@ func (c *Config) IgnoreReregister(ignore bool) *Config {
 }
 
 // SetHotReload sets what parsers will be reloaded by the signal SIGHUP.
-func (c *Config) SetHotReload(parsers ...string) *Config {
+func (c *Config) SetHotReload(parsers ...Parser) *Config {
 	c.panicIsParsed(true)
-	c.hotReloads = append([]string{}, parsers...)
+	c.hotReloads = append([]Parser{}, parsers...)
 	return c
 }
 
@@ -379,15 +379,7 @@ func (c *Config) Parse(args ...string) (err error) {
 		}
 	}
 
-	parsers := make([]Parser, 0, len(c.hotReloads))
-	for _, name := range c.hotReloads {
-		if parser := c.GetParser(name); parser != nil {
-			parsers = append(parsers, parser)
-		} else {
-			c.Printf("No parser named '%s' for hot-reloading", name)
-		}
-	}
-	go ReloadConfigBySignal(syscall.SIGHUP, c, parsers...)
+	go ReloadConfigBySignal(syscall.SIGHUP, c, c.hotReloads...)
 
 	return
 }

@@ -8,4 +8,4 @@ go:
 env:
   - GO111MODULE=on
 script:
-  - go test -race
+  - go test -race -v

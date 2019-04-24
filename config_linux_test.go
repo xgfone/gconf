@@ -22,9 +22,11 @@ import (
 )
 
 func ExampleConfig_SetHotReload() {
-	conf := New().AddParser(NewEnvVarParser(10, "")).SetHotReload("env") //.SetDebug(true)
+	// The flag and cli parser will ignore the hot-reloading automatically.
+	conf := NewDefault(nil).AddParser(NewEnvVarParser(10, ""))
+	conf.SetHotReload(conf.Parsers()...)
 	conf.RegisterOpt(Str("reload_opt", "abc", "test reload"))
-	conf.Parse()
+	conf.Parse([]string{}...) // We disables the cli arguments only for test.
 
 	time.Sleep(time.Millisecond * 10)
 	fmt.Println(conf.String("reload_opt"))
