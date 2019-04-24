@@ -17,6 +17,7 @@ package gconf
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"unicode"
 )
@@ -41,6 +42,9 @@ func NewSimplePropertyParser(cliOptName string) Parser {
 	}, func(c *Config) ([]byte, error) {
 		// Read the content of the config file.
 		if filename := c.StringD(cliOptName, ""); filename == "" {
+			return nil, nil
+		} else if _, err := os.Stat(filename); err != nil && os.IsNotExist(err) {
+			c.Debugf("[property] Warning: the file named '%s' does not exist", filename)
 			return nil, nil
 		} else if data, err := ioutil.ReadFile(filename); err != nil {
 			return nil, err
