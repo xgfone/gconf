@@ -359,7 +359,7 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 
 	opt, ok := g.opts[name]
 	if !ok {
-		return nil, fmt.Errorf("no the option '%s' in the group '%s'", name, g.fname)
+		return nil, nil
 	}
 
 	var err error
@@ -418,6 +418,8 @@ func (g *OptGroup) _setOptValue(name string, value interface{}) {
 }
 
 // ParseOptValue parses the value of the option named name.
+//
+// If no the option named `name`, it will return (nil, nil).
 func (g *OptGroup) ParseOptValue(name string, value interface{}) (interface{}, error) {
 	g.conf.panicIsParsed(false)
 	return g.parseOptValue(g.fixOptName(name), value)
@@ -425,7 +427,7 @@ func (g *OptGroup) ParseOptValue(name string, value interface{}) (interface{}, e
 
 func (g *OptGroup) setOptValue(name string, value interface{}) (err error) {
 	name = g.fixOptName(name)
-	if value, err = g.parseOptValue(name, value); err == nil {
+	if value, err = g.parseOptValue(name, value); err == nil && value != nil {
 		g._setOptValue(name, value)
 	}
 	return
