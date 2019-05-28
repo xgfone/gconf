@@ -23,8 +23,6 @@ import (
 )
 
 type iniParser struct {
-	parsed int32
-
 	sep  string
 	prio int
 
@@ -32,9 +30,9 @@ type iniParser struct {
 	getData func(*Config) ([]byte, error)
 }
 
-// NewSimpleIniParser returns a INI parser with the priority 100,
-// which registers the CLI option, cliOptName, into the default group and reads
-// the data from the INI file appointed by cliOptName.
+// NewSimpleIniParser returns a INI parser based on the file with the priority
+// 100, which registers the CLI option, cliOptName, into the default group and
+// reads the data from the INI file appointed by cliOptName.
 func NewSimpleIniParser(cliOptName string) Parser {
 	return NewIniParser(100, func(c *Config) error {
 		c.RegisterCliOpt(Str(cliOptName, "", "The path of the INI config file."))
@@ -54,7 +52,7 @@ func NewSimpleIniParser(cliOptName string) Parser {
 	})
 }
 
-// NewIniParser returns a new ini parser based on the file.
+// NewIniParser returns a new ini parser.
 //
 // The first argument sets the Init function.
 //

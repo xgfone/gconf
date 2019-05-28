@@ -23,8 +23,6 @@ import (
 )
 
 type propertyParser struct {
-	parsed int32
-
 	sep  string
 	prio int
 
@@ -32,9 +30,10 @@ type propertyParser struct {
 	getData func(*Config) ([]byte, error)
 }
 
-// NewSimplePropertyParser returns a property parser with the priority 100,
-// which registers the CLI option, cliOptName, into the default group and reads
-// the data from the property file appointed by cliOptName.
+// NewSimplePropertyParser returns a property parser based on the file
+// with the priority 100, which registers the CLI option, cliOptName,
+// into the default group and reads the data from the property file
+// appointed by cliOptName.
 func NewSimplePropertyParser(cliOptName string) Parser {
 	return NewPropertyParser(100, func(c *Config) error {
 		c.RegisterCliOpt(Str(cliOptName, "", "The path of the property config file."))
@@ -54,7 +53,7 @@ func NewSimplePropertyParser(cliOptName string) Parser {
 	})
 }
 
-// NewPropertyParser returns a new property parser based on the file.
+// NewPropertyParser returns a new property parser.
 //
 // The first argument sets the Init function.
 //
