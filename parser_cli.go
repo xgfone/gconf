@@ -162,7 +162,9 @@ func (cp *cliParser) updateConfigOpt(names []string, ctx *cli.Context,
 		}
 
 		if value != nil {
-			if err = gopt.Group.UpdateOptValue(gopt.Opt.Name(), value); err != nil {
+			switch err = gopt.Group.UpdateOptValue(gopt.Opt.Name(), value); err {
+			case nil, ErrNoOpt:
+			default:
 				return err
 			}
 			gopt.Ok = true

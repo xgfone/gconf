@@ -27,6 +27,9 @@ import (
 )
 
 var (
+	// ErrNoOpt is an error that the option does not exists.
+	ErrNoOpt = fmt.Errorf("no option")
+
 	// ErrParsed is an error that the config has been parsed.
 	ErrParsed = fmt.Errorf("the config manager has been parsed")
 
@@ -476,6 +479,9 @@ func (c *Config) Observe(f func(groupFullName, optName string, oldOptValue, newO
 //
 // For the option name, the characters "-" and "_" are equal, that's, "abcd-efg"
 // is equal to "abcd_efg".
+//
+// If the group named `groupFullName` does not have the option named `optName`,
+// it will return ErrNoOpt.
 //
 // Notice: You cannot call UpdateOptValue() for the struct option and access them
 // by the struct field, because we have no way to promise that it's goroutine-safe.

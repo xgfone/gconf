@@ -238,7 +238,10 @@ func (f *flagParser) Parse(c *Config) (err error) {
 		optname := name2opt[fg.Name]
 		if gname != "" && optname != "" && fg.Name != vname {
 			group := c.Group(gname)
-			if err = group.UpdateOptValue(optname, fg.Value.String()); err != nil {
+			switch e := group.UpdateOptValue(optname, fg.Value.String()); e {
+			case nil, ErrNoOpt:
+			default:
+				err = e
 				return
 			}
 			group.LockOpt(optname)

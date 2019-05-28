@@ -99,7 +99,9 @@ func (e *envVarParser) Parse(c *Config) (err error) {
 			if info, ok := env2opts[items[0]]; ok {
 				c.Debugf("[%s] Parsing Env '%s'", e.Name(), env)
 				group := c.Group(info[0])
-				if err = group.UpdateOptValue(info[1], items[1]); err != nil {
+				switch err = group.UpdateOptValue(info[1], items[1]); err {
+				case nil, ErrNoOpt:
+				default:
 					return err
 				}
 				group.LockOpt(info[1])

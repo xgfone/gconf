@@ -180,7 +180,11 @@ func (p *iniParser) Parse(c *Config) error {
 	}
 
 	for _, opt := range opts {
-		opt[0].(*OptGroup).UpdateOptValue(opt[1].(string), opt[2])
+		switch err = opt[0].(*OptGroup).UpdateOptValue(opt[1].(string), opt[2]); err {
+		case nil, ErrNoOpt:
+		default:
+			return err
+		}
 	}
 
 	return nil

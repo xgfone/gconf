@@ -359,7 +359,7 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 
 	opt, ok := g.opts[name]
 	if !ok {
-		return nil, nil
+		return nil, ErrNoOpt
 	}
 
 	var err error
@@ -419,7 +419,7 @@ func (g *OptGroup) _setOptValue(name string, value interface{}) {
 
 // ParseOptValue parses the value of the option named name.
 //
-// If no the option named `name`, it will return (nil, nil).
+// If no the option named `name`, it will return ErrNoOpt.
 func (g *OptGroup) ParseOptValue(name string, value interface{}) (interface{}, error) {
 	g.conf.panicIsParsed(false)
 	return g.parseOptValue(g.fixOptName(name), value)
@@ -438,6 +438,8 @@ func (g *OptGroup) setOptValue(name string, value interface{}) (err error) {
 //
 // For the option name, the characters "-" and "_" are equal, that's, "abcd-efg"
 // is equal to "abcd_efg".
+//
+// If no the option named `name`, it will return ErrNoOpt.
 //
 // Notice: You cannot call UpdateOptValue() for the struct option and access them
 // by the struct field, because we have no way to promise that it's goroutine-safe.
