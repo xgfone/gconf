@@ -88,10 +88,6 @@ func (j jsonParser) Pre(c *Config) error {
 }
 
 func (j jsonParser) Parse(c *Config) error {
-	return nil
-}
-
-func (j jsonParser) Post(c *Config) error {
 	data, err := j.getData(c)
 	if err != nil {
 		return err
@@ -105,6 +101,10 @@ func (j jsonParser) Post(c *Config) error {
 	}
 
 	return j.update(c, c.OptGroup, ms)
+}
+
+func (j jsonParser) Post(c *Config) error {
+	return nil
 }
 
 func (j jsonParser) update(c *Config, group *OptGroup, ms map[string]interface{}) error {
