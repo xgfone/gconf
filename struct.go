@@ -21,62 +21,61 @@ import (
 	"time"
 )
 
-// StructValidator is used to validate the struct value.
-type StructValidator interface {
-	Validate() error
-}
-
-// RegisterStruct retusters the struct fields as the options.
+// RegisterStruct retusters the struct fields as the options into the current group.
 //
-// The tag of the field supports "name"(string), "short"(string), "help"(string),
-// "default"(string), "cli"(bool), "group"(string), "cmd"(string) and
-// "action"(string).
+// Supproted types for the struct filed:
+//
+//   bool
+//   int
+//   int32
+//   int64
+//   uint
+//   uint32
+//   uint64
+//   float64
+//   string
+//   time.Duration
+//   time.Time
+//   []int
+//   []uint
+//   []float64
+//   []string
+//   []time.Duration
+//
+// Other types will be ignored.
+//
+// The tag of the field supports "name"(string), "short"(string),
+// "help"(string), "default"(string), "group"(string).
 //
 //   1. "name", "short", "default" and "help" are used to create a option
 //      with the name, the short name, the default value and the help doc.
-//   2. "cli" is used to indicate whether the option is the CLI option or not.
-//   3. "group" is used to change the group of the option to "group".
-//   4. "cmd" is used to indicate that the option belongs the command named
-//      by "cmd".
-//   5. "action" is the action function of the command, the type of which is
-//      `func() error`, and which must be registered into Config or an exported
-//      method of the topmost struct. Beside, "action" need to be used with
-//      "cmd" together.
+//   2. "group" is used to change the group of the option to "group".
+//      For a struct, if no "group", it will use "name".
 //
-// If "name" is "-", that's `name:"-"`, the corresponding field will be ignored.
+// If "name" or "group" is "-", that's `name:"-"` or `group:"-"`,
+// the corresponding field will be ignored.
 //
-// The bool value may be one of "t", "T", "1", "on", "On", "ON", "true", "True",
-// "TRUE", "yes", "Yes", "YES" for true and "f", "F", "0", "off", "Off", "OFF",
-// "false", "False", "FALSE", "no", "No", "NO", "" for false.
+// The bool value will be parsed by `strconv.ParseBool`, so "1", "t", "T",
+// "TRUE", "true", "True", "0", "f", "F", "FALSE", "false" and "False"
+// are accepted.
 //
 // For the field that is a struct, it is a new sub-group of the current group,
 // and the lower-case of the field name is the name of the new sub-group.
 // But you can use the tag "group" or "name" to overwrite it, and "group" is
 // preference to "name".
 //
-// Notice: All the tags are optional.
-//
-// If the struct has implemented the interface StructValidator, this validator
-// will be called automatically after having parsed. But the individual field
-// does not support the validator by the tag. You maybe choose others, such as
-// github.com/asaskevich/govalidator. Beside, you can get the option from the
-// corresponding group, then add the validators for it by hand. All of the
-// builtin options support the validator chain.
-//
 // Notice:
-//   1. The struct must be a pointer to a struct variable, or panic.
-//   2. It must be called before being parsed, or panic.
+//   1. All the tags are optional.
+//   2. The struct must be a pointer to a struct variable, or panic.
 //   3. The struct supports the nested struct, but not the pointer field.
-//   4. For the struct option, you shouldn't call UpdateOptValue() because of
-//      concurrence.
 //
-func (c *Config) RegisterStruct(s interface{}) *Config {
-	return c.registerStruct(false, s)
-}
+func (g *OptGroup) RegisterStruct(v interface{}) {
+	if v == nil {
+		panic("the struct value must not be nil")
+	}
 
-func (c *Config) registerStruct(cli bool, s interface{}) *Config {
-	sv := reflect.ValueOf(s)
-	if sv.IsNil() || !sv.IsValid() {
+	sv := reflect.ValueOf(v)
+	if !sv.IsValid() {
 		panic("the struct is invalid or can't be set")
 	}
 
@@ -88,36 +87,21 @@ func (c *Config) registerStruct(cli bool, s interface{}) *Config {
 		panic("the struct is not a struct")
 	}
 
-	c.registerStructByValue(nil, c.OptGroup, sv, sv, cli)
-
-	if v, ok := s.(StructValidator); ok {
-		c.validators = append(c.validators, v.Validate)
-	}
-	return c
+	g.conf.registerStructByValue(sv, sv)
 }
 
-func (c *Config) getActionMethod(orig reflect.Value, method string) func() error {
-	if m := orig.MethodByName(method).Interface(); m == nil {
-		return nil
-	} else if action, ok := m.(func() error); ok {
-		return action
-	}
-	return nil
-}
-
-func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv, orig reflect.Value, cli bool) {
+func (g *OptGroup) registerStructByValue(sv, orig reflect.Value) {
 	if sv.Kind() == reflect.Ptr {
 		sv = sv.Elem()
 	}
 	st := sv.Type()
 
 	// Register the field as the option
-	var err error
 	num := sv.NumField()
 	for i := 0; i < num; i++ {
 		field := st.Field(i)
 		fieldV := sv.Field(i)
-		group := optGroup
+		group := g
 
 		// Check whether the field can be set.
 		if !fieldV.CanSet() {
@@ -133,42 +117,6 @@ func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv,
 			name = tagname
 		}
 
-		// Parse the tag "cli": the option is CLI or not.
-		isCli := cli
-		if _cli := strings.TrimSpace(field.Tag.Get("cli")); _cli != "" {
-			if isCli, err = ToBool(_cli); err != nil {
-				panic(fmt.Errorf("invalid value '%s' for cli", field.Tag.Get("cli")))
-			}
-		}
-
-		// Parse the tag "help": the help document.
-		help := strings.TrimSpace(field.Tag.Get("help"))
-
-		// Parse the tag "cmd": the command.
-		var cmd *Command
-		if _cmd := strings.TrimSpace(field.Tag.Get("cmd")); _cmd != "" {
-			if command == nil {
-				cmd = c.NewCommand(_cmd, help)
-			} else {
-				cmd = command.NewCommand(_cmd, help)
-			}
-
-			// Parse the tag "action": the action of the current command.
-			if action := strings.TrimSpace(field.Tag.Get("action")); action != "" {
-				actionf := c.GetAction(action)
-				if actionf == nil {
-					if actionf = c.getActionMethod(orig, action); actionf == nil {
-						panic(fmt.Errorf("no the action named '%s'", action))
-					}
-				}
-				cmd.SetAction(actionf)
-				c.Debugf("Set the action of the command '%s' to '%s'", cmd.FullName(), action)
-			}
-
-			isCli = true
-			group = cmd.OptGroup
-		}
-
 		// Parse the tag "group": rename the group name.
 		gname := strings.TrimSpace(field.Tag.Get("group"))
 		if gname != "" {
@@ -178,37 +126,75 @@ func (c *Config) registerStructByValue(command *Command, optGroup *OptGroup, sv,
 		// Check whether the field is the struct.
 		if t := field.Type.Kind(); t == reflect.Struct {
 			if _, ok := fieldV.Interface().(time.Time); !ok { // For struct config
-				if cmd == nil && gname == "" {
+				if gname == "" {
 					group = group.NewGroup(name)
 				}
-				if cmd == nil && command != nil {
-					cmd = command
-				}
-				c.registerStructByValue(cmd, group, fieldV, orig, isCli)
+
+				group.registerStructByValue(fieldV, orig)
 				continue
 			}
 		}
 
-		_type := getOptType(fieldV)
-		if _type == int64Type {
-			if _, ok := fieldV.Interface().(time.Duration); ok {
-				_type = durationType
-			}
-		}
+		// Parse the tag "help": the help document.
+		help := strings.TrimSpace(field.Tag.Get("help"))
 
-		// Parse the tag "default": the default value of the option.
-		var _default interface{}
-		if v, ok := field.Tag.Lookup("default"); ok {
-			if _default, err = parseOpt(strings.TrimSpace(v), _type); err != nil {
-				panic(fmt.Errorf("can't parse the default tag in the field %s: %s",
-					field.Name, err))
-			}
+		var opt Opt
+		switch v := fieldV.Interface().(type) {
+		case bool:
+			opt = BoolOpt(name, help).D(v)
+		case int:
+			opt = IntOpt(name, help).D(v)
+		case int32:
+			opt = Int32Opt(name, help).D(v)
+		case int64:
+			opt = Int64Opt(name, help).D(v)
+		case uint:
+			opt = UintOpt(name, help).D(v)
+		case uint32:
+			opt = Uint32Opt(name, help).D(v)
+		case uint64:
+			opt = Uint64Opt(name, help).D(v)
+		case float64:
+			opt = Float64Opt(name, help).D(v)
+		case string:
+			opt = StrOpt(name, help).D(v)
+		case time.Duration:
+			opt = DurationOpt(name, help).D(v)
+		case time.Time:
+			opt = TimeOpt(name, help).D(v)
+
+		case []int:
+			opt = IntSliceOpt(name, help).D(v)
+		case []uint:
+			opt = UintSliceOpt(name, help).D(v)
+		case []float64:
+			opt = Float64SliceOpt(name, help).D(v)
+		case []string:
+			opt = StrSliceOpt(name, help).D(v)
+		case []time.Duration:
+			opt = DurationSliceOpt(name, help).D(v)
+		default:
+			continue
 		}
 
 		// Parse the tag "short": the short name of the option.
-		short := strings.TrimSpace(field.Tag.Get("short"))
+		if short := strings.TrimSpace(field.Tag.Get("short")); short != "" {
+			opt.S(short)
+		}
 
-		group.registerOpt(isCli, newBaseOpt(short, name, _default, help, _type))
-		group.fields[group.fixOptName(name)] = fieldV
+		// Parse the tag "default": the default value of the option.
+		if v, ok := field.Tag.Lookup("default"); ok {
+			if _default, err := opt.Parser(strings.TrimSpace(v)); err != nil {
+				panic(fmt.Errorf("can't parse the default tag in the field %s: %s", field.Name, err))
+			} else {
+				opt.Default = _default
+				fieldV.Set(reflect.ValueOf(_default))
+			}
+		}
+
+		group.registerOpt(opt)
+		group.setOptWatch(opt.Name, func(value interface{}) {
+			fieldV.Set(reflect.ValueOf(value))
+		})
 	}
 }

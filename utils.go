@@ -22,254 +22,133 @@ import (
 	"github.com/xgfone/go-tools/types"
 )
 
-// Some converting function aliases.
+// Some type converters, all of which have a default implementation,
+// but you can reset them to yourself implementations.
 var (
-	IsZero    = types.IsZero
-	ToBool    = types.ToBool
-	ToInt64   = types.ToInt64
-	ToUint64  = types.ToUint64
-	ToFloat64 = types.ToFloat64
-	ToString  = types.ToString
-	ToTime    = types.ToTime
+	ToBool     func(interface{}) (bool, error)
+	ToInt      func(interface{}) (int, error)
+	ToInt32    func(interface{}) (int32, error)
+	ToInt64    func(interface{}) (int64, error)
+	ToUint     func(interface{}) (uint, error)
+	ToUint32   func(interface{}) (uint32, error)
+	ToUint64   func(interface{}) (uint64, error)
+	ToFloat64  func(interface{}) (float64, error)
+	ToString   func(interface{}) (string, error)
+	ToDuration func(interface{}) (time.Duration, error)
+	ToTime     func(interface{}) (time.Time, error)
+
+	// For string type, it will be separated by the comma(,) by default.
+	ToIntSlice      func(interface{}) ([]int, error)
+	ToUintSlice     func(interface{}) ([]uint, error)
+	ToFloat64Slice  func(interface{}) ([]float64, error)
+	ToStringSlice   func(interface{}) ([]string, error)
+	ToDurationSlice func(interface{}) ([]time.Duration, error)
 )
 
-// InStrings reports whether s is in ss.
-func InStrings(s string, ss []string) bool {
-	for _, _s := range ss {
-		if s == _s {
-			return true
-		}
-	}
-	return false
+func init() {
+	ToBool = types.ToBool
+	ToInt64 = types.ToInt64
+	ToUint64 = types.ToUint64
+	ToFloat64 = types.ToFloat64
+	ToString = types.ToString
+	ToTime = func(v interface{}) (time.Time, error) { return types.ToTime(v) }
+	ToInt = types.ToInt
+	ToInt32 = types.ToInt32
+	ToUint = types.ToUint
+	ToUint32 = types.ToUint32
+	ToDuration = types.ToDuration
+
+	ToIntSlice = toIntSlice
+	ToUintSlice = toUintSlice
+	ToFloat64Slice = toFloat64Slice
+	ToStringSlice = toStringSlice
+	ToDurationSlice = toDurationSlice
 }
 
-// ToDuration does the best to convert a certain value to time.Duration.
-func ToDuration(v interface{}) (d time.Duration, err error) {
-	switch _v := v.(type) {
-	case string:
-		return time.ParseDuration(_v)
-	case []byte:
-		return time.ParseDuration(string(_v))
-	case fmt.Stringer:
-		return time.ParseDuration(_v.String())
-	}
-
-	_v, err := ToInt64(v)
-	if err != nil {
-		return
-	}
-	return time.Duration(_v), nil
-}
-
-// ToStringSlice does the best to convert a certain value to []string.
-//
-// If the value is string, they are separated by the comma.
-func ToStringSlice(_v interface{}) (v []string, err error) {
-	switch vv := _v.(type) {
-	case string:
-		vs := strings.Split(vv, ",")
-		v = make([]string, 0, len(vs))
-		for _, s := range vs {
-			s = strings.TrimSpace(s)
-			if s != "" {
-				v = append(v, s)
-			}
-		}
+func getStringSlice(value interface{}) []string {
+	var s string
+	switch v := value.(type) {
 	case []string:
-		v = vv
+		return v
+	case string:
+		s = v
+	case []byte:
+		s = string(v)
+	case fmt.Stringer:
+		s = v.String()
 	default:
-		err = types.ErrUnknownType
+		return nil
 	}
-	return
+
+	vs := strings.Split(s, ",")
+	ss := make([]string, 0, len(vs))
+	for _, s := range vs {
+		if s = strings.TrimSpace(s); s != "" {
+			ss = append(ss, s)
+		}
+	}
+	return ss
 }
 
-// ToIntSlice does the best to convert a certain value to []int.
-//
-// If the value is string, they are separated by the comma.
-func ToIntSlice(_v interface{}) (v []int, err error) {
-	switch vv := _v.(type) {
-	case string:
-		vs := strings.Split(vv, ",")
-		v = make([]int, 0, len(vs))
-		for _, s := range vs {
-			if s = strings.TrimSpace(s); s == "" {
-				continue
+func toIntSlice(value interface{}) ([]int, error) {
+	if ss := getStringSlice(value); ss != nil {
+		var err error
+		vs := make([]int, len(ss))
+		for i, s := range ss {
+			if vs[i], err = ToInt(s); err != nil {
+				return []int{}, fmt.Errorf("unable to cast %#v of type %T to []int", value, value)
 			}
-
-			i, err := types.ToInt64(s)
-			if err != nil {
-				return nil, err
-			}
-			v = append(v, int(i))
 		}
-	case []int:
-		v = vv
-	default:
-		err = types.ErrUnknownType
+		return vs, nil
 	}
-	return
+	return types.ToIntSlice(value)
 }
 
-// ToInt64Slice does the best to convert a certain value to []int64.
-//
-// If the value is string, they are separated by the comma.
-func ToInt64Slice(_v interface{}) (v []int64, err error) {
-	switch vv := _v.(type) {
-	case string:
-		vs := strings.Split(vv, ",")
-		v = make([]int64, 0, len(vs))
-		for _, s := range vs {
-			if s = strings.TrimSpace(s); s == "" {
-				continue
+func toUintSlice(value interface{}) (v []uint, err error) {
+	if ss := getStringSlice(value); ss != nil {
+		var err error
+		vs := make([]uint, len(ss))
+		for i, s := range ss {
+			if vs[i], err = ToUint(s); err != nil {
+				return []uint{}, fmt.Errorf("unable to cast %#v of type %T to []uint", value, value)
 			}
-
-			i, err := types.ToInt64(s)
-			if err != nil {
-				return nil, err
-			}
-			v = append(v, i)
 		}
-	case []int64:
-		v = vv
-	default:
-		err = types.ErrUnknownType
+		return vs, nil
 	}
-	return
+	return types.ToUintSlice(value)
 }
 
-// ToUintSlice does the best to convert a certain value to []uint.
-//
-// If the value is string, they are separated by the comma.
-func ToUintSlice(_v interface{}) (v []uint, err error) {
-	switch vv := _v.(type) {
-	case string:
-		vs := strings.Split(vv, ",")
-		v = make([]uint, 0, len(vs))
-		for _, s := range vs {
-			if s = strings.TrimSpace(s); s == "" {
-				continue
+func toFloat64Slice(value interface{}) ([]float64, error) {
+	if ss := getStringSlice(value); ss != nil {
+		var err error
+		vs := make([]float64, len(ss))
+		for i, s := range ss {
+			if vs[i], err = ToFloat64(s); err != nil {
+				return []float64{}, fmt.Errorf("unable to cast %#v of type %T to []float64", value, value)
 			}
-
-			i, err := types.ToUint64(s)
-			if err != nil {
-				return nil, err
-			}
-			v = append(v, uint(i))
 		}
-	case []uint:
-		v = vv
-	default:
-		err = types.ErrUnknownType
+		return vs, nil
 	}
-	return
+	return types.ToFloat64Slice(value)
 }
 
-// ToUint64Slice does the best to convert a certain value to []uint64.
-//
-// If the value is string, they are separated by the comma.
-func ToUint64Slice(_v interface{}) (v []uint64, err error) {
-	switch vv := _v.(type) {
-	case string:
-		vs := strings.Split(vv, ",")
-		v = make([]uint64, 0, len(vs))
-		for _, s := range vs {
-			if s = strings.TrimSpace(s); s == "" {
-				continue
-			}
-
-			i, err := types.ToUint64(s)
-			if err != nil {
-				return nil, err
-			}
-			v = append(v, i)
-		}
-	case []uint64:
-		v = vv
-	default:
-		err = types.ErrUnknownType
+func toStringSlice(value interface{}) ([]string, error) {
+	if ss := getStringSlice(value); ss != nil {
+		return ss, nil
 	}
-	return
+	return types.ToStringSlice(value)
 }
 
-// ToFloat64Slice does the best to convert a certain value to []float64.
-//
-// If the value is string, they are separated by the comma.
-func ToFloat64Slice(_v interface{}) (v []float64, err error) {
-	switch vv := _v.(type) {
-	case string:
-		vs := strings.Split(vv, ",")
-		v = make([]float64, 0, len(vs))
-		for _, s := range vs {
-			if s = strings.TrimSpace(s); s == "" {
-				continue
+func toDurationSlice(value interface{}) ([]time.Duration, error) {
+	if ss := getStringSlice(value); ss != nil {
+		var err error
+		vs := make([]time.Duration, len(ss))
+		for i, s := range ss {
+			if vs[i], err = ToDuration(s); err != nil {
+				return []time.Duration{}, fmt.Errorf("unable to cast %#v of type %T to []time.Duration", value, value)
 			}
-
-			i, err := types.ToFloat64(s)
-			if err != nil {
-				return nil, err
-			}
-			v = append(v, i)
 		}
-	case []float64:
-		v = vv
-	default:
-		err = types.ErrUnknownType
+		return vs, nil
 	}
-	return
-}
-
-// ToTimes does the best to convert a certain value to []time.Time.
-//
-// If the value is string, they are separated by the comma and the each value
-// is parsed by the format, layout.
-func ToTimes(layout string, _v interface{}) (v []time.Time, err error) {
-	switch vv := _v.(type) {
-	case string:
-		vs := strings.Split(vv, ",")
-		v = make([]time.Time, 0, len(vs))
-		for _, s := range vs {
-			if s = strings.TrimSpace(s); s == "" {
-				continue
-			}
-
-			i, err := time.Parse(layout, s)
-			if err != nil {
-				return nil, err
-			}
-			v = append(v, i)
-		}
-	case []time.Time:
-		v = vv
-	default:
-		err = types.ErrUnknownType
-	}
-	return
-}
-
-// ToDurations does the best to convert a certain value to []time.Duration.
-//
-// If the value is string, they are separated by the comma and the each value
-// is parsed by time.ParseDuration().
-func ToDurations(_v interface{}) (v []time.Duration, err error) {
-	switch vv := _v.(type) {
-	case string:
-		vs := strings.Split(vv, ",")
-		v = make([]time.Duration, 0, len(vs))
-		for _, s := range vs {
-			if s = strings.TrimSpace(s); s == "" {
-				continue
-			}
-
-			i, err := time.ParseDuration(s)
-			if err != nil {
-				return nil, err
-			}
-			v = append(v, i)
-		}
-	case []time.Duration:
-		v = vv
-	default:
-		err = types.ErrUnknownType
-	}
-	return
+	return types.ToDurationSlice(value)
 }
