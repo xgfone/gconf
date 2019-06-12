@@ -15,10 +15,54 @@
 package gconf
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/urfave/cli"
 )
+
+func ExampleNewCliSource() {
+	conf := New()
+	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
+	conf.NewGroup("cmd1").RegisterOpt(IntOpt("opt2", ""))
+	conf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpt(IntOpt("opt3", ""))
+
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{cli.StringFlag{Name: "opt1"}}
+	app.Commands = []cli.Command{
+		cli.Command{
+			Name:  "cmd1",
+			Flags: []cli.Flag{cli.IntFlag{Name: "opt2"}},
+			Subcommands: []cli.Command{
+				cli.Command{
+					Name:  "cmd2",
+					Flags: []cli.Flag{cli.IntFlag{Name: "opt3"}},
+					Action: func(ctx *cli.Context) error {
+						conf.LoadSource(NewCliSource(ctx, "cmd1.cmd2"))
+						conf.LoadSource(NewCliSource(ctx.Parent(), "cmd1"))
+						conf.LoadSource(NewCliSource(ctx.Parent().Parent(), ""))
+
+						fmt.Println(conf.GetString("opt1"))
+						fmt.Println(conf.Group("cmd1").GetInt("opt2"))
+						fmt.Println(conf.Group("cmd1.cmd2").GetInt("opt3"))
+
+						return nil
+					},
+				},
+			},
+		},
+	}
+
+	// For Test
+	app.Run([]string{"app", "--opt1=xyz", "cmd1", "--opt2=123", "cmd2", "--opt3=456"})
+
+	// Output:
+	// xyz
+	// 123
+	// 456
+}
 
 func TestNewEnvSource(t *testing.T) {
 	os.Setenv("OPT1", "123")

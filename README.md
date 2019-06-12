@@ -16,7 +16,7 @@ The supported Go version: `1.10+`.
 
 ## Source
 
-Source is used to read the configuration data. You can load lots of sources to read the configuration data from many storage locations. The default has implemented some sources, such as `flag`, `env`, `file`. But you can also implement other sources, such as `ZooKeeper`, `ETCD`, etc.
+Source is used to read the configuration data. You can load lots of sources to read the configuration data from many storage locations. The default has implemented some sources, such as `flag`, `cli`, `env`, `file`, `url`. But you can also implement other sources, such as `ZooKeeper`, `ETCD`, etc.
 
 **Notice:** If the source supports the watcher, it will add it to watch the changed of the source data automatically.
 
@@ -152,6 +152,66 @@ func main() {
 	// Output:
 	// [Observer] Setting: group=, opt=opt1, old=abc, new=xyz
 	// [Observer] Setting: group=group, opt=opt2, old=123, new=789
+}
+```
+
+### The `cli` Command
+
+The `flag` does not support the command, so you can use `github.com/urfave/cli`.
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/urfave/cli"
+	"github.com/xgfone/gconf"
+)
+
+func main() {
+	// Register options into the group
+	gconf.Conf.RegisterOpt(gconf.StrOpt("opt1", "").D("abc"))
+	gconf.Conf.NewGroup("cmd1").RegisterOpt(gconf.IntOpt("opt2", ""))
+	gconf.Conf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpt(gconf.IntOpt("opt3", ""))
+
+	// Create and run cli app.
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{cli.StringFlag{Name: "opt1"}}
+	app.Commands = []cli.Command{
+		cli.Command{
+			Name:  "cmd1",
+			Flags: []cli.Flag{cli.IntFlag{Name: "opt2"}},
+			Subcommands: []cli.Command{
+				cli.Command{
+					Name:  "cmd2",
+					Flags: []cli.Flag{cli.IntFlag{Name: "opt3"}},
+					Action: func(ctx *cli.Context) error {
+						// Load the sources
+						gconf.Conf.LoadSource(gconf.NewCliSource(ctx, "cmd1.cmd2"))          // cmd2
+						gconf.Conf.LoadSource(gconf.NewCliSource(ctx.Parent(), "cmd1"))      // cmd1
+						gconf.Conf.LoadSource(gconf.NewCliSource(ctx.Parent().Parent(), "")) // global
+
+						// Read and print the option
+						fmt.Println(gconf.Conf.GetString("opt1"))
+						fmt.Println(gconf.Conf.Group("cmd1").GetInt("opt2"))
+						fmt.Println(gconf.Conf.Group("cmd1.cmd2").GetInt("opt3"))
+
+						return nil
+					},
+				},
+			},
+		},
+	}
+	app.RunAndExitOnError()
+
+	// Execute:
+	//     PROGRAM --opt1=xyz cmd1 --opt2=123 cmd2 --opt3=456
+	//
+	// Output:
+	//     xyz
+	//     123
+	//     456
 }
 ```
 
