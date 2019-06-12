@@ -84,7 +84,7 @@ type Decoder struct {
 // If the decoder has added, it will do nothing and return false.
 // But you can override it by setting force to true.
 //
-// The default has added the "json" encoders. TODO:)
+// The default has added the "json" and "ini" encoders.
 func (c *Config) AddDecoder(decoder Decoder, force ...bool) (ok bool) {
 	c.lock.Lock()
 	if _, ok = c.decoders[decoder.Type]; !ok {

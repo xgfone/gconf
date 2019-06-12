@@ -44,7 +44,7 @@ func NewSourceError(source, format string, data []byte, err error) SourceError {
 	return SourceError{Source: source, Format: format, Data: data, Err: err}
 }
 
-// DataSet TODO:)
+// DataSet represents the information of the configuration data.
 type DataSet struct {
 	Data      []byte // The original data.
 	Format    string // Such as "json", "xml", etc.
@@ -131,6 +131,10 @@ func (c *Config) flatMap(parent string, src, dst map[string]interface{}) {
 }
 
 func (c *Config) parseDataSet(ds DataSet, force bool) error {
+	if len(ds.Data) == 0 {
+		return nil
+	}
+
 	decoder, ok := c.GetDecoder(ds.Format)
 	if !ok {
 		return NewSourceError(ds.Source, ds.Format, ds.Data, errNoDecoder)
