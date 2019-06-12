@@ -15,6 +15,7 @@
 package gconf
 
 import (
+	"net/http"
 	"os"
 	"testing"
 )
@@ -131,6 +132,22 @@ func TestNewFileSource_JSON(t *testing.T) {
 	} else if v := conf.Group("group1").GetBool("opt2"); !v {
 		t.Fail()
 	} else if v := conf.Group("group1.group2").GetFloat64("opt3"); v != 3 {
+		t.Error(v)
+	}
+}
+
+func TestNewURLSource(t *testing.T) {
+	// Start the http server
+	go http.ListenAndServe("127.0.0.1:12345", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write([]byte(`{"opt": 123}`))
+	}))
+
+	conf := New()
+	conf.RegisterOpt(IntOpt("opt", ""))
+	conf.LoadSource(NewURLSource("http://127.0.0.1:12345/"))
+
+	if v := conf.GetInt("opt"); v != 123 {
 		t.Error(v)
 	}
 }
