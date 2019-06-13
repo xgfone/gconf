@@ -142,6 +142,14 @@ func (g *OptGroup) Opt(name string) (opt Opt, exist bool) {
 	return
 }
 
+// MustOpt is the same as Opt(name), but panic if the option does not exist.
+func (g *OptGroup) MustOpt(name string) Opt {
+	if opt, ok := g.Opt(name); ok {
+		return opt
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // HasOpt reports whether there is an option named name in the current group.
 func (g *OptGroup) HasOpt(name string) bool {
 	g.lock.RLock()
