@@ -108,30 +108,6 @@ func (g *OptGroup) G(group string) *OptGroup {
 	return g.Group(group)
 }
 
-// AllSubGroups returns all the sub-groups of the current group.
-//
-// If the current group is the default, it will returns all groups,
-// containing the default group.
-//
-// Notice: "group1.group2.group3" and "group1.group2" are the sub-group of "group1".
-func (g *OptGroup) AllSubGroups() []*OptGroup {
-	var gname string
-	if name := g.Name(); name != "" {
-		gname = name + g.conf.gsep
-	} else {
-		return g.conf.AllGroups()
-	}
-
-	allGroups := g.conf.AllGroups()
-	groups := make([]*OptGroup, 0, len(allGroups))
-	for _, group := range allGroups {
-		if strings.HasPrefix(group.Name(), gname) {
-			groups = append(groups, group)
-		}
-	}
-	return groups
-}
-
 // AllOpts returns all the options in the current group.
 func (g *OptGroup) AllOpts() []Opt {
 	g.lock.RLock()
