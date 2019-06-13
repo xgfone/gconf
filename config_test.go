@@ -251,8 +251,8 @@ func TestOptGroupLocked(t *testing.T) {
 	conf := New()
 	conf.NewGroup("group1").RegisterOpts([]Opt{StrOpt("opt1", "").D("a"), StrOpt("opt2", "").D("b")})
 	conf.NewGroup("group2").RegisterOpts([]Opt{StrOpt("opt3", "").D("c"), StrOpt("opt4", "").D("d")})
-	conf.Group("group1").LockOpt("opt2")
-	conf.Group("group2").LockGroup()
+	conf.Group("group1").FreezeOpt("opt2")
+	conf.Group("group2").FreezeGroup()
 
 	errs := make([]error, 0, 4)
 	conf.SetErrHandler(func(err error) { errs = append(errs, err) })

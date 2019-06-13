@@ -26,8 +26,8 @@ var (
 	// ErrNoOpt is returned when no corresponding option.
 	ErrNoOpt = fmt.Errorf("no option")
 
-	// ErrLockedOpt is returned when to set the value of the option but it's locked.
-	ErrLockedOpt = fmt.Errorf("option is locked")
+	// ErrFrozenOpt is returned when to set the value of the option but it's forzen.
+	ErrFrozenOpt = fmt.Errorf("option is frozen")
 )
 
 // IsErrNoOpt whether reports the error is ErrNoOpt or not.
@@ -38,9 +38,9 @@ func IsErrNoOpt(err error) bool {
 	return false
 }
 
-// IsErrLockedOpt whether reports the error is ErrLockedOpt or not.
-func IsErrLockedOpt(err error) bool {
-	if e, ok := err.(OptError); ok && e.Err == ErrLockedOpt {
+// IsErrFrozenOpt whether reports the error is ErrFrozenOpt or not.
+func IsErrFrozenOpt(err error) bool {
+	if e, ok := err.(OptError); ok && e.Err == ErrFrozenOpt {
 		return true
 	}
 	return false
@@ -67,10 +67,10 @@ func (e OptError) Error() string {
 }
 
 type groupOpt struct {
-	opt   Opt
-	lock  bool
-	value interface{}
-	watch func(interface{})
+	opt    Opt
+	value  interface{}
+	watch  func(interface{})
+	frozen bool
 }
 
 // OptGroup is the group of the options.
@@ -78,10 +78,9 @@ type OptGroup struct {
 	lock sync.RWMutex
 	conf *Config
 
-	name string // short name
-	opts map[string]*groupOpt
-
-	lockGroup bool
+	name   string // short name
+	opts   map[string]*groupOpt
+	frozen bool
 }
 
 func newOptGroup(conf *Config, name string) *OptGroup {
@@ -275,86 +274,86 @@ func (g *OptGroup) RegisterOpts(opts []Opt, force ...bool) (ok bool) {
 	return g.registerOpts(opts, force...)
 }
 
-// LockGroup locks the current group and disable its options to be set.
+// FreezeGroup freezes the current group and disable its options to be set.
 //
-// If the current group has been locked, it does nothing.
-func (g *OptGroup) LockGroup() {
+// If the current group has been frozen, it does nothing.
+func (g *OptGroup) FreezeGroup() {
 	g.lock.Lock()
-	if !g.lockGroup {
-		g.lockGroup = true
+	if !g.frozen {
+		g.frozen = true
 	}
 	g.lock.Unlock()
 }
 
-// UnlockGroup unlocks the current group and allows its options to be set.
+// UnfreezeGroup unfreezes the current group and allows its options to be set.
 //
-// If the current group has been unlocked, it does nothing.
-func (g *OptGroup) UnlockGroup() {
+// If the current group has been unfrozen, it does nothing.
+func (g *OptGroup) UnfreezeGroup() {
 	g.lock.Lock()
-	if g.lockGroup {
-		g.lockGroup = false
+	if g.frozen {
+		g.frozen = false
 	}
 	g.lock.Unlock()
 }
 
-// LockOpt locks these options and disable them to be set.
+// FreezeOpt freezes these options and disable them to be set.
 //
-// If the option does not exist has been locked, it does nothing for it.
-func (g *OptGroup) LockOpt(names ...string) {
+// If the option does not exist has been frozen, it does nothing for it.
+func (g *OptGroup) FreezeOpt(names ...string) {
 	for i := range names {
 		names[i] = g.fixOptName(names[i])
 	}
 
 	g.lock.Lock()
 	for _, name := range names {
-		if gopt, ok := g.opts[name]; ok && !gopt.lock {
-			gopt.lock = true
+		if gopt, ok := g.opts[name]; ok && !gopt.frozen {
+			gopt.frozen = true
 		}
 	}
 	g.lock.Unlock()
 }
 
-// UnlockOpt unlocks these options and allows them to be set.
+// UnfreezeOpt unfreeze these options and allows them to be set.
 //
-// If the option does not exist has been unlocked, it does nothing for it.
-func (g *OptGroup) UnlockOpt(names ...string) {
+// If the option does not exist has been unfrozen, it does nothing for it.
+func (g *OptGroup) UnfreezeOpt(names ...string) {
 	for i := range names {
 		names[i] = g.fixOptName(names[i])
 	}
 
 	g.lock.Lock()
 	for _, name := range names {
-		if gopt, ok := g.opts[name]; ok && gopt.lock {
-			gopt.lock = false
+		if gopt, ok := g.opts[name]; ok && gopt.frozen {
+			gopt.frozen = false
 		}
 	}
 	g.lock.Unlock()
 }
 
-// GroupIsLocked reports whether the current group named name is locked.
-func (g *OptGroup) GroupIsLocked() (locked bool) {
+// GroupIsFrozen reports whether the current group named name is frozen.
+func (g *OptGroup) GroupIsFrozen() (frozen bool) {
 	g.lock.RLock()
-	locked = g.lockGroup
+	frozen = g.frozen
 	g.lock.RUnlock()
 	return
 }
 
-// OptIsLocked reports whether the option named name is locked.
+// OptIsFrozen reports whether the option named name is frozen.
 //
 // Return false if the option does not exist.
-func (g *OptGroup) OptIsLocked(name string) (locked bool) {
+func (g *OptGroup) OptIsFrozen(name string) (frozen bool) {
 	name = g.fixOptName(name)
 	g.lock.RLock()
-	locked = g.optIsLocked(name)
+	frozen = g.optIsFrozen(name)
 	g.lock.RUnlock()
 	return
 }
 
-func (g *OptGroup) optIsLocked(name string) bool {
-	if g.lockGroup {
+func (g *OptGroup) optIsFrozen(name string) bool {
+	if g.frozen {
 		return true
 	} else if gopt, ok := g.opts[name]; ok {
-		return gopt.lock
+		return gopt.frozen
 	}
 	return false
 }
@@ -433,9 +432,9 @@ func (g *OptGroup) Set(name string, value interface{}) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	// Check whether the current group or the option is locked.
-	if g.optIsLocked(name) {
-		g.conf.handleError(NewOptError(g.Name(), name, ErrLockedOpt, value))
+	// Check whether the current group or the option is frozen.
+	if g.optIsFrozen(name) {
+		g.conf.handleError(NewOptError(g.Name(), name, ErrFrozenOpt, value))
 		return
 	}
 
