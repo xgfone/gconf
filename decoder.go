@@ -101,7 +101,7 @@ func (c *Config) GetDecoder(_type string) (decoder Decoder, ok bool) {
 	_type = strings.ToLower(_type)
 	c.lock.RLock()
 	if decoder, ok = c.decoders[_type]; !ok {
-		if alias, ok := c.decAlias[_type]; ok {
+		if alias, _ok := c.decAlias[_type]; _ok {
 			decoder, ok = c.decoders[alias]
 		}
 	}

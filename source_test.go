@@ -100,7 +100,7 @@ func TestNewEnvSource(t *testing.T) {
 
 func TestNewFileSource_INI(t *testing.T) {
 	// Prepare the ini file
-	filename := "_test_ini_file_source_.ini"
+	filename := "_test_ini_file_source_.conf"
 	if file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm); err != nil {
 		t.Error(err)
 	} else {
