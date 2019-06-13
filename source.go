@@ -167,6 +167,8 @@ func (c *Config) parseDataSet(ds DataSet, force bool) error {
 }
 
 // AddWatcher adds some watchers to watch the change of the configuration data.
+//
+// If the config is closed, it will ignore all the watchers.
 func (c *Config) AddWatcher(watchers ...Watcher) {
 	ws := make([]Watcher, 0, len(watchers))
 	for _, w := range watchers {
@@ -175,13 +177,21 @@ func (c *Config) AddWatcher(watchers ...Watcher) {
 		}
 	}
 
+	var exited bool
 	c.lock.Lock()
-	c.watchers = append(c.watchers, ws...)
+	select {
+	case <-c.exit:
+		exited = true
+	default:
+		c.watchers = append(c.watchers, ws...)
+	}
 	c.lock.Unlock()
 
-	for _, w := range ws {
-		go c.watchSource(w)
-		debugf("[Config] Add source watcher '%s'", w.Source())
+	if !exited {
+		for _, w := range ws {
+			go c.watchSource(w)
+			debugf("[Config] Add source watcher '%s'", w.Source())
+		}
 	}
 }
 

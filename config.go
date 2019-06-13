@@ -193,7 +193,7 @@ func (c *Config) callObserver(opt changedOpt, f func(string, string, interface{}
 	f(opt.Group, opt.Opt, opt.Old, opt.New)
 }
 
-// Close closes the whole configuration, containing all the watchers.
+// Close closes all the watchers and disables anyone to add the watcher into it.
 func (c *Config) Close() error {
 	select {
 	case <-c.exit:
