@@ -259,6 +259,11 @@ func (c *Config) AllGroups() []*OptGroup {
 	return groups
 }
 
+// SetStringVersion is equal to c.SetVersion(VersionOpt.D(version)).
+func (c *Config) SetStringVersion(version string) {
+	c.SetVersion(VersionOpt.D(version))
+}
+
 // SetVersion sets the version information.
 //
 // Notice: the field Default must be a string.

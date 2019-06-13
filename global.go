@@ -26,6 +26,11 @@ func SetVersion(version Opt) {
 	Conf.SetVersion(version)
 }
 
+// SetStringVersion is equal to Conf.SetStringVersion(version).
+func SetStringVersion(version string) {
+	Conf.SetStringVersion(version)
+}
+
 // AddWatcher is equal to Conf.AddWatcher(watchers...).
 func AddWatcher(watchers ...Watcher) {
 	Conf.AddWatcher(watchers...)
