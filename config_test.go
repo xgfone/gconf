@@ -247,7 +247,7 @@ func ExampleConfig() {
 	// [7s 8s 9s]
 }
 
-func TestOptGroupLocked(t *testing.T) {
+func TestFreezeGroupAndOpt(t *testing.T) {
 	conf := New()
 	conf.NewGroup("group1").RegisterOpts([]Opt{StrOpt("opt1", "").D("a"), StrOpt("opt2", "").D("b")})
 	conf.NewGroup("group2").RegisterOpts([]Opt{StrOpt("opt3", "").D("c"), StrOpt("opt4", "").D("d")})
