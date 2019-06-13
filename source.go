@@ -185,29 +185,41 @@ func (c *Config) AddWatcher(watchers ...Watcher) {
 	}
 }
 
-// LoadSource adds the sources then loads them.
+// LoadSource adds the sources then loads them. If the source supports
+// the watcher, it will add it automatically.
 //
 // If a certain option of a certain group has been set, it will be ignored.
 // But you can set force to true to reset the value of this option.
 func (c *Config) LoadSource(source Source, force ...bool) error {
+	return c.loadSource(source, true, force...)
+}
+
+// LoadSourceWithoutWatcher is the same as LoadSource, but does not add the watcher.
+func (c *Config) LoadSourceWithoutWatcher(source Source, force ...bool) error {
+	return c.loadSource(source, false, force...)
+}
+
+func (c *Config) loadSource(source Source, addWatcher bool, force ...bool) (err error) {
 	var _force bool
 	if len(force) > 0 && force[0] {
 		_force = true
 	}
 
 	// Add the watcher if having one.
-	watcher, werr := source.Watch()
-	if watcher != nil {
-		c.AddWatcher(watcher)
+	var watcher Watcher
+	if addWatcher {
+		if watcher, err = source.Watch(); watcher != nil {
+			c.AddWatcher(watcher)
+		}
 	}
 
 	// Read and parse the data from the source for the first time.
-	ds, err := source.Read()
-	if err != nil {
-		return NewSourceError(source.String(), "", nil, err)
-	} else if err = c.parseDataSet(ds, _force); err != nil {
-		return err
+	ds, rerr := source.Read()
+	if rerr != nil {
+		return NewSourceError(source.String(), "", nil, rerr)
+	} else if rerr = c.parseDataSet(ds, _force); rerr != nil {
+		return rerr
 	}
 
-	return werr
+	return
 }
