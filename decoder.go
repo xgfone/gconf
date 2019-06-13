@@ -23,7 +23,7 @@ import (
 
 // Decoder is used to decode the configuration data.
 type Decoder struct {
-	// Type is the type of decoder, such as "json", "xml", etc.
+	// Type is the type of decoder, such as "json", "xml", which is case insensitive.
 	Type string
 
 	// Decode is used to decode the configuration data.
@@ -86,9 +86,10 @@ type Decoder struct {
 //
 // The default has added the "json" and "ini" encoders.
 func (c *Config) AddDecoder(decoder Decoder, force ...bool) (ok bool) {
+	_type := strings.ToLower(decoder.Type)
 	c.lock.Lock()
-	if _, ok = c.decoders[decoder.Type]; !ok {
-		c.decoders[decoder.Type] = decoder
+	if _, ok = c.decoders[_type]; !ok {
+		c.decoders[_type] = decoder
 		ok = true
 	}
 	c.lock.Unlock()
@@ -97,10 +98,34 @@ func (c *Config) AddDecoder(decoder Decoder, force ...bool) (ok bool) {
 
 // GetDecoder returns the decoder by the type.
 func (c *Config) GetDecoder(_type string) (decoder Decoder, ok bool) {
+	_type = strings.ToLower(_type)
 	c.lock.RLock()
-	decoder, ok = c.decoders[_type]
+	if decoder, ok = c.decoders[_type]; !ok {
+		if alias, ok := c.decAlias[_type]; ok {
+			decoder, ok = c.decoders[alias]
+		}
+	}
 	c.lock.RUnlock()
 	return
+}
+
+// AddDecoderAlias adds the alias of the decoder typed _type. For example,
+//
+//   c.AddDecoderAlias("conf", "ini")
+//
+// When you get the "conf" decoder and it does not exist, it will try to
+// return the "ini" decoder.
+//
+// If the alias has existed, it will override it.
+//
+// Notice: "ini" is the alias of "conf" by default.
+func (c *Config) AddDecoderAlias(_type, alias string) {
+	_type = strings.ToLower(_type)
+	alias = strings.ToLower(alias)
+
+	c.lock.Lock()
+	c.decAlias[_type] = alias
+	c.lock.Unlock()
 }
 
 // NewDecoder returns a new decoder.

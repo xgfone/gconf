@@ -76,6 +76,7 @@ type Config struct {
 	groups   map[string]*OptGroup // the option groups
 	groups2  map[string]*OptGroup // The auxiliary groups
 	decoders map[string]Decoder
+	decAlias map[string]string
 	watchers []Watcher
 	observes []func(string, string, interface{}, interface{})
 	version  Opt
@@ -90,12 +91,14 @@ func New() *Config {
 	c.groups = make(map[string]*OptGroup, 8)
 	c.groups2 = make(map[string]*OptGroup, 8)
 	c.decoders = make(map[string]Decoder, 8)
+	c.decAlias = make(map[string]string, 8)
 	c.watchers = make([]Watcher, 0, 8)
 	c.OptGroup = newOptGroup(c, "")
 	c.groups[c.OptGroup.Name()] = c.OptGroup
 	c.errHandler = c.defaultErrorHandler
 	c.AddDecoder(NewJSONDecoder())
 	c.AddDecoder(NewIniDecoder())
+	c.AddDecoderAlias("conf", "ini")
 	go c.watchChangedOpt()
 	return c
 }
