@@ -224,7 +224,7 @@ func (c *Config) handleError(err error) {
 // SetErrHandler resets the error handler to h.
 //
 // The default is output to os.Stdout by fmt.Println(err), but it ignores ErrNoOpt.
-func (c *Config) SetErrHandler(h func(error)) *Config {
+func (c *Config) SetErrHandler(h func(error)) {
 	if h == nil {
 		panic("the error handler must not be nil")
 	}
@@ -232,18 +232,16 @@ func (c *Config) SetErrHandler(h func(error)) *Config {
 	c.lock.Lock()
 	c.errHandler = h
 	c.lock.Unlock()
-	return c
 }
 
 // Observe appends the observer to watch the change of all the option value.
-func (c *Config) Observe(observer func(group string, opt string, oldValue, newValue interface{})) *Config {
+func (c *Config) Observe(observer func(group string, opt string, oldValue, newValue interface{})) {
 	if observer == nil {
 		panic("the observer must not be nil")
 	}
 	c.lock.Lock()
 	c.observes = append(c.observes, observer)
 	c.lock.Unlock()
-	return c
 }
 
 // AllGroups returns all the groups, containing the default group.
@@ -264,7 +262,7 @@ func (c *Config) AllGroups() []*OptGroup {
 // SetVersion sets the version information.
 //
 // Notice: the field Default must be a string.
-func (c *Config) SetVersion(version Opt) *Config {
+func (c *Config) SetVersion(version Opt) {
 	if v, ok := version.Default.(string); !ok {
 		panic("the version is not a string value")
 	} else if v == "" {
@@ -275,7 +273,6 @@ func (c *Config) SetVersion(version Opt) *Config {
 	c.lock.Lock()
 	c.version = version
 	c.lock.Unlock()
-	return c
 }
 
 // GetVersion returns a the version information.
