@@ -22,12 +22,25 @@ import (
 	"time"
 )
 
-// ErrNoOpt is returned when no corresponding option.
-var ErrNoOpt = fmt.Errorf("no option")
+var (
+	// ErrNoOpt is returned when no corresponding option.
+	ErrNoOpt = fmt.Errorf("no option")
+
+	// ErrLockedOpt is returned when to set the value of the option but it's locked.
+	ErrLockedOpt = fmt.Errorf("option is locked")
+)
 
 // IsErrNoOpt whether reports the error is ErrNoOpt or not.
 func IsErrNoOpt(err error) bool {
 	if e, ok := err.(OptError); (ok && e.Err == ErrNoOpt) || err == ErrNoOpt {
+		return true
+	}
+	return false
+}
+
+// IsErrLockedOpt whether reports the error is ErrLockedOpt or not.
+func IsErrLockedOpt(err error) bool {
+	if e, ok := err.(OptError); ok && e.Err == ErrLockedOpt {
 		return true
 	}
 	return false
@@ -48,13 +61,14 @@ func NewOptError(group, opt string, err error, value interface{}) OptError {
 
 func (e OptError) Error() string {
 	if e.Group == "" {
-		return fmt.Sprintf("invalid value of option '%s': %s", e.Opt, e.Err)
+		return fmt.Sprintf("[Config] invalid setting for '%s': %s", e.Opt, e.Err)
 	}
-	return fmt.Sprintf("invalid value of option '%s:%s': %s", e.Group, e.Opt, e.Err)
+	return fmt.Sprintf("[Config] invalid setting for '%s:%s': %s", e.Group, e.Opt, e.Err)
 }
 
 type groupOpt struct {
 	opt   Opt
+	lock  bool
 	value interface{}
 	watch func(interface{})
 }
@@ -66,6 +80,8 @@ type OptGroup struct {
 
 	name string // short name
 	opts map[string]*groupOpt
+
+	lockGroup bool
 }
 
 func newOptGroup(conf *Config, name string) *OptGroup {
@@ -132,8 +148,9 @@ func (g *OptGroup) fixOptName(name string) string {
 
 // Opt returns the option named name.
 func (g *OptGroup) Opt(name string) (opt Opt, exist bool) {
+	name = g.fixOptName(name)
 	g.lock.RLock()
-	gopt := g.opts[g.fixOptName(name)]
+	gopt := g.opts[name]
 	g.lock.RUnlock()
 
 	if gopt != nil {
@@ -152,17 +169,20 @@ func (g *OptGroup) MustOpt(name string) Opt {
 
 // HasOpt reports whether there is an option named name in the current group.
 func (g *OptGroup) HasOpt(name string) bool {
+	name = g.fixOptName(name)
 	g.lock.RLock()
-	_, ok := g.opts[g.fixOptName(name)]
+	_, ok := g.opts[name]
 	g.lock.RUnlock()
 	return ok
 }
 
 // IsSet reports whether the option named name has been set.
 func (g *OptGroup) IsSet(name string) bool {
+	name = g.fixOptName(name)
+
 	var set bool
 	g.lock.RLock()
-	if opt, ok := g.opts[g.fixOptName(name)]; ok {
+	if opt, ok := g.opts[name]; ok {
 		set = opt.value != nil
 	}
 	g.lock.RUnlock()
@@ -172,8 +192,9 @@ func (g *OptGroup) IsSet(name string) bool {
 // HasAndIsNotSet reports whether the option named name exists and
 // hasn't been set, which is equal to `g.HasOpt(name) && !g.IsSet(name)`.
 func (g *OptGroup) HasAndIsNotSet(name string) (yes bool) {
+	name = g.fixOptName(name)
 	g.lock.RLock()
-	if opt, ok := g.opts[g.fixOptName(name)]; ok {
+	if opt, ok := g.opts[name]; ok {
 		yes = opt.value == nil
 	}
 	g.lock.RUnlock()
@@ -181,8 +202,9 @@ func (g *OptGroup) HasAndIsNotSet(name string) (yes bool) {
 }
 
 func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
+	g.fixOptName(name)
 	g.lock.Lock()
-	if opt, ok := g.opts[g.fixOptName(name)]; ok {
+	if opt, ok := g.opts[name]; ok {
 		opt.watch = watch
 	}
 	g.lock.Unlock()
@@ -251,6 +273,90 @@ func (g *OptGroup) RegisterOpt(opt Opt, force ...bool) (ok bool) {
 // then to return true.
 func (g *OptGroup) RegisterOpts(opts []Opt, force ...bool) (ok bool) {
 	return g.registerOpts(opts, force...)
+}
+
+// LockGroup locks the current group and disable its options to be set.
+//
+// If the current group has been locked, it does nothing.
+func (g *OptGroup) LockGroup() {
+	g.lock.Lock()
+	if !g.lockGroup {
+		g.lockGroup = true
+	}
+	g.lock.Unlock()
+}
+
+// UnlockGroup unlocks the current group and allows its options to be set.
+//
+// If the current group has been unlocked, it does nothing.
+func (g *OptGroup) UnlockGroup() {
+	g.lock.Lock()
+	if g.lockGroup {
+		g.lockGroup = false
+	}
+	g.lock.Unlock()
+}
+
+// LockOpt locks these options and disable them to be set.
+//
+// If the option does not exist has been locked, it does nothing for it.
+func (g *OptGroup) LockOpt(names ...string) {
+	for i := range names {
+		names[i] = g.fixOptName(names[i])
+	}
+
+	g.lock.Lock()
+	for _, name := range names {
+		if gopt, ok := g.opts[name]; ok && !gopt.lock {
+			gopt.lock = true
+		}
+	}
+	g.lock.Unlock()
+}
+
+// UnlockOpt unlocks these options and allows them to be set.
+//
+// If the option does not exist has been unlocked, it does nothing for it.
+func (g *OptGroup) UnlockOpt(names ...string) {
+	for i := range names {
+		names[i] = g.fixOptName(names[i])
+	}
+
+	g.lock.Lock()
+	for _, name := range names {
+		if gopt, ok := g.opts[name]; ok && gopt.lock {
+			gopt.lock = false
+		}
+	}
+	g.lock.Unlock()
+}
+
+// GroupIsLocked reports whether the current group named name is locked.
+func (g *OptGroup) GroupIsLocked() (locked bool) {
+	g.lock.RLock()
+	locked = g.lockGroup
+	g.lock.RUnlock()
+	return
+}
+
+// OptIsLocked reports whether the option named name is locked.
+//
+// Return false if the option does not exist.
+func (g *OptGroup) OptIsLocked(name string) (locked bool) {
+	name = g.fixOptName(name)
+	g.lock.RLock()
+	locked = g.optIsLocked(name)
+	g.lock.RUnlock()
+	return
+}
+
+func (g *OptGroup) optIsLocked(name string) bool {
+	if g.lockGroup {
+		return true
+	} else if gopt, ok := g.opts[name]; ok {
+		return gopt.lock
+	}
+	return false
 }
 
 func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, error) {
@@ -327,9 +433,17 @@ func (g *OptGroup) Set(name string, value interface{}) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
+	// Check whether the current group or the option is locked.
+	if g.optIsLocked(name) {
+		g.conf.handleError(NewOptError(g.Name(), name, ErrLockedOpt, value))
+		return
+	}
+
+	// Parse the option value
 	value, err := g.parseOptValue(name, value)
 	switch err {
 	case nil:
+		// Set the option value
 		g.setOptValue(name, value)
 	case ErrNoOpt:
 		g.conf.handleError(NewOptError(g.Name(), name, err, value))

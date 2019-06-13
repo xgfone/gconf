@@ -96,6 +96,21 @@ func NewGroup(group string) *OptGroup {
 	return Conf.NewGroup(group)
 }
 
+// LockOpt is eqaul to Conf.LockOpt(names...).
+func LockOpt(names ...string) {
+	Conf.LockOpt(names...)
+}
+
+// UnlockOpt is eqaul to Conf.UnlockOpt(names...).
+func UnlockOpt(names ...string) {
+	Conf.UnlockOpt(names...)
+}
+
+// OptIsLocked is equal to Conf.OptIsLocked(name).
+func OptIsLocked(name string) (locked bool) {
+	return Conf.OptIsLocked(name)
+}
+
 // RegisterOpt is equal to Conf.RegisterOpt(opt, force...).
 func RegisterOpt(opt Opt, force ...bool) (ok bool) {
 	return Conf.RegisterOpt(opt, force...)
