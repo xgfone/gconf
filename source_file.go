@@ -32,15 +32,16 @@ var ConfigFileOpt = StrOpt("config-file", "the config file path.")
 // named filename.
 //
 // Notice: it will identify the format by the filename extension automatically.
-// If no filename extension, it will use defaulFormat, or panic.
+// If no filename extension, it will use defaulFormat, which is "ini" by default.
 func NewFileSource(filename string, defaultFormat ...string) Source {
 	id := fmt.Sprintf("file:%s", filename)
 	format := strings.Trim(filepath.Ext(filename), ".")
 	if format == "" {
-		if len(defaultFormat) == 0 || defaultFormat[0] == "" {
-			panic(fmt.Errorf("missing the file format for '%s'", filename))
+		if len(defaultFormat) > 0 && defaultFormat[0] != "" {
+			format = defaultFormat[0]
+		} else {
+			format = "ini"
 		}
-		format = defaultFormat[0]
 	}
 	return fileSource{id: id, filepath: filename, format: format}
 }
