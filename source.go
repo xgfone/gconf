@@ -159,7 +159,7 @@ func (c *Config) parseDataSet(ds DataSet, force bool) error {
 			key = key[index+len(c.gsep):]
 		}
 
-		if force || group.HasAndIsNotSet(key) {
+		if force || group.HasOptAndIsNotSet(key) {
 			group.Set(key, value)
 		}
 	}

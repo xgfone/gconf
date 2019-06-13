@@ -176,8 +176,8 @@ func (g *OptGroup) HasOpt(name string) bool {
 	return ok
 }
 
-// IsSet reports whether the option named name has been set.
-func (g *OptGroup) IsSet(name string) bool {
+// OptIsSet reports whether the option named name has been set.
+func (g *OptGroup) OptIsSet(name string) bool {
 	name = g.fixOptName(name)
 
 	var set bool
@@ -189,9 +189,9 @@ func (g *OptGroup) IsSet(name string) bool {
 	return set
 }
 
-// HasAndIsNotSet reports whether the option named name exists and
-// hasn't been set, which is equal to `g.HasOpt(name) && !g.IsSet(name)`.
-func (g *OptGroup) HasAndIsNotSet(name string) (yes bool) {
+// HasOptAndIsNotSet reports whether the option named name exists and
+// hasn't been set, which is equal to `g.HasOpt(name) && !g.OptIsSet(name)`.
+func (g *OptGroup) HasOptAndIsNotSet(name string) (yes bool) {
 	name = g.fixOptName(name)
 	g.lock.RLock()
 	if opt, ok := g.opts[name]; ok {
