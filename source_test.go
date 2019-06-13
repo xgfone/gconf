@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/urfave/cli"
 )
@@ -186,6 +187,7 @@ func TestNewURLSource(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Write([]byte(`{"opt": 123}`))
 	}))
+	time.Sleep(time.Millisecond * 50) // Wait that the http server finishes to start.
 
 	conf := New()
 	conf.RegisterOpt(IntOpt("opt", ""))
