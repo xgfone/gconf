@@ -41,6 +41,11 @@ func LoadSource(source Source, force ...bool) error {
 	return Conf.LoadSource(source, force...)
 }
 
+// LoadSourceWithoutWatcher is equal to Conf.LoadSourceWithoutWatcher(source, force...).
+func LoadSourceWithoutWatcher(source Source, force ...bool) error {
+	return Conf.LoadSourceWithoutWatcher(source, force...)
+}
+
 // AddDecoder is equal to Conf.AddDecoder(decoder, force...).
 func AddDecoder(decoder Decoder, force ...bool) (ok bool) {
 	return Conf.AddDecoder(decoder, force...)
