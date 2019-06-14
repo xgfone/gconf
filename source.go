@@ -79,7 +79,7 @@ type Watcher interface {
 	Source() string
 
 	// Close closes the watcher.
-	Close() error
+	Close()
 }
 
 // Source represents a data source where the data is.

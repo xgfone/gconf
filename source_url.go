@@ -183,12 +183,11 @@ func (u urlWatcher) Source() string {
 	return u.src.String()
 }
 
-func (u urlWatcher) Close() error {
+func (u urlWatcher) Close() {
 	select {
 	case <-u.exit:
 	default:
 		close(u.exit)
 		close(u.value)
 	}
-	return nil
 }

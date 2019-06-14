@@ -194,7 +194,7 @@ func (c *Config) callObserver(opt changedOpt, f func(string, string, interface{}
 }
 
 // Close closes all the watchers and disables anyone to add the watcher into it.
-func (c *Config) Close() error {
+func (c *Config) Close() {
 	select {
 	case <-c.exit:
 	default:
@@ -205,7 +205,6 @@ func (c *Config) Close() error {
 			w.Close()
 		}
 	}
-	return nil
 }
 
 func (c *Config) defaultErrorHandler(err error) {

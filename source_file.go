@@ -105,13 +105,13 @@ type fileWatcher struct {
 	exit chan struct{}
 }
 
-func (f *fileWatcher) Close() error {
+func (f *fileWatcher) Close() {
 	select {
 	case <-f.exit:
 	default:
 		close(f.exit)
+		f.fw.Close()
 	}
-	return f.fw.Close()
 }
 
 func (f *fileWatcher) Source() string {
