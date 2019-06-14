@@ -158,15 +158,12 @@ func (u urlWatcher) loop() {
 		default:
 		}
 
-		// Send the new value.
-		u.value <- value
-
-		// Check whether it is closed.
 		select {
-		case _, ok := <-u.exit:
+		case _, ok := <-u.exit: // be closed
 			if !ok {
 				return
 			}
+		case u.value <- value: // Send the new value.
 		default:
 		}
 	}
