@@ -67,8 +67,8 @@ func AllGroups() []*OptGroup {
 }
 
 // Close is equal to Conf.Close().
-func Close() error {
-	return Conf.Close()
+func Close() {
+	Conf.Close()
 }
 
 // Observe is equal to Conf.Observe(observer).
