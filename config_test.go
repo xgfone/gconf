@@ -93,6 +93,27 @@ func ExampleOptGroup_FreezeOpt() {
 	// d
 }
 
+func ExampleConfig_Snapshot() {
+	conf := New()
+	conf.RegisterOpt(StrOpt("opt1", ""))
+	conf.NewGroup("group1").RegisterOpt(IntOpt("opt2", ""))
+	conf.NewGroup("group1").NewGroup("group2").RegisterOpt(IntOpt("opt3", ""))
+
+	conf.Set("opt1", "abc")
+	fmt.Println(conf.Snapshot())
+
+	conf.Group("group1").Set("opt2", 123)
+	fmt.Println(conf.Snapshot())
+
+	conf.Group("group1.group2").Set("opt3", 456)
+	fmt.Println(conf.Snapshot())
+
+	// Output:
+	// map[group1.group2.opt3:0 group1.opt2:0 opt1:abc]
+	// map[group1.group2.opt3:0 group1.opt2:123 opt1:abc]
+	// map[group1.group2.opt3:456 group1.opt2:123 opt1:abc]
+}
+
 func ExampleConfig() {
 	opts := []Opt{
 		BoolOpt("bool", "test bool opt"),

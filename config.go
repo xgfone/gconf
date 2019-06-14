@@ -65,6 +65,7 @@ type Config struct {
 	lock sync.RWMutex
 	gsep string // The separator between the group names.
 
+	snap     *snapshot
 	groups   map[string]*OptGroup // the option groups
 	groups2  map[string]*OptGroup // The auxiliary groups
 	decoders map[string]Decoder
@@ -80,6 +81,7 @@ type Config struct {
 func New() *Config {
 	c := new(Config)
 	c.gsep = "."
+	c.snap = newSnapshot(c)
 	c.exit = make(chan struct{})
 	c.groups = make(map[string]*OptGroup, 8)
 	c.groups2 = make(map[string]*OptGroup, 8)
