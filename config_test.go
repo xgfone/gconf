@@ -16,7 +16,6 @@ package gconf
 
 import (
 	"fmt"
-	"testing"
 )
 
 func ExampleConfig_Observe() {
@@ -47,6 +46,35 @@ func ExampleConfig_SetErrHandler() {
 	// Output:
 	// [Config] invalid setting for 'opt1': the length of 'abcdefg' is 7, not between 0 and 6
 	// [Config] invalid setting for 'group:opt2': the value '300' is not between 100 and 200
+}
+
+func ExampleOptGroup_FreezeOpt() {
+	conf := New()
+	conf.NewGroup("group1").RegisterOpts([]Opt{StrOpt("opt1", "").D("a"), StrOpt("opt2", "").D("b")})
+	conf.NewGroup("group2").RegisterOpts([]Opt{StrOpt("opt3", "").D("c"), StrOpt("opt4", "").D("d")})
+	conf.Group("group1").FreezeOpt("opt2")
+	conf.Group("group2").FreezeGroup()
+
+	errs := make([]error, 0, 4)
+	conf.SetErrHandler(func(err error) { errs = append(errs, err) })
+
+	conf.UpdateValue("group1.opt1", "o")
+	conf.UpdateOptValue("group1", "opt2", "p")
+	conf.UpdateOptValue("group2", "opt3", "q")
+	conf.UpdateOptValue("group2", "opt4", "r")
+
+	fmt.Println(len(errs))
+	fmt.Println(conf.Group("group1").GetString("opt1"))
+	fmt.Println(conf.Group("group1").GetString("opt2"))
+	fmt.Println(conf.Group("group2").GetString("opt3"))
+	fmt.Println(conf.Group("group2").GetString("opt4"))
+
+	// Output:
+	// 3
+	// o
+	// b
+	// c
+	// d
 }
 
 func ExampleConfig() {
@@ -241,32 +269,4 @@ func ExampleConfig() {
 	// [7 8 9]
 	// [x y z]
 	// [7s 8s 9s]
-}
-
-func TestFreezeGroupAndOpt(t *testing.T) {
-	conf := New()
-	conf.NewGroup("group1").RegisterOpts([]Opt{StrOpt("opt1", "").D("a"), StrOpt("opt2", "").D("b")})
-	conf.NewGroup("group2").RegisterOpts([]Opt{StrOpt("opt3", "").D("c"), StrOpt("opt4", "").D("d")})
-	conf.Group("group1").FreezeOpt("opt2")
-	conf.Group("group2").FreezeGroup()
-
-	errs := make([]error, 0, 4)
-	conf.SetErrHandler(func(err error) { errs = append(errs, err) })
-
-	conf.UpdateValue("group1.opt1", "o")
-	conf.UpdateOptValue("group1", "opt2", "p")
-	conf.UpdateOptValue("group2", "opt3", "q")
-	conf.UpdateOptValue("group2", "opt4", "r")
-
-	if len(errs) != 3 {
-		t.Error(errs)
-	} else if v := conf.Group("group1").GetString("opt1"); v != "o" {
-		t.Error(v)
-	} else if v := conf.Group("group1").GetString("opt2"); v != "b" {
-		t.Error(v)
-	} else if v := conf.Group("group2").GetString("opt3"); v != "c" {
-		t.Error(v)
-	} else if v := conf.Group("group2").GetString("opt4"); v != "d" {
-		t.Error(v)
-	}
 }
