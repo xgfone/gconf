@@ -99,6 +99,8 @@ func ExampleConfig_Snapshot() {
 	conf.NewGroup("group1").RegisterOpt(IntOpt("opt2", ""))
 	conf.NewGroup("group1").NewGroup("group2").RegisterOpt(IntOpt("opt3", ""))
 
+	fmt.Println(conf.Snapshot())
+
 	conf.Set("opt1", "abc")
 	fmt.Println(conf.Snapshot())
 
@@ -109,6 +111,7 @@ func ExampleConfig_Snapshot() {
 	fmt.Println(conf.Snapshot())
 
 	// Output:
+	// map[group1.group2.opt3:0 group1.opt2:0 opt1:]
 	// map[group1.group2.opt3:0 group1.opt2:0 opt1:abc]
 	// map[group1.group2.opt3:0 group1.opt2:123 opt1:abc]
 	// map[group1.group2.opt3:456 group1.opt2:123 opt1:abc]
