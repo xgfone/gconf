@@ -257,7 +257,7 @@ func TestFreezeGroupAndOpt(t *testing.T) {
 	errs := make([]error, 0, 4)
 	conf.SetErrHandler(func(err error) { errs = append(errs, err) })
 
-	conf.UpdateOptValue("group1", "opt1", "o")
+	conf.UpdateValue("group1.opt1", "o")
 	conf.UpdateOptValue("group1", "opt2", "p")
 	conf.UpdateOptValue("group2", "opt3", "q")
 	conf.UpdateOptValue("group2", "opt4", "r")

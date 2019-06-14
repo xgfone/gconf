@@ -314,3 +314,19 @@ func (c *Config) UpdateOptValue(groupName, optName string, optValue interface{})
 		group.Set(optName, optValue)
 	}
 }
+
+// UpdateValue is the same as UpdateOptValue, but key is equal to
+// `fmt.Sprintf("%s.%s", groupName, optName)`.
+//
+// that's,
+//   c.UpdateOptValue(groupName, optName, optValue)
+// is equal to
+//   c.UpdateValue(fmt.Sprintf("%s.%s", groupName, optName), optValue)
+func (c *Config) UpdateValue(key string, value interface{}) {
+	var group string
+	if index := strings.LastIndex(key, c.gsep); index > 0 {
+		group = key[:index]
+		key = key[index+len(c.gsep):]
+	}
+	c.UpdateOptValue(group, key, value)
+}

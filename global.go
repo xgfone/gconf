@@ -86,6 +86,11 @@ func UpdateOptValue(groupName, optName string, optValue interface{}) {
 	Conf.UpdateOptValue(groupName, optName, optValue)
 }
 
+// UpdateValue is equal to Conf.UpdateValue(key, value).
+func UpdateValue(key string, value interface{}) {
+	Conf.UpdateValue(key, value)
+}
+
 // Group is equal to Conf.Group(group).
 func Group(group string) *OptGroup {
 	return Conf.Group(group)
