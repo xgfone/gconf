@@ -15,6 +15,7 @@
 package gconf
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -99,22 +100,28 @@ func ExampleConfig_Snapshot() {
 	conf.NewGroup("group1").RegisterOpt(IntOpt("opt2", ""))
 	conf.NewGroup("group1").NewGroup("group2").RegisterOpt(IntOpt("opt3", ""))
 
-	fmt.Println(conf.Snapshot())
+	// For test
+	print := func(snap map[string]interface{}) {
+		data, _ := json.Marshal(conf.Snapshot())
+		fmt.Println(string(data))
+	}
+
+	print(conf.Snapshot())
 
 	conf.Set("opt1", "abc")
-	fmt.Println(conf.Snapshot())
+	print(conf.Snapshot())
 
 	conf.Group("group1").Set("opt2", 123)
-	fmt.Println(conf.Snapshot())
+	print(conf.Snapshot())
 
 	conf.Group("group1.group2").Set("opt3", 456)
-	fmt.Println(conf.Snapshot())
+	print(conf.Snapshot())
 
 	// Output:
-	// map[group1.group2.opt3:0 group1.opt2:0 opt1:]
-	// map[group1.group2.opt3:0 group1.opt2:0 opt1:abc]
-	// map[group1.group2.opt3:0 group1.opt2:123 opt1:abc]
-	// map[group1.group2.opt3:456 group1.opt2:123 opt1:abc]
+	// {"group1.group2.opt3":0,"group1.opt2":0,"opt1":""}
+	// {"group1.group2.opt3":0,"group1.opt2":0,"opt1":"abc"}
+	// {"group1.group2.opt3":0,"group1.opt2":123,"opt1":"abc"}
+	// {"group1.group2.opt3":456,"group1.opt2":123,"opt1":"abc"}
 }
 
 func ExampleConfig() {
