@@ -83,7 +83,7 @@ func main() {
 }
 ```
 
-The package has created a global default `Config`, that's, `Conf`. You can use it, like the global variable `CONF` in `oslo.config`. For example,
+The package has created a global default `Config`, that's, `Conf`. You can use it, like the global variable `CONF` in `oslo.config`. Besides, the package exports some methods of `Conf` as the global functions, and you can use them. For example,
 ```go
 package main
 
@@ -100,17 +100,17 @@ var opts = []gconf.Opt{
 
 func main() {
 	// Register options
-	gconf.Conf.RegisterOpts(opts)
+	gconf.RegisterOpts(opts)
 
 	// Add the options to flag.CommandLine and parse the CLI
 	gconf.AddAndParseOptFlag(gconf.Conf)
 
 	// Load the sources
-	gconf.Conf.LoadSource(gconf.NewFlagSource())
+	gconf.LoadSource(gconf.NewFlagSource())
 
 	// Read and print the option
-	fmt.Println(gconf.Conf.GetString("ip"))
-	fmt.Println(gconf.Conf.GetInt("port"))
+	fmt.Println(gconf.GetString("ip"))
+	fmt.Println(gconf.GetInt("port"))
 
 	// Execute:
 	//     PROGRAM --ip 1.2.3.4
@@ -134,17 +134,17 @@ import (
 
 func main() {
 	// Register the options
-	gconf.Conf.RegisterOpt(gconf.StrOpt("opt1", "").D("abc"))
-	gconf.Conf.NewGroup("group").RegisterOpt(gconf.IntOpt("opt2", "").D(123))
+	gconf.RegisterOpt(gconf.StrOpt("opt1", "").D("abc"))
+	gconf.NewGroup("group").RegisterOpt(gconf.IntOpt("opt2", "").D(123))
 
 	// Add the observer
-	gconf.Conf.Observe(func(group, opt string, old, new interface{}) {
+	gconf.Observe(func(group, opt string, old, new interface{}) {
 		fmt.Printf("[Observer] Setting: group=%s, opt=%s, old=%v, new=%v\n", group, opt, old, new)
 	})
 
 	// Update the value of the option.
-	gconf.Conf.UpdateOptValue("", "opt1", "xyz") // The first way
-	gconf.Conf.Group("group").Set("opt2", 789)   // The second way
+	gconf.UpdateOptValue("", "opt1", "xyz") // The first way
+	gconf.Group("group").Set("opt2", 789)   // The second way
 
 	// Sleep a while, because observer is asynchronized.
 	time.Sleep(time.Millisecond * 10)
@@ -171,9 +171,9 @@ import (
 
 func main() {
 	// Register options into the group
-	gconf.Conf.RegisterOpt(gconf.StrOpt("opt1", "").D("abc"))
-	gconf.Conf.NewGroup("cmd1").RegisterOpt(gconf.IntOpt("opt2", ""))
-	gconf.Conf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpt(gconf.IntOpt("opt3", ""))
+	gconf.RegisterOpt(gconf.StrOpt("opt1", "").D("abc"))
+	gconf.NewGroup("cmd1").RegisterOpt(gconf.IntOpt("opt2", ""))
+	gconf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpt(gconf.IntOpt("opt3", ""))
 
 	// Create and run cli app.
 	app := cli.NewApp()
@@ -188,14 +188,14 @@ func main() {
 					Flags: []cli.Flag{cli.IntFlag{Name: "opt3"}},
 					Action: func(ctx *cli.Context) error {
 						// Load the sources
-						gconf.Conf.LoadSource(gconf.NewCliSource(ctx, "cmd1.cmd2"))          // cmd2
-						gconf.Conf.LoadSource(gconf.NewCliSource(ctx.Parent(), "cmd1"))      // cmd1
-						gconf.Conf.LoadSource(gconf.NewCliSource(ctx.Parent().Parent(), "")) // global
+						gconf.LoadSource(gconf.NewCliSource(ctx, "cmd1.cmd2"))          // cmd2
+						gconf.LoadSource(gconf.NewCliSource(ctx.Parent(), "cmd1"))      // cmd1
+						gconf.LoadSource(gconf.NewCliSource(ctx.Parent().Parent(), "")) // global
 
 						// Read and print the option
-						fmt.Println(gconf.Conf.GetString("opt1"))
-						fmt.Println(gconf.Conf.Group("cmd1").GetInt("opt2"))
-						fmt.Println(gconf.Conf.Group("cmd1.cmd2").GetInt("opt3"))
+						fmt.Println(gconf.GetString("opt1"))
+						fmt.Println(gconf.Group("cmd1").GetInt("opt2"))
+						fmt.Println(gconf.Group("cmd1.cmd2").GetInt("opt3"))
 
 						return nil
 					},
@@ -238,19 +238,19 @@ func main() {
 	// Register options
 	//
 	// Notice: the default global Conf has registered gconf.O.
-	gconf.Conf.RegisterOpts(opts)
+	gconf.RegisterOpts(opts)
 
 	// Add the options to flag.CommandLine and parse the CLI
 	gconf.AddAndParseOptFlag(gconf.Conf)
 
 	// Load the flag & file sources
-	gconf.Conf.LoadSource(gconf.NewFlagSource())
-	gconf.Conf.LoadSource(gconf.NewFileSource(gconf.Conf.GetString(gconf.ConfigFileOpt.Name)))
+	gconf.LoadSource(gconf.NewFlagSource())
+	gconf.LoadSource(gconf.NewFileSource(gconf.GetString(gconf.ConfigFileOpt.Name)))
 
 	// Read and print the option
 	for {
 		time.Sleep(time.Second * 10)
-		fmt.Printf("%s:%d\n", gconf.Conf.GetString("ip"), gconf.Conf.GetInt("port"))
+		fmt.Printf("%s:%d\n", gconf.GetString("ip"), gconf.GetInt("port"))
 	}
 
 	// $ PROGRAM --config-file /path/to/file.json &
