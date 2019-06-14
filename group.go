@@ -223,7 +223,12 @@ func (g *OptGroup) registerOpt(opt Opt, force ...bool) (ok bool) {
 	}
 	g.lock.Unlock()
 
-	debugf("[Config] Register the option '%s' into the group '%s'\n", opt.Name, g.name)
+	if ok {
+		debugf("[Config] Register the option '%s' into the group '%s'\n",
+			opt.Name, g.name)
+		g.conf.noticeOptRegister(g.name, []Opt{opt})
+	}
+
 	return
 }
 
@@ -253,6 +258,10 @@ func (g *OptGroup) registerOpts(opts []Opt, force ...bool) (ok bool) {
 		ok = true
 	}
 	g.lock.Unlock()
+
+	if ok {
+		g.conf.noticeOptRegister(g.name, opts)
+	}
 
 	return
 }

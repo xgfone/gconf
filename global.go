@@ -76,6 +76,11 @@ func Observe(observer func(group string, opt string, oldValue, newValue interfac
 	Conf.Observe(observer)
 }
 
+// ObserveRegister is equal to Conf.ObserveRegister(observer).
+func ObserveRegister(observer func(group string, opts []Opt)) {
+	Conf.ObserveRegister(observer)
+}
+
 // SetErrHandler is equal to Conf.SetErrHandler(handler).
 func SetErrHandler(handler func(error)) {
 	Conf.SetErrHandler(handler)

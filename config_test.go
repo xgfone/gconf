@@ -34,6 +34,22 @@ func ExampleConfig_Observe() {
 	// Setting: group=group, opt=opt2, old=123, new=789
 }
 
+func ExampleConfig_ObserveRegister() {
+	conf := New()
+	conf.ObserveRegister(func(group string, opts []Opt) {
+		for _, opt := range opts {
+			fmt.Printf("Register Opt: group=%s, opt=%s\n", group, opt.Name)
+		}
+	})
+
+	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
+	conf.NewGroup("group").RegisterOpt(IntOpt("opt2", "").D(123))
+
+	// Output:
+	// Register Opt: group=, opt=opt1
+	// Register Opt: group=group, opt=opt2
+}
+
 func ExampleConfig_SetErrHandler() {
 	conf := New()
 	conf.RegisterOpt(StrOpt("opt1", "").D("abc").V(NewStrLenValidator(0, 6)))

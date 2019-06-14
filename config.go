@@ -70,8 +70,10 @@ type Config struct {
 	decoders map[string]Decoder
 	decAlias map[string]string
 	watchers []Watcher
-	observes []func(string, string, interface{}, interface{})
 	version  Opt
+
+	setObserves []func(string, string, interface{}, interface{})
+	regObserves []func(string, []Opt)
 }
 
 // New returns a new Config.
@@ -147,26 +149,41 @@ func (c *Config) getGroup(parent, name string) *OptGroup {
 	return group
 }
 
-func (c *Config) noticeOptChange(group, optname string, old, new interface{}) {
+func (c *Config) noticeOptRegister(group string, opts []Opt) {
 	c.lock.RLock()
-	observers := append([]func(g, p string, o, n interface{}){}, c.observes...)
+	fs := append([]func(string, []Opt){}, c.regObserves...)
 	c.lock.RUnlock()
 
-	for _, observer := range observers {
-		c.callObserver(group, optname, old, new, observer)
+	for _, observer := range fs {
+		c.callRegObserver(group, opts, observer)
 	}
 }
 
-func (c *Config) wrapPanic() {
-	if err := recover(); err != nil {
-		c.handleError(fmt.Errorf("[Config] Observer panic: %v", err))
+func (c *Config) noticeOptChange(group, optname string, old, new interface{}) {
+	c.lock.RLock()
+	fs := append([]func(g, p string, o, n interface{}){}, c.setObserves...)
+	c.lock.RUnlock()
+
+	for _, observer := range fs {
+		c.callSetObserver(group, optname, old, new, observer)
 	}
 }
 
-func (c *Config) callObserver(group, optname string, old, new interface{},
+func (c *Config) callRegObserver(group string, opts []Opt, cb func(string, []Opt)) {
+	defer c.wrapPanic("register")
+	cb(group, opts)
+}
+
+func (c *Config) callSetObserver(group, optname string, old, new interface{},
 	cb func(string, string, interface{}, interface{})) {
-	defer c.wrapPanic()
+	defer c.wrapPanic("set")
 	cb(group, optname, old, new)
+}
+
+func (c *Config) wrapPanic(s string) {
+	if err := recover(); err != nil {
+		c.handleError(fmt.Errorf("[Config] option %s observer panic: %v", s, err))
+	}
 }
 
 // Close closes all the watchers and disables anyone to add the watcher into it.
@@ -215,7 +232,17 @@ func (c *Config) Observe(observer func(group string, opt string, oldValue, newVa
 		panic("the observer must not be nil")
 	}
 	c.lock.Lock()
-	c.observes = append(c.observes, observer)
+	c.setObserves = append(c.setObserves, observer)
+	c.lock.Unlock()
+}
+
+// ObserveRegister appends the observer to watch the register of the option.
+func (c *Config) ObserveRegister(observer func(group string, opts []Opt)) {
+	if observer == nil {
+		panic("the observer must not be nil")
+	}
+	c.lock.Lock()
+	c.regObserves = append(c.regObserves, observer)
 	c.lock.Unlock()
 }
 
