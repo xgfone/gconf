@@ -38,7 +38,7 @@ Beside, you can update the value of the option dynamically by calling `UpdateOpt
 
 ## Observe the changed configuration
 
-You can use the method `Observe(callback func(groupName, optName string, oldOptValue, newOptValue interface{}))` to monitor what the configuration is updated to: when a certain configuration is updated, the callback function will be called asynchronizedly.
+You can use the method `Observe(callback func(groupName, optName string, oldOptValue, newOptValue interface{}))` to monitor what the configuration is updated to: when a certain configuration is updated, the callback function will be called synchronizedly.
 
 
 ## Usage
@@ -145,9 +145,6 @@ func main() {
 	// Update the value of the option.
 	gconf.UpdateOptValue("", "opt1", "xyz") // The first way
 	gconf.Group("group").Set("opt2", 789)   // The second way
-
-	// Sleep a while, because observer is asynchronized.
-	time.Sleep(time.Millisecond * 10)
 
 	// Output:
 	// [Observer] Setting: group=, opt=opt1, old=abc, new=xyz

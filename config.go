@@ -56,13 +56,6 @@ func debugf(msg string, args ...interface{}) {
 // The default global Conf will register the option ConfigFileOpt.
 var Conf = New()
 
-type changedOpt struct {
-	Group string
-	Opt   string
-	Old   interface{}
-	New   interface{}
-}
-
 // Config is used to manage the configuration options.
 type Config struct {
 	*OptGroup  // The default group.
@@ -72,7 +65,6 @@ type Config struct {
 	lock sync.RWMutex
 	gsep string // The separator between the group names.
 
-	opts     chan changedOpt
 	groups   map[string]*OptGroup // the option groups
 	groups2  map[string]*OptGroup // The auxiliary groups
 	decoders map[string]Decoder
@@ -87,7 +79,6 @@ func New() *Config {
 	c := new(Config)
 	c.gsep = "."
 	c.exit = make(chan struct{})
-	c.opts = make(chan changedOpt, 1024)
 	c.groups = make(map[string]*OptGroup, 8)
 	c.groups2 = make(map[string]*OptGroup, 8)
 	c.decoders = make(map[string]Decoder, 8)
@@ -99,7 +90,6 @@ func New() *Config {
 	c.AddDecoder(NewJSONDecoder())
 	c.AddDecoder(NewIniDecoder())
 	c.AddDecoderAlias("conf", "ini")
-	go c.watchChangedOpt()
 	return c
 }
 
@@ -158,27 +148,12 @@ func (c *Config) getGroup(parent, name string) *OptGroup {
 }
 
 func (c *Config) noticeOptChange(group, optname string, old, new interface{}) {
-	select {
-	case c.opts <- changedOpt{Group: group, Opt: optname, Old: old, New: new}:
-	default:
-	}
-}
+	c.lock.RLock()
+	observers := append([]func(g, p string, o, n interface{}){}, c.observes...)
+	c.lock.RUnlock()
 
-func (c *Config) watchChangedOpt() {
-	observes := make([]func(string, string, interface{}, interface{}), 0, 32)
-	for {
-		select {
-		case <-c.exit:
-			return
-		case opt := <-c.opts:
-			c.lock.RLock()
-			observes = append(observes[:0], c.observes...)
-			c.lock.RUnlock()
-
-			for _, observe := range observes {
-				c.callObserver(opt, observe)
-			}
-		}
+	for _, observer := range observers {
+		c.callObserver(group, optname, old, new, observer)
 	}
 }
 
@@ -188,9 +163,10 @@ func (c *Config) wrapPanic() {
 	}
 }
 
-func (c *Config) callObserver(opt changedOpt, f func(string, string, interface{}, interface{})) {
+func (c *Config) callObserver(group, optname string, old, new interface{},
+	cb func(string, string, interface{}, interface{})) {
 	defer c.wrapPanic()
-	f(opt.Group, opt.Opt, opt.Old, opt.New)
+	cb(group, optname, old, new)
 }
 
 // Close closes all the watchers and disables anyone to add the watcher into it.

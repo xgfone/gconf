@@ -17,7 +17,6 @@ package gconf
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
 func ExampleConfig_Observe() {
@@ -30,9 +29,6 @@ func ExampleConfig_Observe() {
 
 	conf.Set("opt1", "xyz")
 	conf.Group("group").Set("opt2", 789)
-
-	// Sleep a while, because observer is asynchronized
-	time.Sleep(time.Millisecond * 10)
 
 	// Output:
 	// Setting: group=, opt=opt1, old=abc, new=xyz
