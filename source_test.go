@@ -191,7 +191,7 @@ func TestNewURLSource(t *testing.T) {
 
 	conf := New()
 	conf.RegisterOpt(IntOpt("opt", ""))
-	conf.LoadSource(NewURLSource("http://127.0.0.1:12345/"))
+	conf.LoadSource(NewURLSource("http://127.0.0.1:12345/", 0))
 
 	if v := conf.GetInt("opt"); v != 123 {
 		t.Error(v)

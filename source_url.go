@@ -31,21 +31,33 @@ var errNoContentType = fmt.Errorf("http response has no the header Content-Type"
 //
 // The header "Content-Type" indicates the data format, that's, it will split
 // the value by "/" and use the last part, such as "application/json" represents
-// the format "json".
+// the format "json". But you can set format to override it.
 //
-// It supports the watcher, which checks whether the data is changed once each 1m.
-func NewURLSource(url string) Source {
+// It supports the watcher, which checks whether the data is changed once
+// with interval time. If interval is 0, it is time.Minute by default.
+func NewURLSource(url string, interval time.Duration, format ...string) Source {
 	if url == "" {
 		panic("the url must not be nil")
 	} else if _, err := neturl.Parse(url); err != nil {
 		panic(err)
 	}
-	return urlSource{url: url, id: fmt.Sprintf("url:%s", url)}
+
+	var _format string
+	if len(format) > 0 && format[0] != "" {
+		_format = format[0]
+	}
+	if interval <= 0 {
+		interval = time.Minute
+	}
+	return urlSource{id: fmt.Sprintf("url:%s", url), url: url, format: _format, period: interval}
 }
 
 type urlSource struct {
 	id  string
 	url string
+
+	format string
+	period time.Duration
 }
 
 func (u urlSource) String() string {
@@ -59,16 +71,20 @@ func (u urlSource) Read() (DataSet, error) {
 	}
 	defer resp.Body.Close()
 
-	// Get the Content-Type as the format.
-	ct := strings.TrimSpace(resp.Header.Get("Content-Type"))
-	if index := strings.IndexByte(ct, ';'); index > 0 {
-		ct = strings.TrimSpace(ct[:index])
-	}
-	if index := strings.LastIndexByte(ct, '/'); index > 0 {
-		ct = ct[index+1:]
-	}
-	if ct == "" {
-		return DataSet{}, errNoContentType
+	format := u.format
+	if format == "" {
+		// Get the Content-Type as the format.
+		ct := strings.TrimSpace(resp.Header.Get("Content-Type"))
+		if index := strings.IndexByte(ct, ';'); index > 0 {
+			ct = strings.TrimSpace(ct[:index])
+		}
+		if index := strings.LastIndexByte(ct, '/'); index > 0 {
+			ct = ct[index+1:]
+		}
+		if ct == "" {
+			return DataSet{}, errNoContentType
+		}
+		format = ct
 	}
 
 	// Read the body of the response.
@@ -79,7 +95,7 @@ func (u urlSource) Read() (DataSet, error) {
 
 	ds := DataSet{
 		Data:      data,
-		Format:    ct,
+		Format:    format,
 		Source:    u.String(),
 		Timestamp: time.Now(),
 	}
@@ -88,7 +104,7 @@ func (u urlSource) Read() (DataSet, error) {
 }
 
 func (u urlSource) Watch() (Watcher, error) {
-	return newURLWatcher(u, time.Minute), nil
+	return newURLWatcher(u, u.period), nil
 }
 
 func newURLWatcher(src Source, interval time.Duration) Watcher {
