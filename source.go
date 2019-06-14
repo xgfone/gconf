@@ -15,8 +15,6 @@
 package gconf
 
 import (
-	"crypto/md5"
-	"crypto/sha256"
 	"fmt"
 	"strings"
 	"time"
@@ -55,16 +53,12 @@ type DataSet struct {
 
 // Md5 returns the md5 checksum of the DataSet data
 func (c DataSet) Md5() string {
-	h := md5.New()
-	h.Write(c.Data)
-	return fmt.Sprintf("%x", h.Sum(nil))
+	return bytesToMd5(c.Data)
 }
 
 // Sha256 returns the sha256 checksum of the DataSet data
 func (c DataSet) Sha256() string {
-	h := sha256.New()
-	h.Write(c.Data)
-	return fmt.Sprintf("%x", h.Sum(nil))
+	return bytesToSha256(c.Data)
 }
 
 // Watcher is a watcher that is used to watch the data change of the source.
@@ -146,10 +140,14 @@ func (c *Config) parseDataSet(ds DataSet, force bool) error {
 		return NewSourceError(ds.Source, ds.Format, ds.Data, err)
 	}
 
-	// Flat the map
+	// Flat and update the map
 	maps := make(map[string]interface{}, len(ms)*2)
 	c.flatMap("", ms, maps)
+	c.updateFlatMap(maps, force)
+	return nil
+}
 
+func (c *Config) updateFlatMap(maps map[string]interface{}, force bool) {
 	for key, value := range maps {
 		group := c.OptGroup
 		if index := strings.LastIndex(key, c.gsep); index > -1 {
@@ -163,7 +161,6 @@ func (c *Config) parseDataSet(ds DataSet, force bool) error {
 			group.Set(key, value)
 		}
 	}
-	return nil
 }
 
 // AddWatcher adds some watchers to watch the change of the configuration data.

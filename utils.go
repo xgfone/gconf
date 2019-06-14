@@ -15,6 +15,8 @@
 package gconf
 
 import (
+	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"strings"
 	"time"
@@ -63,6 +65,18 @@ func init() {
 	ToFloat64Slice = toFloat64Slice
 	ToStringSlice = toStringSlice
 	ToDurationSlice = toDurationSlice
+}
+
+func bytesToMd5(data []byte) string {
+	h := md5.New()
+	h.Write(data)
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func bytesToSha256(data []byte) string {
+	h := sha256.New()
+	h.Write(data)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 func getStringSlice(value interface{}) []string {

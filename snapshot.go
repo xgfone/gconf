@@ -15,7 +15,6 @@
 package gconf
 
 import (
-	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -23,13 +22,6 @@ import (
 	"sync"
 	"time"
 )
-
-// DataSet Md5
-func bytesToMd5(data []byte) string {
-	h := md5.New()
-	h.Write(data)
-	return fmt.Sprintf("%x", h.Sum(nil))
-}
 
 // LoadBackupFile loads configuration data from the file, then watches
 // the change of the options and write them into the file.
@@ -47,11 +39,9 @@ func (c *Config) LoadBackupFile(filename string) error {
 		return err
 	}
 
-	// for key, value := range ms {
-
-	// }
-
+	c.updateFlatMap(ms, false)
 	go c.writeSnapshotIntoFile(bytesToMd5(data), filename)
+
 	return nil
 }
 

@@ -46,6 +46,11 @@ func LoadSourceWithoutWatcher(source Source, force ...bool) error {
 	return Conf.LoadSourceWithoutWatcher(source, force...)
 }
 
+// LoadBackupFile is equal to Conf.LoadBackupFile(filename).
+func LoadBackupFile(filename string) error {
+	return Conf.LoadBackupFile(filename)
+}
+
 // AddDecoder is equal to Conf.AddDecoder(decoder, force...).
 func AddDecoder(decoder Decoder, force ...bool) (ok bool) {
 	return Conf.AddDecoder(decoder, force...)
