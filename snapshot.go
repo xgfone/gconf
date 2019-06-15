@@ -23,8 +23,10 @@ import (
 	"time"
 )
 
-// LoadBackupFile loads configuration data from the file, then watches
-// the change of the options and write them into the file.
+// LoadBackupFile loads configuration data from the backup file if exists,
+// then watches the change of the options and write them into the file.
+//
+// So you can use it as the local cache.
 func (c *Config) LoadBackupFile(filename string) error {
 	var data []byte
 	var ms map[string]interface{}
@@ -39,7 +41,7 @@ func (c *Config) LoadBackupFile(filename string) error {
 		return err
 	}
 
-	c.updateFlatMap(ms, false)
+	c.updateFlattedMap(ms, false)
 	go c.writeSnapshotIntoFile(bytesToMd5(data), filename)
 
 	return nil
@@ -64,7 +66,7 @@ func (c *Config) writeSnapshotIntoFile(lastChecksum, filename string) {
 					c.handleError(fmt.Errorf("[Config] snapshot write file[%s]: %s", filename, err.Error()))
 				} else {
 					lastChecksum = checksum
-					debugf("[Config] Write snapshot into file '%s'", filename)
+					debugf("[Config] Write snapshot into file '%s'\n", filename)
 				}
 			}
 		}

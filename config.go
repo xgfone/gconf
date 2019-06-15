@@ -335,3 +335,102 @@ func (c *Config) UpdateValue(key string, value interface{}) {
 	}
 	c.UpdateOptValue(group, key, value)
 }
+
+// LoadMap loads the configuration options from the map m.
+//
+// If a certain option has been set, it will be ignored.
+// But you can set force to true to reset the value of this option.
+//
+// The map may be the formats as follow:
+//
+//     map[string]interface{} {
+//         "opt1": "value1",
+//         "opt2": "value2",
+//         // ...
+//         "group1": map[string]interface{} {
+//             "opt11": "value11",
+//             "opt12": "value12",
+//             "group2": map[string]interface{} {
+//                 // ...
+//             },
+//             "group3.group4": map[string]interface{} {
+//                 // ...
+//             }
+//         },
+//         "group5.group6.group7": map[string]interface{} {
+//             "opt71": "value71",
+//             "opt72": "value72",
+//             "group8": map[string]interface{} {
+//                 // ...
+//             },
+//             "group9.group10": map[string]interface{} {
+//                 // ...
+//             }
+//         },
+//         "group11.group12.opt121": "value121",
+//         "group11.group12.opt122": "value122"
+//     }
+//
+// When loading it, it will be flatted to
+//
+//     map[string]interface{} {
+//         "opt1": "value1",
+//         "opt2": "value2",
+//         "group1.opt1": "value11",
+//         "group1.opt2": "value12",
+//         "group1.group2.XXX": "XXX",
+//         "group1.group3.group4.XXX": "XXX",
+//         "group5.group6.group7.opt71": "value71",
+//         "group5.group6.group7.opt72": "value72",
+//         "group5.group6.group7.group8.XXX": "XXX",
+//         "group5.group6.group7.group9.group10.XXX": "XXX",
+//         "group11.group12.opt121": "value121",
+//         "group11.group12.opt122": "value122"
+//     }
+//
+// So the option name must not contain the dot(.).
+func (c *Config) LoadMap(m map[string]interface{}, force ...bool) {
+	var _force bool
+	if len(force) > 0 && force[0] {
+		_force = true
+	}
+
+	// Flat the map and update it
+	maps := make(map[string]interface{}, len(m)*2)
+	c.flatMap("", m, maps)
+	c.updateFlattedMap(maps, _force)
+}
+
+func (c *Config) updateFlattedMap(maps map[string]interface{}, force bool) {
+	for key, value := range maps {
+		group := c.OptGroup
+		if index := strings.LastIndex(key, c.gsep); index > -1 {
+			if group = c.Group(key[:index]); group == nil {
+				continue
+			}
+			key = key[index+len(c.gsep):]
+		}
+
+		if force || group.HasOptAndIsNotSet(key) {
+			group.Set(key, value)
+		}
+	}
+}
+
+func (c *Config) flatMap(parent string, src, dst map[string]interface{}) {
+	for key, value := range src {
+		if ms, ok := value.(map[string]interface{}); ok {
+			group := key
+			if parent != "" {
+				group = strings.Join([]string{parent, key}, c.gsep)
+			}
+			c.flatMap(group, ms, dst)
+			continue
+		}
+
+		if parent != "" {
+			key = strings.Join([]string{parent, key}, c.gsep)
+		}
+		dst[key] = value
+	}
+}

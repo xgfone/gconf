@@ -16,7 +16,6 @@ package gconf
 
 import (
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -106,24 +105,6 @@ func (c *Config) watchSource(w Watcher) {
 	}
 }
 
-func (c *Config) flatMap(parent string, src, dst map[string]interface{}) {
-	for key, value := range src {
-		if ms, ok := value.(map[string]interface{}); ok {
-			group := key
-			if parent != "" {
-				group = strings.Join([]string{parent, key}, c.gsep)
-			}
-			c.flatMap(group, ms, dst)
-			continue
-		}
-
-		if parent != "" {
-			key = strings.Join([]string{parent, key}, c.gsep)
-		}
-		dst[key] = value
-	}
-}
-
 func (c *Config) parseDataSet(ds DataSet, force bool) error {
 	if len(ds.Data) == 0 {
 		return nil
@@ -140,27 +121,9 @@ func (c *Config) parseDataSet(ds DataSet, force bool) error {
 		return NewSourceError(ds.Source, ds.Format, ds.Data, err)
 	}
 
-	// Flat and update the map
-	maps := make(map[string]interface{}, len(ms)*2)
-	c.flatMap("", ms, maps)
-	c.updateFlatMap(maps, force)
+	// Load the map
+	c.LoadMap(ms, force)
 	return nil
-}
-
-func (c *Config) updateFlatMap(maps map[string]interface{}, force bool) {
-	for key, value := range maps {
-		group := c.OptGroup
-		if index := strings.LastIndex(key, c.gsep); index > -1 {
-			if group = c.Group(key[:index]); group == nil {
-				continue
-			}
-			key = key[index+len(c.gsep):]
-		}
-
-		if force || group.HasOptAndIsNotSet(key) {
-			group.Set(key, value)
-		}
-	}
 }
 
 // AddWatcher adds some watchers to watch the change of the configuration data.
@@ -187,7 +150,7 @@ func (c *Config) AddWatcher(watchers ...Watcher) {
 	if !exited {
 		for _, w := range ws {
 			go c.watchSource(w)
-			debugf("[Config] Add source watcher '%s'", w.Source())
+			debugf("[Config] Add source watcher '%s'\n", w.Source())
 		}
 	}
 }
