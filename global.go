@@ -36,6 +36,11 @@ func AddWatcher(watchers ...Watcher) {
 	Conf.AddWatcher(watchers...)
 }
 
+// LoadMap is equal to Conf.LoadMap(m, force...).
+func LoadMap(m map[string]interface{}, force ...bool) {
+	Conf.LoadMap(m, force...)
+}
+
 // LoadSource is equal to Conf.LoadSource(source, force...).
 func LoadSource(source Source, force ...bool) error {
 	return Conf.LoadSource(source, force...)
@@ -49,6 +54,11 @@ func LoadSourceWithoutWatcher(source Source, force ...bool) error {
 // LoadBackupFile is equal to Conf.LoadBackupFile(filename).
 func LoadBackupFile(filename string) error {
 	return Conf.LoadBackupFile(filename)
+}
+
+// Snapshot is equal to Conf.Snapshot().
+func Snapshot() map[string]interface{} {
+	return Conf.Snapshot()
 }
 
 // AddDecoder is equal to Conf.AddDecoder(decoder, force...).
