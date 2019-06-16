@@ -15,6 +15,7 @@ package gconf
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli"
@@ -24,14 +25,24 @@ import (
 // which will reads the configuration data from the flags of cli.
 //
 // groups stands for the group that the context belongs on. The command name
-// may be considered as the group name, such as "cmd1", "cmd1.cmd2", etc.
-func NewCliSource(ctx *cli.Context, groups string) Source {
-	return cliSource{ctx: ctx, groups: groups}
+// may be considered as the group name. The following ways are valid.
+//
+//   NewCliSource(ctx)                      // With the default global group
+//   NewCliSource(ctx, "group1")            // With group "group1"
+//   NewCliSource(ctx, "group1", "group2")  // With group "group1.group2"
+//   NewCliSource(ctx, "group1.group2")     // With group "group1.group2"
+//
+func NewCliSource(ctx *cli.Context, groups ...string) Source {
+	var group string
+	if len(groups) > 0 {
+		group = strings.Trim(strings.Join(groups, "."), ".")
+	}
+	return cliSource{ctx: ctx, group: group}
 }
 
 type cliSource struct {
-	ctx    *cli.Context
-	groups string
+	ctx   *cli.Context
+	group string
 }
 
 func (c cliSource) String() string {
@@ -49,7 +60,7 @@ func (c cliSource) Read() (DataSet, error) {
 	}
 
 	opts := make(map[string]string, 16)
-	c.getFlags(c.groups, c.ctx, names, opts)
+	c.getFlags(c.group, c.ctx, names, opts)
 	if len(opts) == 0 {
 		return DataSet{}, nil
 	}

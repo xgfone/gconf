@@ -186,9 +186,9 @@ func main() {
 					Flags: []cli.Flag{cli.IntFlag{Name: "opt3"}},
 					Action: func(ctx *cli.Context) error {
 						// Load the sources
-						gconf.LoadSource(gconf.NewCliSource(ctx, "cmd1.cmd2"))          // cmd2
-						gconf.LoadSource(gconf.NewCliSource(ctx.Parent(), "cmd1"))      // cmd1
-						gconf.LoadSource(gconf.NewCliSource(ctx.Parent().Parent(), "")) // global
+						gconf.LoadSource(gconf.NewCliSource(ctx, "cmd1.cmd2"))      // cmd2
+						gconf.LoadSource(gconf.NewCliSource(ctx.Parent(), "cmd1"))  // cmd1
+						gconf.LoadSource(gconf.NewCliSource(ctx.Parent().Parent())) // global
 
 						// Read and print the option
 						fmt.Println(gconf.GetString("opt1"))

@@ -41,9 +41,9 @@ func ExampleNewCliSource() {
 					Name:  "cmd2",
 					Flags: []cli.Flag{cli.IntFlag{Name: "opt3"}},
 					Action: func(ctx *cli.Context) error {
-						conf.LoadSource(NewCliSource(ctx, "cmd1.cmd2"))
+						conf.LoadSource(NewCliSource(ctx, "cmd1", "cmd2"))
 						conf.LoadSource(NewCliSource(ctx.Parent(), "cmd1"))
-						conf.LoadSource(NewCliSource(ctx.Parent().Parent(), ""))
+						conf.LoadSource(NewCliSource(ctx.Parent().Parent()))
 
 						fmt.Println(conf.GetString("opt1"))
 						fmt.Println(conf.Group("cmd1").GetInt("opt2"))
