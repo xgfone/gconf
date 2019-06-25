@@ -20,6 +20,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/BurntSushi/toml"
 	"gopkg.in/yaml.v2"
 )
 
@@ -142,6 +143,13 @@ func NewJSONDecoder() Decoder {
 func NewYamlDecoder() Decoder {
 	return NewDecoder("yaml", func(src []byte, dst map[string]interface{}) (err error) {
 		return yaml.Unmarshal([]byte(src), &dst)
+	})
+}
+
+// NewTomlDecoder returns a toml decoder to decode the toml data.
+func NewTomlDecoder() Decoder {
+	return NewDecoder("toml", func(src []byte, dst map[string]interface{}) (err error) {
+		return toml.Unmarshal([]byte(src), &dst)
 	})
 }
 
