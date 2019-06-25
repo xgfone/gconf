@@ -47,6 +47,8 @@ var (
 	ToDurationSlice func(interface{}) ([]time.Duration, error)
 )
 
+var toStringMap = types.ToStringMap
+
 func init() {
 	ToBool = types.ToBool
 	ToInt64 = types.ToInt64

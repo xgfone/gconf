@@ -419,6 +419,10 @@ func (c *Config) updateFlattedMap(maps map[string]interface{}, force bool) {
 
 func (c *Config) flatMap(parent string, src, dst map[string]interface{}) {
 	for key, value := range src {
+		if _, ok := value.(map[interface{}]interface{}); ok {
+			value, _ = toStringMap(value)
+		}
+
 		if ms, ok := value.(map[string]interface{}); ok {
 			group := key
 			if parent != "" {
