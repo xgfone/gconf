@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Decoder is used to decode the configuration data.
@@ -83,8 +85,6 @@ type Decoder struct {
 //
 // If the decoder has added, it will do nothing and return false.
 // But you can override it by setting force to true.
-//
-// The default has added the "json" and "ini" encoders.
 func (c *Config) AddDecoder(decoder Decoder, force ...bool) (ok bool) {
 	_type := strings.ToLower(decoder.Type)
 	c.lock.Lock()
@@ -117,8 +117,6 @@ func (c *Config) GetDecoder(_type string) (decoder Decoder, ok bool) {
 // return the "ini" decoder.
 //
 // If the alias has existed, it will override it.
-//
-// Notice: "ini" is the alias of "conf" by default.
 func (c *Config) AddDecoderAlias(_type, alias string) {
 	_type = strings.ToLower(_type)
 	alias = strings.ToLower(alias)
@@ -137,6 +135,13 @@ func NewDecoder(_type string, decode func([]byte, map[string]interface{}) error)
 func NewJSONDecoder() Decoder {
 	return NewDecoder("json", func(src []byte, dst map[string]interface{}) (err error) {
 		return json.Unmarshal(src, &dst)
+	})
+}
+
+// NewYamlDecoder returns a yaml decoder to decode the yaml data.
+func NewYamlDecoder() Decoder {
+	return NewDecoder("yaml", func(src []byte, dst map[string]interface{}) (err error) {
+		return yaml.Unmarshal([]byte(src), &dst)
 	})
 }
 

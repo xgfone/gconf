@@ -78,6 +78,16 @@ type Config struct {
 }
 
 // New returns a new Config.
+//
+// By default, it will add the "json", "yaml" and "ini" decoders,
+// and set the aliases of "conf" and "yml" to "ini" and "yaml", for example,
+//
+//   c.AddDecoder(NewJSONDecoder())
+//   c.AddDecoder(NewIniDecoder())
+//   c.AddDecoder(NewYamlDecoder())
+//   c.AddDecoderAlias("conf", "ini")
+//   c.AddDecoderAlias("yml", "yaml")
+//
 func New() *Config {
 	c := new(Config)
 	c.gsep = "."
@@ -93,7 +103,9 @@ func New() *Config {
 	c.errHandler = c.defaultErrorHandler
 	c.AddDecoder(NewJSONDecoder())
 	c.AddDecoder(NewIniDecoder())
+	c.AddDecoder(NewYamlDecoder())
 	c.AddDecoderAlias("conf", "ini")
+	c.AddDecoderAlias("yml", "yaml")
 	return c
 }
 
