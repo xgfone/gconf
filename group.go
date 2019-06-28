@@ -201,7 +201,7 @@ func (g *OptGroup) HasOptAndIsNotSet(name string) (yes bool) {
 }
 
 func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
-	g.fixOptName(name)
+	name = g.fixOptName(name)
 	g.lock.Lock()
 	if opt, ok := g.opts[name]; ok {
 		opt.watch = watch
