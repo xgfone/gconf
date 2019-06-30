@@ -21,6 +21,79 @@ import (
 	"github.com/urfave/cli"
 )
 
+// ConvertOptsToCliFlags converts the options from the group to flags of
+// github.com/urfave/cli.
+func ConvertOptsToCliFlags(group *OptGroup) []cli.Flag {
+	opts := group.AllOpts()
+	flags := make([]cli.Flag, len(opts))
+	for i, opt := range opts {
+		name := opt.Name
+		var flag cli.Flag
+		switch v := opt.Default.(type) {
+		case bool:
+			if v {
+				flag = cli.BoolTFlag{Name: name, Usage: opt.Help}
+			} else {
+				flag = cli.BoolFlag{Name: name, Usage: opt.Help}
+			}
+		case int:
+			flag = cli.IntFlag{Name: name, Value: v, Usage: opt.Help}
+		case int32:
+			flag = cli.IntFlag{Name: name, Value: int(v), Usage: opt.Help}
+		case int64:
+			flag = cli.Int64Flag{Name: name, Value: v, Usage: opt.Help}
+		case uint:
+			flag = cli.UintFlag{Name: name, Value: v, Usage: opt.Help}
+		case uint32:
+			flag = cli.UintFlag{Name: name, Value: uint(v), Usage: opt.Help}
+		case uint64:
+			flag = cli.Uint64Flag{Name: name, Value: v, Usage: opt.Help}
+		case float64:
+			flag = cli.Float64Flag{Name: name, Value: v, Usage: opt.Help}
+		case string:
+			flag = cli.StringFlag{Name: name, Value: v, Usage: opt.Help}
+		case time.Duration:
+			flag = cli.DurationFlag{Name: name, Value: v, Usage: opt.Help}
+		case time.Time:
+			flag = cli.StringFlag{Name: name, Value: v.Format(time.RFC3339), Usage: opt.Help}
+		case []int:
+			var s string
+			if len(v) > 0 {
+				s = fmt.Sprintf("%v", v)
+			}
+			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+		case []uint:
+			var s string
+			if len(v) > 0 {
+				s = fmt.Sprintf("%v", v)
+			}
+			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+		case []float64:
+			var s string
+			if len(v) > 0 {
+				s = fmt.Sprintf("%v", v)
+			}
+			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+		case []string:
+			var s string
+			if len(v) > 0 {
+				s = fmt.Sprintf("%v", v)
+			}
+			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+		case []time.Duration:
+			var s string
+			if len(v) > 0 {
+				s = fmt.Sprintf("%v", v)
+			}
+			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+		default:
+			flag = cli.StringFlag{Name: name, Value: fmt.Sprintf("%v", v), Usage: opt.Help}
+		}
+		flags[i] = flag
+	}
+	return flags
+}
+
 // NewCliSource returns a new source based on "github.com/urfave/cli",
 // which will reads the configuration data from the flags of cli.
 //
