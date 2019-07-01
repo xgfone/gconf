@@ -27,7 +27,7 @@ func ConvertOptsToCliFlags(group *OptGroup) []cli.Flag {
 	opts := group.AllOpts()
 	flags := make([]cli.Flag, len(opts))
 	for i, opt := range opts {
-		name := opt.Name
+		name := strings.Replace(opt.Name, "_", "-", -1)
 		var flag cli.Flag
 		switch v := opt.Default.(type) {
 		case bool:
