@@ -216,13 +216,20 @@ func NewIniDecoder(defaultGroupName ...string) Decoder {
 			} else if _len := len(value) - 1; value[_len] == '\\' { // The continuation line
 				vs := []string{strings.TrimSpace(strings.TrimRight(value, "\\"))}
 				for index < maxIndex {
-					value = strings.TrimRight(strings.TrimSpace(lines[index]), "\\")
-					if value = strings.TrimSpace(value); value == "" {
+					value = strings.TrimSpace(lines[index])
+
+					var goon bool
+					if _len := len(value) - 1; value[_len] == '\\' {
+						goon = true
+					}
+
+					if value = strings.TrimSpace(strings.TrimRight(value, "\\")); value == "" {
 						break
 					}
 					index++
 					vs = append(vs, value)
-					if value[len(value)-1] != '\\' {
+
+					if !goon {
 						break
 					}
 				}
