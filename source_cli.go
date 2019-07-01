@@ -23,11 +23,26 @@ import (
 
 // ConvertOptsToCliFlags converts the options from the group to flags of
 // github.com/urfave/cli.
-func ConvertOptsToCliFlags(group *OptGroup) []cli.Flag {
+//
+// If prefix is not empty, it will add the prefix to the flag name,
+// and join them with the character "-".
+//
+// Notice: the character "_" in the flag name will be converted to "-".
+func ConvertOptsToCliFlags(group *OptGroup, prefix ...string) []cli.Flag {
+	var _prefix string
+	if len(prefix) > 0 && prefix[0] != "" {
+		_prefix = prefix[0]
+	}
+
 	opts := group.AllOpts()
 	flags := make([]cli.Flag, len(opts))
 	for i, opt := range opts {
-		name := strings.Replace(opt.Name, "_", "-", -1)
+		name := opt.Name
+		if _prefix != "" {
+			name = fmt.Sprintf("%s-%s", _prefix, name)
+		}
+		name = strings.Replace(name, "_", "-", -1)
+
 		var flag cli.Flag
 		switch v := opt.Default.(type) {
 		case bool:
