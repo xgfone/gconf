@@ -15,8 +15,39 @@
 package gconf
 
 import (
+	"fmt"
 	"testing"
 )
+
+func ExampleNewJSONDecoder() {
+	data := []byte(`{
+		// user name
+		"name": "Aaron",
+		"age": 123,
+
+		// the other information
+		"other": {
+			// address
+			"home": "http://www.example.com"
+		}
+	}`)
+
+	ms := make(map[string]interface{})
+	err := NewJSONDecoder().Decode(data, ms)
+
+	fmt.Println(err)
+	fmt.Println(len(ms))
+	fmt.Println(ms["name"])
+	fmt.Println(ms["age"])
+	fmt.Println(ms["other"])
+
+	// Output:
+	// <nil>
+	// 3
+	// Aaron
+	// 123
+	// map[home:http://www.example.com]
+}
 
 var yamlData = `
 opt1: xyz

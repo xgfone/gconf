@@ -15,6 +15,7 @@
 package gconf
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -133,8 +134,28 @@ func NewDecoder(_type string, decode func([]byte, map[string]interface{}) error)
 }
 
 // NewJSONDecoder returns a json decoder to decode the json data.
+//
+// If the json data contains the comment line starting with "//", it will remove
+// the comment line and parse the json data.
 func NewJSONDecoder() Decoder {
+	comment := []byte("//")
+	newline := []byte("\n")
 	return NewDecoder("json", func(src []byte, dst map[string]interface{}) (err error) {
+		if bytes.Contains(src, comment) {
+			buf := bytes.NewBuffer(nil)
+			buf.Grow(len(src))
+			for _, line := range bytes.Split(src, newline) {
+				if line = bytes.TrimSpace(line); len(line) == 0 {
+					buf.WriteByte('\n')
+					continue
+				} else if len(line) > 1 && line[0] == '/' && line[1] == '/' {
+					continue
+				}
+				buf.Write(line)
+				buf.WriteByte('\n')
+			}
+			src = buf.Bytes()
+		}
 		return json.Unmarshal(src, &dst)
 	})
 }
