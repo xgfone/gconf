@@ -254,10 +254,10 @@ func main() {
 	// $ PROGRAM --config-file /path/to/config.json &
 	// 0.0.0.0:80
 	//
-	// $ echo '{"ip": "1.2.3.4", "port":8000}' >/path/to/config.json
+	// $ echo '{"ip": "1.2.3.4", "port": 8000}' >/path/to/config.json
 	// 1.2.3.4:8000
 	//
-	// $ echo '{"ip": "5.6.7.8", "port":9000}' >/path/to/config.json
+	// $ echo '{"ip": "5.6.7.8", "port":9 000}' >/path/to/config.json
 	// 5.6.7.8:9000
 }
 ```
