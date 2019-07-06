@@ -1,7 +1,7 @@
 # gconf [![Build Status](https://travis-ci.org/xgfone/gconf.svg?branch=master)](https://travis-ci.org/xgfone/gconf) [![GoDoc](https://godoc.org/github.com/xgfone/gconf?status.svg)](http://godoc.org/github.com/xgfone/gconf) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/gconf/master/LICENSE)
 An extensible and powerful go configuration manager, which is inspired by [oslo.config](https://github.com/openstack/oslo.config), [github.com/micro/go-micro/config](https://github.com/micro/go-micro/tree/master/config) and [viper](https://github.com/spf13/viper).
 
-The current version is `v2`. See [DOC](https://godoc.org/github.com/xgfone/gconf).
+The current version is `v3`. See [DOC](https://godoc.org/github.com/xgfone/gconf).
 
 The supported Go version: `1.10+`.
 
@@ -17,13 +17,13 @@ The supported Go version: `1.10+`.
 
 ## Source
 
-Source is used to read the configuration data. You can load lots of sources to read the configuration data from many storage locations. The default has implemented some sources, such as `flag`, `cli`, `env`, `file`, `url`. But you can also implement other sources, such as `ZooKeeper`, `ETCD`, etc.
+Source is used to read the configuration data. You can load lots of sources to read the configuration data from many storage locations. The default has implemented some sources, such as `flag`, `cli`, `env`, `file`, `url`, `zookeeper`. But you can also implement other sources, such as `ETCD`, etc.
 
 **Notice:** If the source supports the watcher, it will add it to watch the changed of the source data automatically.
 
 ## Decoder
 
-The source reads the original data, that's `[]byte`, and it must be decoded. The default has implemented the `json` and `INI` decoders.
+The source reads the original data, that's `[]byte`, and it must be decoded. The default has implemented the `json`, `yaml`, `toml` and `INI` decoders.
 
 
 ## Read and Update the option value
@@ -251,13 +251,13 @@ func main() {
 		fmt.Printf("%s:%d\n", gconf.GetString("ip"), gconf.GetInt("port"))
 	}
 
-	// $ PROGRAM --config-file /path/to/file.json &
+	// $ PROGRAM --config-file /path/to/config.json &
 	// 0.0.0.0:80
 	//
-	// $ echo '{"ip": "1.2.3.4", "port":8000}' >config.json
+	// $ echo '{"ip": "1.2.3.4", "port":8000}' >/path/to/config.json
 	// 1.2.3.4:8000
 	//
-	// $ echo '{"ip": "5.6.7.8", "port":9000}' >config.json
+	// $ echo '{"ip": "5.6.7.8", "port":9000}' >/path/to/config.json
 	// 5.6.7.8:9000
 }
 ```

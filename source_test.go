@@ -182,18 +182,31 @@ func TestNewFileSource_JSON(t *testing.T) {
 }
 
 func TestNewURLSource(t *testing.T) {
+	first := true
+
 	// Start the http server
 	go http.ListenAndServe("127.0.0.1:12345", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Write([]byte(`{"opt": 123}`))
+		if first {
+			first = false
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.Write([]byte(`{"opt": 123}`))
+		} else {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.Write([]byte(`{"opt": 456}`))
+		}
 	}))
 	time.Sleep(time.Millisecond * 50) // Wait that the http server finishes to start.
 
 	conf := New()
 	conf.RegisterOpt(IntOpt("opt", ""))
-	conf.LoadSource(NewURLSource("http://127.0.0.1:12345/", 0))
+	conf.LoadSource(NewURLSource("http://127.0.0.1:12345/", time.Millisecond*100))
 
 	if v := conf.GetInt("opt"); v != 123 {
 		t.Error(v)
+	} else {
+		time.Sleep(time.Millisecond * 200)
+		if v := conf.GetInt("opt"); v != 456 {
+			t.Error(v)
+		}
 	}
 }

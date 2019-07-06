@@ -63,7 +63,7 @@ func (e envSource) Read() (DataSet, error) {
 
 	data, err := json.Marshal(vs)
 	if err != nil {
-		return DataSet{}, err
+		return DataSet{Source: "env", Format: "json"}, err
 	}
 	ds := DataSet{Data: data, Format: "json", Source: "env", Timestamp: time.Now()}
 	ds.Checksum = fmt.Sprintf("md5:%s", ds.Md5())

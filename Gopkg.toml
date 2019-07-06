@@ -13,3 +13,11 @@
 [[constraint]]
     name = "github.com/BurntSushi/toml"
     version = "v0.3.1"
+
+[[constraint]]
+    name = "github.com/samuel/go-zookeeper"
+    revision = "c4fab1ac1bec58281ad0667dc3f0907a9476ac47"
+
+[[constraint]]
+    name = "github.com/urfave/cli"
+    version = "v1.20.0"

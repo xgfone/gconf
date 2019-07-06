@@ -55,18 +55,21 @@ type fileSource struct {
 func (f fileSource) Read() (DataSet, error) {
 	file, err := os.Open(f.filepath)
 	if err != nil {
-		return DataSet{}, err
+		if os.IsNotExist(err) {
+			return DataSet{Source: f.id, Format: f.format}, nil
+		}
+		return DataSet{Source: f.id, Format: f.format}, err
 	}
 	defer file.Close()
 
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		return DataSet{}, err
+		return DataSet{Source: f.id, Format: f.format}, err
 	}
 
 	stat, err := file.Stat()
 	if err != nil {
-		return DataSet{}, err
+		return DataSet{Source: f.id, Format: f.format, Data: data}, err
 	}
 
 	ds := DataSet{

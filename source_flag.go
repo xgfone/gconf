@@ -191,7 +191,7 @@ func (f flagSource) Watch(load func(DataSet, error), exit <-chan struct{}) {}
 func (f flagSource) Read() (DataSet, error) {
 	if !f.flagSet.Parsed() {
 		if err := f.flagSet.Parse(os.Args[1:]); err != nil {
-			return DataSet{}, err
+			return DataSet{Source: "flag", Format: "json"}, err
 		}
 	}
 
@@ -202,7 +202,7 @@ func (f flagSource) Read() (DataSet, error) {
 
 	data, err := json.Marshal(vs)
 	if err != nil {
-		return DataSet{}, err
+		return DataSet{Source: "flag", Format: "json"}, err
 	}
 	ds := DataSet{Data: data, Format: "json", Source: "flag", Timestamp: time.Now()}
 	ds.Checksum = fmt.Sprintf("md5:%s", ds.Md5())

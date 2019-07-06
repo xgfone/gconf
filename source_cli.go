@@ -144,7 +144,7 @@ func (c cliSource) Read() (DataSet, error) {
 	opts := make(map[string]string, 16)
 	c.getFlags(c.group, c.ctx, names, opts)
 	if len(opts) == 0 {
-		return DataSet{}, nil
+		return DataSet{Source: "cli", Format: "json"}, nil
 	}
 
 	data, _ := json.Marshal(opts)
