@@ -262,7 +262,7 @@ func main() {
 }
 ```
 
-**Notice:** Because there are four kinds of default decoders, `json`, `yaml`, `toml` and `INI`, the file is only the format of json or ini. But you can register other decoders to support more format files.
+**Notice:** Because there are four kinds of default decoders, `json`, `yaml`, `toml` and `INI`, the file is only one of them. But you can register other decoders to support more format files.
 
 ### Register a struct as the group and the option
 You also register a struct then use it.
