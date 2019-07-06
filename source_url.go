@@ -60,14 +60,10 @@ type urlSource struct {
 	period time.Duration
 }
 
-func (u urlSource) String() string {
-	return u.id
-}
-
 func (u urlSource) Read() (DataSet, error) {
 	resp, err := http.Get(u.url)
 	if err != nil {
-		return DataSet{}, err
+		return DataSet{Source: u.id, Format: u.format}, err
 	}
 	defer resp.Body.Close()
 
@@ -82,7 +78,7 @@ func (u urlSource) Read() (DataSet, error) {
 			ct = ct[index+1:]
 		}
 		if ct == "" {
-			return DataSet{}, errNoContentType
+			return DataSet{Source: u.id}, errNoContentType
 		}
 		format = ct
 	}
@@ -90,32 +86,21 @@ func (u urlSource) Read() (DataSet, error) {
 	// Read the body of the response.
 	data, err := io2.ReadN(resp.Body, resp.ContentLength)
 	if err != nil {
-		return DataSet{}, err
+		return DataSet{Source: u.id, Format: format}, err
 	}
 
 	ds := DataSet{
 		Data:      data,
 		Format:    format,
-		Source:    u.String(),
+		Source:    u.id,
 		Timestamp: time.Now(),
 	}
 	ds.Checksum = "md5:" + ds.Md5()
 	return ds, nil
 }
 
-func (u urlSource) Watch() (Watcher, error) {
-	return newURLWatcher(u, u.period), nil
-}
-
-func newURLWatcher(src Source, interval time.Duration) Watcher {
-	w := urlWatcher{
-		src:   src,
-		exit:  make(chan struct{}),
-		value: make(chan interface{}, 1),
-		sleep: interval,
-	}
-	go w.loop()
-	return w
+func (u urlSource) Watch(load func(DataSet, error), exit <-chan struct{}) {
+	go u.watchurl(load, exit)
 }
 
 type urlWatcher struct {
@@ -126,68 +111,27 @@ type urlWatcher struct {
 	sleep time.Duration
 }
 
-func (u urlWatcher) loop() {
+func (u urlSource) watchurl(load func(DataSet, error), exit <-chan struct{}) {
+	last := DataSet{}
 	first := true
 	for {
 		if first {
 			first = false
 		} else {
-			time.Sleep(u.sleep)
-		}
-
-		var value interface{}
-		if ds, err := u.src.Read(); err != nil {
-			value = err
-		} else if len(ds.Data) == 0 || ds.Checksum == u.last.Checksum {
-			continue
-		} else {
-			value = ds
-			u.last = ds
-		}
-
-		// Maybe have the old value and consume it.
-		select {
-		case _, ok := <-u.exit: // be closed
-			if !ok {
-				return
-			}
-		case _, ok := <-u.value:
-			if !ok { // be closed
-				return
-			}
-		default:
+			time.Sleep(u.period)
 		}
 
 		select {
-		case _, ok := <-u.exit: // be closed
-			if !ok {
-				return
-			}
-		case u.value <- value: // Send the new value.
+		case <-exit:
+			return
 		default:
 		}
-	}
-}
 
-func (u urlWatcher) Next() (DataSet, error) {
-	if value, ok := <-u.value; !ok {
-		return DataSet{}, ErrWatcherClosed
-	} else if err, ok := value.(error); ok {
-		return DataSet{}, err
-	} else {
-		return value.(DataSet), nil
-	}
-}
-
-func (u urlWatcher) Source() string {
-	return u.src.String()
-}
-
-func (u urlWatcher) Close() {
-	select {
-	case <-u.exit:
-	default:
-		close(u.exit)
-		close(u.value)
+		if ds, err := u.Read(); err != nil {
+			load(ds, err)
+		} else if len(ds.Data) > 0 && ds.Checksum != last.Checksum {
+			last = ds
+			load(ds, nil)
+		}
 	}
 }

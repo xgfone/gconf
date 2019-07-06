@@ -133,13 +133,7 @@ type cliSource struct {
 	group string
 }
 
-func (c cliSource) String() string {
-	return "cli"
-}
-
-func (c cliSource) Watch() (Watcher, error) {
-	return nil, nil
-}
+func (c cliSource) Watch(load func(DataSet, error), exit <-chan struct{}) {}
 
 func (c cliSource) Read() (DataSet, error) {
 	names := c.ctx.FlagNames()
@@ -157,7 +151,7 @@ func (c cliSource) Read() (DataSet, error) {
 	ds := DataSet{
 		Data:      data,
 		Format:    "json",
-		Source:    c.String(),
+		Source:    "cli",
 		Timestamp: time.Now(),
 	}
 	ds.Checksum = "md5:" + ds.Md5()

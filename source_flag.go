@@ -186,13 +186,7 @@ type flagSource struct {
 	flagSet *flag.FlagSet
 }
 
-func (f flagSource) String() string {
-	return "flag"
-}
-
-func (f flagSource) Watch() (Watcher, error) {
-	return nil, nil
-}
+func (f flagSource) Watch(load func(DataSet, error), exit <-chan struct{}) {}
 
 func (f flagSource) Read() (DataSet, error) {
 	if !f.flagSet.Parsed() {
@@ -210,7 +204,7 @@ func (f flagSource) Read() (DataSet, error) {
 	if err != nil {
 		return DataSet{}, err
 	}
-	ds := DataSet{Data: data, Format: "json", Source: f.String(), Timestamp: time.Now()}
+	ds := DataSet{Data: data, Format: "json", Source: "flag", Timestamp: time.Now()}
 	ds.Checksum = fmt.Sprintf("md5:%s", ds.Md5())
 	return ds, nil
 }

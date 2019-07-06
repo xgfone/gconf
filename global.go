@@ -31,24 +31,24 @@ func SetStringVersion(version string) {
 	Conf.SetStringVersion(version)
 }
 
-// AddWatcher is equal to Conf.AddWatcher(watchers...).
-func AddWatcher(watchers ...Watcher) {
-	Conf.AddWatcher(watchers...)
-}
-
 // LoadMap is equal to Conf.LoadMap(m, force...).
 func LoadMap(m map[string]interface{}, force ...bool) {
 	Conf.LoadMap(m, force...)
 }
 
-// LoadSource is equal to Conf.LoadSource(source, force...).
-func LoadSource(source Source, force ...bool) error {
-	return Conf.LoadSource(source, force...)
+// LoadDataSet is equal to Conf.LoadDataSet(ds, force...).
+func LoadDataSet(ds DataSet, force ...bool) {
+	Conf.LoadDataSet(ds, force...)
 }
 
-// LoadSourceWithoutWatcher is equal to Conf.LoadSourceWithoutWatcher(source, force...).
-func LoadSourceWithoutWatcher(source Source, force ...bool) error {
-	return Conf.LoadSourceWithoutWatcher(source, force...)
+// LoadSource is equal to Conf.LoadSource(source, force...).
+func LoadSource(source Source, force ...bool) {
+	Conf.LoadSource(source, force...)
+}
+
+// LoadSourceWithoutWatch is equal to Conf.LoadSourceWithoutWatch(source, force...).
+func LoadSourceWithoutWatch(source Source, force ...bool) {
+	Conf.LoadSourceWithoutWatch(source, force...)
 }
 
 // LoadBackupFile is equal to Conf.LoadBackupFile(filename).

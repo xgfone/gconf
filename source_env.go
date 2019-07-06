@@ -43,13 +43,7 @@ type envSource struct {
 	prefix string
 }
 
-func (e envSource) String() string {
-	return "env"
-}
-
-func (e envSource) Watch() (Watcher, error) {
-	return nil, nil
-}
+func (e envSource) Watch(load func(DataSet, error), exit <-chan struct{}) {}
 
 func (e envSource) Read() (DataSet, error) {
 	vs := make(map[string]string, 32)
@@ -71,7 +65,7 @@ func (e envSource) Read() (DataSet, error) {
 	if err != nil {
 		return DataSet{}, err
 	}
-	ds := DataSet{Data: data, Format: "json", Source: e.String(), Timestamp: time.Now()}
+	ds := DataSet{Data: data, Format: "json", Source: "env", Timestamp: time.Now()}
 	ds.Checksum = fmt.Sprintf("md5:%s", ds.Md5())
 	return ds, nil
 }

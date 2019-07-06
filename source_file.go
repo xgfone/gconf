@@ -52,10 +52,6 @@ type fileSource struct {
 	filepath string
 }
 
-func (f fileSource) String() string {
-	return f.id
-}
-
 func (f fileSource) Read() (DataSet, error) {
 	file, err := os.Open(f.filepath)
 	if err != nil {
@@ -76,7 +72,7 @@ func (f fileSource) Read() (DataSet, error) {
 	ds := DataSet{
 		Data:      data,
 		Format:    f.format,
-		Source:    f.String(),
+		Source:    f.id,
 		Timestamp: stat.ModTime(),
 	}
 	ds.Checksum = "md5:" + ds.Md5()
@@ -84,87 +80,68 @@ func (f fileSource) Read() (DataSet, error) {
 	return ds, nil
 }
 
-func (f fileSource) Watch() (Watcher, error) {
-	return newFileWatcher(f)
+func (f fileSource) Watch(load func(DataSet, error), exit <-chan struct{}) {
+	go f.watchfile(load, exit)
 }
 
-func newFileWatcher(fs fileSource) (Watcher, error) {
+func (f fileSource) watchfile(load func(DataSet, error), exit <-chan struct{}) {
 	fw, err := fsnotify.NewWatcher()
 	if err != nil {
-		return nil, err
+		load(DataSet{Source: f.id, Format: f.format}, err)
+		return
 	}
-	fw.Add(fs.filepath)
-	return &fileWatcher{fs: fs, fw: fw, add: true, exit: make(chan struct{})}, nil
-}
+	defer fw.Close()
 
-type fileWatcher struct {
-	fs fileSource
-	fw *fsnotify.Watcher
-
-	add  bool
-	exit chan struct{}
-}
-
-func (f *fileWatcher) Close() {
-	select {
-	case <-f.exit:
-	default:
-		close(f.exit)
-		f.fw.Close()
+	var add bool
+	if fw.Add(f.filepath) == nil {
+		add = true
 	}
-}
 
-func (f *fileWatcher) Source() string {
-	return f.fs.String()
-}
-
-func (f *fileWatcher) Next() (DataSet, error) {
+	interval := time.Second * 10
 	for {
-		select {
-		case <-f.exit:
-			return DataSet{}, ErrWatcherClosed
-		default:
-		}
-
-		if _, err := os.Stat(f.fs.filepath); err != nil {
+		time.Sleep(interval)
+		if _, err := os.Stat(f.filepath); err != nil {
 			if os.IsNotExist(err) {
-				if f.add {
-					f.fw.Remove(f.fs.filepath)
-					f.add = false
+				if add {
+					fw.Remove(f.filepath)
+					add = false
 				}
-				time.Sleep(time.Second * 10)
-				continue
+			} else {
+				load(DataSet{Source: f.id, Format: f.format}, err)
 			}
-			return DataSet{}, err
+			continue
 		}
 
-		if !f.add {
-			if err := f.fw.Add(f.fs.filepath); err != nil {
-				return DataSet{}, err
+		if !add {
+			if err := fw.Add(f.filepath); err != nil {
+				load(DataSet{Source: f.id, Format: f.format}, err)
+			} else {
+				add = true
+				load(f.Read())
 			}
-			f.add = true
-			return f.fs.Read()
+			continue
 		}
 
 		select {
-		case event, ok := <-f.fw.Events:
+		case <-exit:
+			return
+		case event, ok := <-fw.Events:
 			if !ok {
-				return DataSet{}, ErrWatcherClosed
+				return
 			}
 
 			// BUG: it will be triggered twice continuously by fsnotify on Windows.
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				return f.fs.Read()
+				load(f.Read())
 			} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-				f.add = false
+				add = false
 			}
-		case err, ok := <-f.fw.Errors:
+		case err, ok := <-fw.Errors:
 			if !ok {
-				return DataSet{}, ErrWatcherClosed
+				return
 			}
-			return DataSet{}, err
-		case <-f.exit:
-			return DataSet{}, ErrWatcherClosed
+			load(DataSet{Source: f.id, Format: f.format}, err)
 		}
 	}
+
 }
