@@ -45,6 +45,9 @@ type DataSet struct {
 	Source    string    // Such as "file:/path/to/file", "zk:127.0.0.1:2181", etc.
 	Checksum  string    // Such as "md5:7d2f31e6fff478337478413ee1b70d2a", etc.
 	Timestamp time.Time // The timestamp when the data is modified.
+
+	// Callback will be called after loading the dataset, if it exists.
+	Callback func(DataSet)
 }
 
 // Md5 returns the md5 checksum of the DataSet data
@@ -78,6 +81,10 @@ func (c *Config) LoadDataSet(ds DataSet, force ...bool) {
 		c.handleError(NewSourceError(ds.Source, ds.Format, ds.Data, err))
 	} else {
 		c.LoadMap(ms, force...)
+	}
+
+	if ds.Callback != nil {
+		ds.Callback(ds)
 	}
 }
 
@@ -114,16 +121,28 @@ type Source interface {
 // it will be ignored. But you can set force to true to reset the value of this
 // option.
 func (c *Config) LoadSource(source Source, force ...bool) {
-	c.loadSource(source, true, force...)
+	c.loadSource(source, true, nil, force...)
 }
 
 // LoadSourceWithoutWatch is the same as LoadSource, but does not call
 // the Watch method of the source to watch the source.
 func (c *Config) LoadSourceWithoutWatch(source Source, force ...bool) {
-	c.loadSource(source, false, force...)
+	c.loadSource(source, false, nil, force...)
 }
 
-func (c *Config) loadSource(source Source, watch bool, force ...bool) {
+// LoadSourceAndCallback is the same as LoadSource, but set the callback
+// of the Dataset to cb.
+func (c *Config) LoadSourceAndCallback(source Source, cb func(DataSet), force ...bool) {
+	c.loadSource(source, true, cb, force...)
+}
+
+// LoadSourceAndCallbackWithoutWatch is the same as LoadSourceWithoutWatch,
+// but set the callback of the Dataset to cb.
+func (c *Config) LoadSourceAndCallbackWithoutWatch(source Source, cb func(DataSet), force ...bool) {
+	c.loadSource(source, false, cb, force...)
+}
+
+func (c *Config) loadSource(source Source, watch bool, cb func(DataSet), force ...bool) {
 	if source == nil {
 		panic("the source is nil")
 	}
@@ -134,6 +153,7 @@ func (c *Config) loadSource(source Source, watch bool, force ...bool) {
 	}
 
 	ds, err := source.Read()
+	ds.Callback = cb
 	c.loadDataSetWithError(ds, err, _force)
 	if watch {
 		source.Watch(c.loadDataSetCallback, c.exit)

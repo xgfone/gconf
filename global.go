@@ -51,6 +51,17 @@ func LoadSourceWithoutWatch(source Source, force ...bool) {
 	Conf.LoadSourceWithoutWatch(source, force...)
 }
 
+// LoadSourceAndCallback is equal Conf.LoadSourceAndCallback(source, cb, force...).
+func LoadSourceAndCallback(source Source, cb func(DataSet), force ...bool) {
+	Conf.LoadSourceAndCallback(source, cb, force...)
+}
+
+// LoadSourceAndCallbackWithoutWatch is equal to
+// Conf.LoadSourceAndCallbackWithoutWatch(source, cb, force...).
+func LoadSourceAndCallbackWithoutWatch(source Source, cb func(DataSet), force ...bool) {
+	Conf.LoadSourceAndCallbackWithoutWatch(source, cb, force...)
+}
+
 // LoadBackupFile is equal to Conf.LoadBackupFile(filename).
 func LoadBackupFile(filename string) error {
 	return Conf.LoadBackupFile(filename)
