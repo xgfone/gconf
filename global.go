@@ -86,6 +86,11 @@ func Close() {
 	Conf.Close()
 }
 
+// CloseNotice is equal to Conf.CloseNotice().
+func CloseNotice() <-chan struct{} {
+	return Conf.CloseNotice()
+}
+
 // Observe is equal to Conf.Observe(observer).
 func Observe(observer func(group string, opt string, oldValue, newValue interface{})) {
 	Conf.Observe(observer)
