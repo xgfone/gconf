@@ -209,6 +209,12 @@ func (c *Config) Close() {
 	}
 }
 
+// CloseNotice returns a close channel, which will also be closed when the config
+// is closed.
+func (c *Config) CloseNotice() <-chan struct{} {
+	return c.exit
+}
+
 func (c *Config) defaultErrorHandler(err error) {
 	if !IsErrNoOpt(err) {
 		fmt.Println(err)

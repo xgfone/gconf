@@ -103,9 +103,9 @@ type Source interface {
 
 	// Watch watches the change of the source, then send the changed data to ds.
 	//
-	// The source can check whether exit is closed to determine whether the
+	// The source can check whether close is closed to determine whether the
 	// configuration is closed and to do any cleanup.
-	Watch(load func(DataSet, error), exit <-chan struct{})
+	Watch(load func(DataSet, error), close <-chan struct{})
 }
 
 // LoadSource loads the sources, and call Watch to watch the source.
