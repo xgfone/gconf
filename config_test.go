@@ -17,6 +17,7 @@ package gconf
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
 )
 
 func ExampleConfig_Observe() {
@@ -316,4 +317,57 @@ func ExampleConfig() {
 	// [7 8 9]
 	// [x y z]
 	// [7s 8s 9s]
+}
+
+func ExampleOptGroup_SetOptAlias() {
+	conf := New()
+	conf.RegisterOpt(IntOpt("newopt", "test alias").D(123))
+	conf.SetOptAlias("oldopt", "newopt")
+
+	fmt.Printf("newopt=%d, oldopt=%d\n", conf.GetInt("newopt"), conf.GetInt("oldopt"))
+	conf.Set("oldopt", 456)
+	fmt.Printf("newopt=%d, oldopt=%d\n", conf.GetInt("newopt"), conf.GetInt("oldopt"))
+
+	// Output:
+	// newopt=123, oldopt=123
+	// newopt=456, oldopt=456
+}
+
+func TestOptGroupAlias(t *testing.T) {
+	conf := New()
+	conf.RegisterOpt(IntOpt("int", "test alias"))
+	conf.SetOptAlias("opt", "int")
+
+	if opt, exist := conf.Opt("opt"); !exist || opt.Name != "int" {
+		t.Fail()
+	} else if !conf.HasOpt("opt") {
+		t.Fail()
+	} else if conf.OptIsSet("opt") {
+		t.Fail()
+	} else if !conf.HasOptAndIsNotSet("opt") {
+		t.Fail()
+	}
+
+	conf.Set("opt", 123)
+	if !conf.OptIsSet("opt") {
+		t.Fail()
+	} else if conf.HasOptAndIsNotSet("opt") {
+		t.Fail()
+	} else if v := conf.GetInt("opt"); v != 123 {
+		t.Error(v)
+	}
+
+	if conf.OptIsFrozen("opt") {
+		t.Fail()
+	}
+
+	conf.FreezeOpt("opt")
+	if !conf.OptIsFrozen("opt") {
+		t.Fail()
+	}
+
+	conf.UnfreezeOpt("opt")
+	if conf.OptIsFrozen("opt") {
+		t.Fail()
+	}
 }

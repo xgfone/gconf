@@ -80,11 +80,17 @@ type OptGroup struct {
 
 	name   string // short name
 	opts   map[string]*groupOpt
+	alias  map[string]string
 	frozen bool
 }
 
 func newOptGroup(conf *Config, name string) *OptGroup {
-	return &OptGroup{conf: conf, name: name, opts: make(map[string]*groupOpt, 16)}
+	return &OptGroup{
+		conf:  conf,
+		name:  name,
+		opts:  make(map[string]*groupOpt, 16),
+		alias: make(map[string]string, 16),
+	}
 }
 
 // NewGroup returns a new sub-group with the name named `group`.
@@ -150,6 +156,9 @@ func (g *OptGroup) Opt(name string) (opt Opt, exist bool) {
 	name = g.fixOptName(name)
 	g.lock.RLock()
 	gopt := g.opts[name]
+	if gopt == nil {
+		gopt = g.opts[g.alias[name]] // Check the alias
+	}
 	g.lock.RUnlock()
 
 	if gopt != nil {
@@ -171,6 +180,11 @@ func (g *OptGroup) HasOpt(name string) bool {
 	name = g.fixOptName(name)
 	g.lock.RLock()
 	_, ok := g.opts[name]
+	if !ok {
+		if name = g.alias[name]; name != "" {
+			_, ok = g.opts[name]
+		}
+	}
 	g.lock.RUnlock()
 	return ok
 }
@@ -183,6 +197,10 @@ func (g *OptGroup) OptIsSet(name string) bool {
 	g.lock.RLock()
 	if opt, ok := g.opts[name]; ok {
 		set = opt.value != nil
+	} else if name, ok = g.alias[name]; ok {
+		if opt, ok = g.opts[name]; ok {
+			set = opt.value != nil
+		}
 	}
 	g.lock.RUnlock()
 	return set
@@ -195,9 +213,23 @@ func (g *OptGroup) HasOptAndIsNotSet(name string) (yes bool) {
 	g.lock.RLock()
 	if opt, ok := g.opts[name]; ok {
 		yes = opt.value == nil
+	} else if name, ok = g.alias[name]; ok {
+		if opt, ok = g.opts[name]; ok {
+			yes = opt.value == nil
+		}
 	}
 	g.lock.RUnlock()
 	return
+}
+
+// SetOptAlias sets the alias of the option from old to new. So you can access
+// the option named new by the old name.
+func (g *OptGroup) SetOptAlias(old, new string) {
+	old = g.fixOptName(old)
+	new = g.fixOptName(new)
+	g.lock.Lock()
+	g.alias[old] = new
+	g.lock.Unlock()
 }
 
 func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
@@ -205,6 +237,10 @@ func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
 	g.lock.Lock()
 	if opt, ok := g.opts[name]; ok {
 		opt.watch = watch
+	} else if name, ok = g.alias[name]; ok {
+		if opt, ok = g.opts[name]; ok {
+			opt.watch = watch
+		}
 	}
 	g.lock.Unlock()
 }
@@ -315,7 +351,13 @@ func (g *OptGroup) FreezeOpt(names ...string) {
 
 	g.lock.Lock()
 	for _, name := range names {
-		if gopt, ok := g.opts[name]; ok && !gopt.frozen {
+		gopt, ok := g.opts[name]
+		if !ok {
+			if alias, exist := g.alias[name]; exist {
+				gopt, ok = g.opts[alias]
+			}
+		}
+		if ok && !gopt.frozen {
 			gopt.frozen = true
 		}
 	}
@@ -332,7 +374,13 @@ func (g *OptGroup) UnfreezeOpt(names ...string) {
 
 	g.lock.Lock()
 	for _, name := range names {
-		if gopt, ok := g.opts[name]; ok && gopt.frozen {
+		gopt, ok := g.opts[name]
+		if !ok {
+			if alias, exist := g.alias[name]; exist {
+				gopt, ok = g.opts[alias]
+			}
+		}
+		if ok && gopt.frozen {
 			gopt.frozen = false
 		}
 	}
@@ -363,6 +411,10 @@ func (g *OptGroup) optIsFrozen(name string) bool {
 		return true
 	} else if gopt, ok := g.opts[name]; ok {
 		return gopt.frozen
+	} else if name, ok = g.alias[name]; ok {
+		if gopt, ok = g.opts[name]; ok {
+			return gopt.frozen
+		}
 	}
 	return false
 }
@@ -374,7 +426,11 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 
 	opt, ok := g.opts[name]
 	if !ok {
-		return nil, ErrNoOpt
+		if name, ok = g.alias[name]; !ok {
+			return nil, ErrNoOpt
+		} else if opt, ok = g.opts[name]; !ok {
+			return nil, ErrNoOpt
+		}
 	}
 
 	// Parse the option value
@@ -393,6 +449,10 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 
 func (g *OptGroup) setOptValue(name string, value interface{}) {
 	opt := g.opts[name]
+	if opt == nil {
+		name = g.alias[name]
+		opt = g.opts[name]
+	}
 	old := opt.value
 	opt.value = value
 	if old == nil {
@@ -466,7 +526,13 @@ func (g *OptGroup) Set(name string, value interface{}) {
 func (g *OptGroup) Get(name string) (value interface{}) {
 	name = g.fixOptName(name)
 	g.lock.RLock()
-	if opt, ok := g.opts[name]; ok {
+	opt, ok := g.opts[name]
+	if !ok {
+		if name, ok = g.alias[name]; ok {
+			opt, ok = g.opts[name]
+		}
+	}
+	if ok {
 		if value = opt.value; value == nil {
 			value = opt.opt.Default
 		}
