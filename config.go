@@ -164,6 +164,10 @@ func (c *Config) getGroup(parent, name string) *OptGroup {
 }
 
 func (c *Config) noticeOptRegister(group string, opts []Opt) {
+	if len(opts) == 0 {
+		return
+	}
+
 	c.lock.RLock()
 	fs := append([]func(string, []Opt){}, c.regObserves...)
 	c.lock.RUnlock()
