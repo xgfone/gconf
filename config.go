@@ -99,7 +99,7 @@ func New() *Config {
 	c.decAlias = make(map[string]string, 8)
 	c.OptGroup = newOptGroup(c, "")
 	c.groups[c.OptGroup.Name()] = c.OptGroup
-	c.errHandler = c.defaultErrorHandler
+	c.errHandler = ErrorHandler(func(err error) { fmt.Println(err) })
 	c.AddDecoder(NewJSONDecoder())
 	c.AddDecoder(NewIniDecoder())
 	c.AddDecoder(NewYamlDecoder())
@@ -219,12 +219,6 @@ func (c *Config) CloseNotice() <-chan struct{} {
 	return c.exit
 }
 
-func (c *Config) defaultErrorHandler(err error) {
-	if !IsErrNoOpt(err) {
-		fmt.Println(err)
-	}
-}
-
 func (c *Config) handleError(err error) {
 	c.lock.RLock()
 	handler := c.errHandler
@@ -232,9 +226,20 @@ func (c *Config) handleError(err error) {
 	handler(err)
 }
 
+// ErrorHandler returns a error handler, which will ignore ErrNoOpt
+// and ErrFrozenOpt, and pass the others to h.
+func ErrorHandler(h func(err error)) func(error) {
+	return func(err error) {
+		if !IsErrNoOpt(err) && !IsErrFrozenOpt(err) {
+			h(err)
+		}
+	}
+}
+
 // SetErrHandler resets the error handler to h.
 //
-// The default is output to os.Stdout by fmt.Println(err), but it ignores ErrNoOpt.
+// The default is output to os.Stdout by fmt.Println(err), but it ignores
+// ErrNoOpt and ErrFrozenOpt.
 func (c *Config) SetErrHandler(h func(error)) {
 	if h == nil {
 		panic("the error handler must not be nil")
