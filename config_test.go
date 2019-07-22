@@ -371,3 +371,24 @@ func TestOptGroupAlias(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestOrValidator(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	conf := New()
+	conf.RegisterOpt(StrOpt("ip1", "").V(Or(NewIPValidator(), NewEmptyStrValidator())))
+	conf.RegisterOpt(StrOpt("ip2", "").D("0.0.0.0").V(Or(NewIPValidator(), NewEmptyStrValidator())))
+
+	conf.Set("ip1", "127.0.0.1")
+	conf.Set("ip2", "")
+
+	if v := conf.GetString("ip1"); v != "127.0.0.1" {
+		t.Error(v)
+	} else if v = conf.GetString("ip2"); v != "" {
+		t.Error(v)
+	}
+}

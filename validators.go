@@ -32,6 +32,19 @@ var (
 // is valid.
 type Validator func(value interface{}) error
 
+// Or returns a union validator, which returns nil only if a certain validator
+// returns nil or the error that the last validator returns.
+func Or(validators ...Validator) Validator {
+	return func(value interface{}) (err error) {
+		for _, v := range validators {
+			if err = v(value); err == nil {
+				return nil
+			}
+		}
+		return
+	}
+}
+
 // NewStrLenValidator returns a validator to validate that the length of the
 // string must be between min and max.
 func NewStrLenValidator(min, max int) Validator {
