@@ -23,8 +23,9 @@ import (
 )
 
 var (
-	errStrEmtpy  = fmt.Errorf("the string is empty")
-	errNotString = fmt.Errorf("the value is not string")
+	errStrEmtpy    = fmt.Errorf("the string is empty")
+	errNotString   = fmt.Errorf("the value is not string")
+	errStrNotEmtpy = fmt.Errorf("the string is not empty")
 )
 
 // Validator is used to validate whether the value of the option in the group
@@ -46,6 +47,22 @@ func NewStrLenValidator(min, max int) Validator {
 				s, _len, min, max)
 		}
 		return nil
+	}
+}
+
+// NewEmptyStrValidator returns a validator to validate that the value must be
+// an empty string.
+func NewEmptyStrValidator() Validator {
+	return func(value interface{}) error {
+		s, ok := value.(string)
+		if !ok {
+			return errNotString
+		}
+
+		if len(s) == 0 {
+			return nil
+		}
+		return errStrNotEmtpy
 	}
 }
 
