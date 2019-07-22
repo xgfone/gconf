@@ -47,6 +47,10 @@ type Opt struct {
 	Parser func(input interface{}) (output interface{}, err error)
 
 	// Validators is the validators of the option, which is optional.
+	//
+	// When updating the option value, the validators will validate it.
+	// If there is a validator returns an error, the updating fails and
+	// returns the error. That's, these validators are the AND relations.
 	Validators []Validator
 }
 
