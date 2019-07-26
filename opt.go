@@ -20,7 +20,7 @@ import (
 )
 
 // VersionOpt reprensents a version option.
-var VersionOpt = StrOpt("version", "Print the version and exit.").S("v").V(NewStrNotEmptyValidator())
+var VersionOpt = StrOpt("version", "Print the version and exit.").S("v").D("1.0.0").V(NewStrNotEmptyValidator())
 
 // Opt is used to represent a option vlaue.
 type Opt struct {
