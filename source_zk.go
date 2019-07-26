@@ -22,9 +22,8 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-// NewZkSource returns a new ZeeKeeper source with a connection to zk.
-//
-// If path is "", it is "/" by default.
+// NewZkSource is the same as NewZkConnSource, and conn is created by hosts,
+// timeout, logger.
 func NewZkSource(hosts []string, path, format string, timeout time.Duration, logger ...zk.Logger) Source {
 	if format == "" {
 		panic("zk source: the format must not be nil")
@@ -37,6 +36,22 @@ func NewZkSource(hosts []string, path, format string, timeout time.Duration, log
 		conn.SetLogger(logger[0])
 	}
 
+	return NewZkConnSource(conn, path, format, hosts...)
+}
+
+// NewZkConnSource returns a new ZeeKeeper source with the connection to zk.
+//
+// path is the prefix of the zk path. If path is "", it is "/" by default.
+//
+// format is the format of the data of the zk source.
+//
+// hosts is used to generate the id of the source. If missing, it will use
+// conn.Server().
+func NewZkConnSource(conn *zk.Conn, path, format string, hosts ...string) Source {
+	if format == "" {
+		panic("zk source: the format must not be empty")
+	}
+
 	switch path = strings.TrimSpace(path); path {
 	case "":
 		path = "/"
@@ -45,6 +60,10 @@ func NewZkSource(hosts []string, path, format string, timeout time.Duration, log
 		if path = strings.TrimRight(path, "/"); path == "" {
 			path = "/"
 		}
+	}
+
+	if len(hosts) == 0 {
+		hosts = []string{conn.Server()}
 	}
 
 	id := fmt.Sprintf("zk:%s:%s", path, strings.Join(hosts, ","))
