@@ -501,7 +501,7 @@ func main() {
 }
 ```
 
-For the base types and their slice types, it's not goroutine-safe to get or set the value of the struct field. But you can use the versions of their `OptField`.
+For the base types and their slice types, it's not goroutine-safe to get or set the value of the struct field. But you can use the versions of their `OptField` instead.
 ```go
 package main
 
