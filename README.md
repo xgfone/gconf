@@ -175,15 +175,15 @@ func main() {
 
 	// Create and run cli app.
 	app := cli.NewApp()
-	app.Flags = []cli.Flag{cli.StringFlag{Name: "opt1"}}
+	app.Flags = gconf.ConvertOptsToCliFlags(gconf.Conf.OptGroup)
 	app.Commands = []cli.Command{
 		cli.Command{
 			Name:  "cmd1",
-			Flags: []cli.Flag{cli.IntFlag{Name: "opt2"}},
+			Flags: gconf.ConvertOptsToCliFlags(gconf.Group("cmd1")),
 			Subcommands: []cli.Command{
 				cli.Command{
 					Name:  "cmd2",
-					Flags: []cli.Flag{cli.IntFlag{Name: "opt3"}},
+					Flags: gconf.ConvertOptsToCliFlags(gconf.Group("cmd1.cmd2")),
 					Action: func(ctx *cli.Context) error {
 						// Load the sources
 						gconf.LoadSource(gconf.NewCliSource(ctx, "cmd1.cmd2"))      // cmd2
