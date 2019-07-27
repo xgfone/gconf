@@ -42,6 +42,9 @@ func ConvertOptsToCliFlags(group *OptGroup, prefix ...string) []cli.Flag {
 			name = fmt.Sprintf("%s-%s", _prefix, name)
 		}
 		name = strings.Replace(name, "_", "-", -1)
+		if opt.Short != "" {
+			name = fmt.Sprintf("%s, %s", name, opt.Short)
+		}
 
 		var flag cli.Flag
 		switch v := opt.Default.(type) {
