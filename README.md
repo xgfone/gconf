@@ -500,3 +500,171 @@ func main() {
 	//         uints
 }
 ```
+
+For the base types and their slice types, it's not goroutine-safe to get or set the value of the struct field. But you can use the versions of their `OptField`.
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/xgfone/gconf"
+)
+
+// AppConfig is used to configure the application.
+type AppConfig struct {
+	Bool      gconf.BoolOptField
+	BoolT     gconf.BoolTOptField
+	Int       gconf.IntOptField
+	Int32     gconf.Int32OptField
+	Int64     gconf.Int64OptField
+	Uint      gconf.UintOptField
+	Uint32    gconf.Uint32OptField
+	Uint64    gconf.Uint64OptField
+	Float64   gconf.Float64OptField
+	String    gconf.StringOptField
+	Duration  gconf.DurationOptField
+	Time      gconf.TimeOptField
+	Ints      gconf.IntSliceOptField
+	Uints     gconf.UintSliceOptField
+	Float64s  gconf.Float64SliceOptField
+	Strings   gconf.StringSliceOptField
+	Durations gconf.DurationSliceOptField
+
+	// Pointer Example
+	IntP   *gconf.IntOptField `default:"123" short:"i" help:"test int pointer"`
+	Ignore *gconf.StringOptField
+}
+
+func main() {
+	// Notice: for the pointer to the option field, it must be initialized.
+	// Or it will be ignored.
+	config := AppConfig{IntP: &gconf.IntOptField{}}
+	conf := gconf.New()
+	conf.RegisterStruct(&config)
+
+	fmt.Println("--- Registered Options ---")
+	for _, opt := range conf.AllOpts() {
+		fmt.Println(opt.Name)
+	}
+
+	fmt.Println("--- Before Updating ---")
+	fmt.Printf("bool=%v\n", config.Bool.Get())
+	fmt.Printf("boolt=%v\n", config.BoolT.Get())
+	fmt.Printf("int=%v\n", config.Int.Get())
+	fmt.Printf("int32=%v\n", config.Int32.Get())
+	fmt.Printf("int64=%v\n", config.Int64.Get())
+	fmt.Printf("uint=%v\n", config.Uint.Get())
+	fmt.Printf("uint32=%v\n", config.Uint32.Get())
+	fmt.Printf("uint64=%v\n", config.Uint64.Get())
+	fmt.Printf("float64=%v\n", config.Float64.Get())
+	fmt.Printf("string=%v\n", config.String.Get())
+	fmt.Printf("duration=%v\n", config.Duration.Get())
+	fmt.Printf("time=%v\n", config.Time.Get().Format(time.RFC3339))
+	fmt.Printf("ints=%v\n", config.Ints.Get())
+	fmt.Printf("uints=%v\n", config.Uints.Get())
+	fmt.Printf("float64s=%v\n", config.Float64s.Get())
+	fmt.Printf("strings=%v\n", config.Strings.Get())
+	fmt.Printf("durations=%v\n", config.Durations.Get())
+	fmt.Printf("intp=%v\n", config.IntP.Get())
+
+	conf.Set("bool", true)
+	conf.Set("boolt", false)
+	conf.Set("int", 123)
+	conf.Set("int32", 123)
+	conf.Set("int64", 123)
+	conf.Set("uint", 123)
+	conf.Set("uint32", 123)
+	conf.Set("uint64", 123)
+	conf.Set("float64", 123)
+	conf.Set("string", "abc")
+	conf.Set("duration", "10s")
+	conf.Set("time", "2019-07-27 15:39:34")
+	conf.Set("ints", []int{1, 2, 3})
+	conf.Set("uints", []uint{4, 5, 6})
+	conf.Set("float64s", []float64{1, 2, 3})
+	conf.Set("strings", []string{"a", "b", "c"})
+	conf.Set("durations", []time.Duration{time.Second, time.Second * 2, time.Second * 3})
+	conf.Set("intp", 456)
+
+	fmt.Println("--- After Updating ---")
+	fmt.Printf("bool=%v\n", config.Bool.Get())
+	fmt.Printf("boolt=%v\n", config.BoolT.Get())
+	fmt.Printf("int=%v\n", config.Int.Get())
+	fmt.Printf("int32=%v\n", config.Int32.Get())
+	fmt.Printf("int64=%v\n", config.Int64.Get())
+	fmt.Printf("uint=%v\n", config.Uint.Get())
+	fmt.Printf("uint32=%v\n", config.Uint32.Get())
+	fmt.Printf("uint64=%v\n", config.Uint64.Get())
+	fmt.Printf("float64=%v\n", config.Float64.Get())
+	fmt.Printf("string=%v\n", config.String.Get())
+	fmt.Printf("duration=%v\n", config.Duration.Get())
+	fmt.Printf("time=%v\n", config.Time.Get().Format(time.RFC3339))
+	fmt.Printf("ints=%v\n", config.Ints.Get())
+	fmt.Printf("uints=%v\n", config.Uints.Get())
+	fmt.Printf("float64s=%v\n", config.Float64s.Get())
+	fmt.Printf("strings=%v\n", config.Strings.Get())
+	fmt.Printf("durations=%v\n", config.Durations.Get())
+	fmt.Printf("intp=%v\n", config.IntP.Get())
+
+	// Output:
+	// --- Registered Options ---
+	// bool
+	// boolt
+	// duration
+	// durations
+	// float64
+	// float64s
+	// int
+	// int32
+	// int64
+	// intp
+	// ints
+	// string
+	// strings
+	// time
+	// uint
+	// uint32
+	// uint64
+	// uints
+	// --- Before Updating ---
+	// bool=false
+	// boolt=true
+	// int=0
+	// int32=0
+	// int64=0
+	// uint=0
+	// uint32=0
+	// uint64=0
+	// float64=0
+	// string=
+	// duration=0s
+	// time=0001-01-01T00:00:00Z
+	// ints=[]
+	// uints=[]
+	// float64s=[]
+	// strings=[]
+	// durations=[]
+	// intp=123
+	// --- After Updating ---
+	// bool=true
+	// boolt=false
+	// int=123
+	// int32=123
+	// int64=123
+	// uint=123
+	// uint32=123
+	// uint64=123
+	// float64=123
+	// string=abc
+	// duration=10s
+	// time=2019-07-27T15:39:34Z
+	// ints=[1 2 3]
+	// uints=[4 5 6]
+	// float64s=[1 2 3]
+	// strings=[a b c]
+	// durations=[1s 2s 3s]
+	// intp=456
+}
+```
