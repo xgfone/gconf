@@ -489,9 +489,6 @@ func (g *OptGroup) Parse(name string, value interface{}) (interface{}, error) {
 // is equal to "abcd_efg".
 //
 // If there is not the option or the value is nil, it will ignore it.
-//
-// Notice: You should not call the method for the struct option and access them
-// by the struct field, because we have no way to promise that it's goroutine-safe.
 func (g *OptGroup) Set(name string, value interface{}) {
 	if value == nil {
 		return

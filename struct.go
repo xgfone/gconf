@@ -41,6 +41,7 @@ import (
 //   []float64
 //   []string
 //   []time.Duration
+//   OptField<interface{}>
 //
 // Other types will be ignored.
 //
@@ -66,8 +67,10 @@ import (
 //
 // Notice:
 //   1. All the tags are optional.
-//   2. The struct must be a pointer to a struct variable, or panic.
-//   3. The struct supports the nested struct, but not the pointer field.
+//   2. OptField is goroutine-safe, but the others is not.
+//   3. The struct must be a pointer to a struct variable, or panic.
+//   4. The struct supports the nested struct, but not the pointer field
+//      except OptField.
 //
 func (g *OptGroup) RegisterStruct(v interface{}) {
 	if v == nil {
@@ -96,6 +99,9 @@ func (g *OptGroup) registerStructByValue(sv, orig reflect.Value) {
 	}
 	st := sv.Type()
 
+	var optFieldValue OptField
+	optFieldT := reflect.ValueOf(&optFieldValue).Elem().Type()
+
 	// Register the field as the option
 	num := sv.NumField()
 	for i := 0; i < num; i++ {
@@ -123,63 +129,80 @@ func (g *OptGroup) registerStructByValue(sv, orig reflect.Value) {
 			group = group.NewGroup(gname)
 		}
 
-		// Check whether the field is the struct.
-		if t := field.Type.Kind(); t == reflect.Struct {
-			if _, ok := fieldV.Interface().(time.Time); !ok { // For struct config
-				if gname == "" {
-					group = group.NewGroup(name)
-				}
+		var opt Opt
+		var setter func(interface{})
 
-				group.registerStructByValue(fieldV, orig)
+		fv := fieldV
+		if kind := fv.Kind(); kind != reflect.Ptr && kind != reflect.Interface {
+			fv = fv.Addr()
+		}
+
+		if fv.Type().Implements(optFieldT) { // For OptField
+			if fv.IsNil() {
 				continue
 			}
+			optField := fv.Interface().(OptField)
+			setter = optField.Set
+			opt = NewOpt(name, optField.Default(), optField.Parse)
+		} else {
+			if t := field.Type.Kind(); t == reflect.Struct {
+				if _, ok := fieldV.Interface().(time.Time); !ok { // For struct config
+					if gname == "" {
+						group = group.NewGroup(name)
+					}
+					group.registerStructByValue(fieldV, orig)
+					continue
+				}
+			}
+
+			switch v := fieldV.Interface().(type) {
+			case bool:
+				opt = BoolOpt(name, "").D(v)
+			case int:
+				opt = IntOpt(name, "").D(v)
+			case int32:
+				opt = Int32Opt(name, "").D(v)
+			case int64:
+				opt = Int64Opt(name, "").D(v)
+			case uint:
+				opt = UintOpt(name, "").D(v)
+			case uint32:
+				opt = Uint32Opt(name, "").D(v)
+			case uint64:
+				opt = Uint64Opt(name, "").D(v)
+			case float64:
+				opt = Float64Opt(name, "").D(v)
+			case string:
+				opt = StrOpt(name, "").D(v)
+			case time.Duration:
+				opt = DurationOpt(name, "").D(v)
+			case time.Time:
+				opt = TimeOpt(name, "").D(v)
+			case []int:
+				opt = IntSliceOpt(name, "").D(v)
+			case []uint:
+				opt = UintSliceOpt(name, "").D(v)
+			case []float64:
+				opt = Float64SliceOpt(name, "").D(v)
+			case []string:
+				opt = StrSliceOpt(name, "").D(v)
+			case []time.Duration:
+				opt = DurationSliceOpt(name, "").D(v)
+			default:
+				continue
+			}
+
+			setter = func(value interface{}) { fieldV.Set(reflect.ValueOf(value)) }
 		}
 
 		// Parse the tag "help": the help document.
-		help := strings.TrimSpace(field.Tag.Get("help"))
-
-		var opt Opt
-		switch v := fieldV.Interface().(type) {
-		case bool:
-			opt = BoolOpt(name, help).D(v)
-		case int:
-			opt = IntOpt(name, help).D(v)
-		case int32:
-			opt = Int32Opt(name, help).D(v)
-		case int64:
-			opt = Int64Opt(name, help).D(v)
-		case uint:
-			opt = UintOpt(name, help).D(v)
-		case uint32:
-			opt = Uint32Opt(name, help).D(v)
-		case uint64:
-			opt = Uint64Opt(name, help).D(v)
-		case float64:
-			opt = Float64Opt(name, help).D(v)
-		case string:
-			opt = StrOpt(name, help).D(v)
-		case time.Duration:
-			opt = DurationOpt(name, help).D(v)
-		case time.Time:
-			opt = TimeOpt(name, help).D(v)
-
-		case []int:
-			opt = IntSliceOpt(name, help).D(v)
-		case []uint:
-			opt = UintSliceOpt(name, help).D(v)
-		case []float64:
-			opt = Float64SliceOpt(name, help).D(v)
-		case []string:
-			opt = StrSliceOpt(name, help).D(v)
-		case []time.Duration:
-			opt = DurationSliceOpt(name, help).D(v)
-		default:
-			continue
+		if help := strings.TrimSpace(field.Tag.Get("help")); help != "" {
+			opt.Help = help
 		}
 
 		// Parse the tag "short": the short name of the option.
 		if short := strings.TrimSpace(field.Tag.Get("short")); short != "" {
-			opt.S(short)
+			opt.Short = short
 		}
 
 		// Parse the tag "default": the default value of the option.
@@ -188,13 +211,11 @@ func (g *OptGroup) registerStructByValue(sv, orig reflect.Value) {
 				panic(fmt.Errorf("can't parse the default tag in the field %s: %s", field.Name, err))
 			} else {
 				opt.Default = _default
-				fieldV.Set(reflect.ValueOf(_default))
+				setter(_default)
 			}
 		}
 
 		group.registerOpt(opt)
-		group.setOptWatch(opt.Name, func(value interface{}) {
-			fieldV.Set(reflect.ValueOf(value))
-		})
+		group.setOptWatch(opt.Name, setter)
 	}
 }
