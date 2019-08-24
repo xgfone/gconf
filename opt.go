@@ -104,7 +104,13 @@ func (o Opt) D(_default interface{}) Opt {
 	if _default == nil {
 		panic("the default value of the option must not be nil")
 	}
-	o.Default = _default
+	if o.Parser == nil {
+		o.Default = _default
+	} else if value, err := o.Parser(_default); err != nil {
+		panic(NewOptError("", o.Name, err, _default))
+	} else {
+		o.Default = value
+	}
 	return o
 }
 
@@ -114,6 +120,13 @@ func (o Opt) P(parser func(interface{}) (interface{}, error)) Opt {
 		panic("the parser of the option must not be nil")
 	}
 	o.Parser = parser
+	if o.Default != nil {
+		if value, err := o.Parser(o.Default); err != nil {
+			panic(NewOptError("", o.Name, err, o.Default))
+		} else {
+			o.Default = value
+		}
+	}
 	return o
 }
 

@@ -27,46 +27,30 @@ import (
 // Some type converters, all of which have a default implementation,
 // but you can reset them to yourself implementations.
 var (
-	ToBool     func(interface{}) (bool, error)
-	ToInt      func(interface{}) (int, error)
-	ToInt32    func(interface{}) (int32, error)
-	ToInt64    func(interface{}) (int64, error)
-	ToUint     func(interface{}) (uint, error)
-	ToUint32   func(interface{}) (uint32, error)
-	ToUint64   func(interface{}) (uint64, error)
-	ToFloat64  func(interface{}) (float64, error)
-	ToString   func(interface{}) (string, error)
-	ToDuration func(interface{}) (time.Duration, error)
-	ToTime     func(interface{}) (time.Time, error)
+	ToBool     = types.ToBool     // func(interface{}) (bool, error)
+	ToInt      = types.ToInt      // func(interface{}) (int, error)
+	ToInt32    = types.ToInt32    // func(interface{}) (int32, error)
+	ToInt64    = types.ToInt64    // func(interface{}) (int64, error)
+	ToUint     = types.ToUint     // func(interface{}) (uint, error)
+	ToUint32   = types.ToUint32   // func(interface{}) (uint32, error)
+	ToUint64   = types.ToUint64   // func(interface{}) (uint64, error)
+	ToFloat64  = types.ToFloat64  // func(interface{}) (float64, error)
+	ToString   = types.ToString   // func(interface{}) (string, error)
+	ToDuration = types.ToDuration // func(interface{}) (time.Duration, error)
+	ToTime     = toTime           // func(interface{}) (time.Time, error)
 
 	// For string type, it will be separated by the comma(,) by default.
-	ToIntSlice      func(interface{}) ([]int, error)
-	ToUintSlice     func(interface{}) ([]uint, error)
-	ToFloat64Slice  func(interface{}) ([]float64, error)
-	ToStringSlice   func(interface{}) ([]string, error)
-	ToDurationSlice func(interface{}) ([]time.Duration, error)
+	ToIntSlice      = toIntSlice      // func(interface{}) ([]int, error)
+	ToUintSlice     = toUintSlice     // func(interface{}) ([]uint, error)
+	ToFloat64Slice  = toFloat64Slice  // func(interface{}) ([]float64, error)
+	ToStringSlice   = toStringSlice   // func(interface{}) ([]string, error)
+	ToDurationSlice = toDurationSlice // func(interface{}) ([]time.Duration, error)
 )
 
 var toStringMap = types.ToStringMap
 
-func init() {
-	ToBool = types.ToBool
-	ToInt64 = types.ToInt64
-	ToUint64 = types.ToUint64
-	ToFloat64 = types.ToFloat64
-	ToString = types.ToString
-	ToTime = func(v interface{}) (time.Time, error) { return types.ToTime(v) }
-	ToInt = types.ToInt
-	ToInt32 = types.ToInt32
-	ToUint = types.ToUint
-	ToUint32 = types.ToUint32
-	ToDuration = types.ToDuration
-
-	ToIntSlice = toIntSlice
-	ToUintSlice = toUintSlice
-	ToFloat64Slice = toFloat64Slice
-	ToStringSlice = toStringSlice
-	ToDurationSlice = toDurationSlice
+func toTime(v interface{}) (time.Time, error) {
+	return types.ToTime(v)
 }
 
 func bytesToMd5(data []byte) string {
