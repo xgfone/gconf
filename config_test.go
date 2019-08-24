@@ -20,6 +20,22 @@ import (
 	"testing"
 )
 
+func ExampleConfig_Traverse() {
+	conf := New()
+	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
+	conf.NewGroup("group1").RegisterOpt(IntOpt("opt2", "").D(123))
+	conf.NewGroup("group1").NewGroup("group2").RegisterOpt(IntOpt("opt3", "").D(456))
+
+	conf.Traverse(func(group, opt string, value interface{}) {
+		fmt.Printf("group=%s, opt=%s, value=%v\n", group, opt, value)
+	})
+
+	// Output:
+	// group=, opt=opt1, value=abc
+	// group=group1, opt=opt2, value=123
+	// group=group1.group2, opt=opt3, value=456
+}
+
 func ExampleConfig_Observe() {
 	conf := New()
 	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))

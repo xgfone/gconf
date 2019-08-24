@@ -102,6 +102,11 @@ func CloseNotice() <-chan struct{} {
 	return Conf.CloseNotice()
 }
 
+// Traverse is equal to Conf.Traverse(f).
+func Traverse(f func(group string, opt string, value interface{})) {
+	Conf.Traverse(f)
+}
+
 // Observe is equal to Conf.Observe(observer).
 func Observe(observer func(group string, opt string, oldValue, newValue interface{})) {
 	Conf.Observe(observer)

@@ -333,6 +333,15 @@ func (c *Config) PrintGroup(w io.Writer) error {
 	return nil
 }
 
+// Traverse traverses all the options of all the groups.
+func (c *Config) Traverse(f func(group string, opt string, value interface{})) {
+	for _, group := range c.AllGroups() {
+		for _, opt := range group.AllOpts() {
+			f(group.Name(), group.fixOptName(opt.Name), group.Get(opt.Name))
+		}
+	}
+}
+
 // UpdateOptValue updates the value of the option of the group.
 //
 // If the group or the option does not exist, it will be ignored.
