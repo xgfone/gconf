@@ -337,7 +337,8 @@ func (c *Config) PrintGroup(w io.Writer) error {
 func (c *Config) Traverse(f func(group string, opt string, value interface{})) {
 	for _, group := range c.AllGroups() {
 		for _, opt := range group.AllOpts() {
-			f(group.Name(), group.fixOptName(opt.Name), group.Get(opt.Name))
+			name := group.fixOptName(opt.Name)
+			f(group.Name(), name, group.Get(name))
 		}
 	}
 }
