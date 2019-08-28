@@ -538,10 +538,27 @@ func (g *OptGroup) Get(name string) (value interface{}) {
 	return
 }
 
+// Must is the same as Get(name), but panic if the option does not exist.
+func (g *OptGroup) Must(name string) (value interface{}) {
+	if value = g.Get(name); value == nil {
+		panic(NewOptError(g.name, name, ErrNoOpt, nil))
+	}
+	return
+}
+
 // GetBool is the same as Get(name), but returns the bool value.
 func (g *OptGroup) GetBool(name string) bool {
 	v, _ := ToBool(g.Get(name))
 	return v
+}
+
+// MustBool is the same as GetBool(name), but panic if the option does not exist.
+func (g *OptGroup) MustBool(name string) bool {
+	if value := g.Get(name); value != nil {
+		v, _ := ToBool(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
 }
 
 // GetInt is the same as Get(name), but returns the int value.
@@ -550,10 +567,28 @@ func (g *OptGroup) GetInt(name string) int {
 	return v
 }
 
+// MustInt is the same as GetInt(name), but panic if the option does not exist.
+func (g *OptGroup) MustInt(name string) int {
+	if value := g.Get(name); value != nil {
+		v, _ := ToInt(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // GetInt32 is the same as Get(name), but returns the int32 value.
 func (g *OptGroup) GetInt32(name string) int32 {
 	v, _ := ToInt32(g.Get(name))
 	return v
+}
+
+// MustInt32 is the same as GetInt32(name), but panic if the option does not exist.
+func (g *OptGroup) MustInt32(name string) int32 {
+	if value := g.Get(name); value != nil {
+		v, _ := ToInt32(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
 }
 
 // GetInt64 is the same as Get(name), but returns the int64 value.
@@ -562,10 +597,28 @@ func (g *OptGroup) GetInt64(name string) int64 {
 	return v
 }
 
+// MustInt64 is the same as GetInt64(name), but panic if the option does not exist.
+func (g *OptGroup) MustInt64(name string) int64 {
+	if value := g.Get(name); value != nil {
+		v, _ := ToInt64(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // GetUint is the same as Get(name), but returns the uint value.
 func (g *OptGroup) GetUint(name string) uint {
 	v, _ := ToUint(g.Get(name))
 	return v
+}
+
+// MustUint is the same as GetUint(name), but panic if the option does not exist.
+func (g *OptGroup) MustUint(name string) uint {
+	if value := g.Get(name); value != nil {
+		v, _ := ToUint(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
 }
 
 // GetUint32 is the same as Get(name), but returns the uint32 value.
@@ -574,10 +627,28 @@ func (g *OptGroup) GetUint32(name string) uint32 {
 	return v
 }
 
+// MustUint32 is the same as GetUint32(name), but panic if the option does not exist.
+func (g *OptGroup) MustUint32(name string) uint32 {
+	if value := g.Get(name); value != nil {
+		v, _ := ToUint32(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // GetUint64 is the same as Get(name), but returns the uint64 value.
 func (g *OptGroup) GetUint64(name string) uint64 {
 	v, _ := ToUint64(g.Get(name))
 	return v
+}
+
+// MustUint64 is the same as GetUint64(name), but panic if the option does not exist.
+func (g *OptGroup) MustUint64(name string) uint64 {
+	if value := g.Get(name); value != nil {
+		v, _ := ToUint64(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
 }
 
 // GetFloat64 is the same as Get(name), but returns the float64 value.
@@ -586,10 +657,28 @@ func (g *OptGroup) GetFloat64(name string) float64 {
 	return v
 }
 
+// MustFloat64 is the same as GetFloat64(name), but panic if the option does not exist.
+func (g *OptGroup) MustFloat64(name string) float64 {
+	if value := g.Get(name); value != nil {
+		v, _ := ToFloat64(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // GetString is the same as Get(name), but returns the string value.
 func (g *OptGroup) GetString(name string) string {
 	v, _ := ToString(g.Get(name))
 	return v
+}
+
+// MustString is the same as GetString(name), but panic if the option does not exist.
+func (g *OptGroup) MustString(name string) string {
+	if value := g.Get(name); value != nil {
+		v, _ := ToString(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
 }
 
 // GetDuration is the same as Get(name), but returns the time.Duration value.
@@ -598,10 +687,28 @@ func (g *OptGroup) GetDuration(name string) time.Duration {
 	return v
 }
 
+// MustDuration is the same as GetDuration(name), but panic if the option does not exist.
+func (g *OptGroup) MustDuration(name string) time.Duration {
+	if value := g.Get(name); value != nil {
+		v, _ := ToDuration(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // GetTime is the same as Get(name), but returns the time.Time value.
 func (g *OptGroup) GetTime(name string) time.Time {
 	v, _ := ToTime(g.Get(name))
 	return v
+}
+
+// MustTime is the same as GetTime(name), but panic if the option does not exist.
+func (g *OptGroup) MustTime(name string) time.Time {
+	if value := g.Get(name); value != nil {
+		v, _ := ToTime(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
 }
 
 // GetIntSlice is the same as Get(name), but returns the []int value.
@@ -610,10 +717,28 @@ func (g *OptGroup) GetIntSlice(name string) []int {
 	return v
 }
 
+// MustIntSlice is the same as GetIntSlice(name), but panic if the option does not exist.
+func (g *OptGroup) MustIntSlice(name string) []int {
+	if value := g.Get(name); value != nil {
+		v, _ := ToIntSlice(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // GetUintSlice is the same as Get(name), but returns the []uint value.
 func (g *OptGroup) GetUintSlice(name string) []uint {
 	v, _ := ToUintSlice(g.Get(name))
 	return v
+}
+
+// MustUintSlice is the same as GetUintSlice(name), but panic if the option does not exist.
+func (g *OptGroup) MustUintSlice(name string) []uint {
+	if value := g.Get(name); value != nil {
+		v, _ := ToUintSlice(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
 }
 
 // GetFloat64Slice is the same as Get(name), but returns the []float64 value.
@@ -622,14 +747,41 @@ func (g *OptGroup) GetFloat64Slice(name string) []float64 {
 	return v
 }
 
+// MustFloat64Slice is the same as GetFloat64Slice(name), but panic if the option does not exist.
+func (g *OptGroup) MustFloat64Slice(name string) []float64 {
+	if value := g.Get(name); value != nil {
+		v, _ := ToFloat64Slice(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // GetStringSlice is the same as Get(name), but returns the []string value.
 func (g *OptGroup) GetStringSlice(name string) []string {
 	v, _ := ToStringSlice(g.Get(name))
 	return v
 }
 
+// MustStringSlice is the same as GetStringSlice(name), but panic if the option does not exist.
+func (g *OptGroup) MustStringSlice(name string) []string {
+	if value := g.Get(name); value != nil {
+		v, _ := ToStringSlice(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
+}
+
 // GetDurationSlice is the same as Get(name), but returns the []time.Duration value.
 func (g *OptGroup) GetDurationSlice(name string) []time.Duration {
 	v, _ := ToDurationSlice(g.Get(name))
 	return v
+}
+
+// MustDurationSlice is the same as GetDurationSlice(name), but panic if the option does not exist.
+func (g *OptGroup) MustDurationSlice(name string) []time.Duration {
+	if value := g.Get(name); value != nil {
+		v, _ := ToDurationSlice(value)
+		return v
+	}
+	panic(NewOptError(g.name, name, ErrNoOpt, nil))
 }

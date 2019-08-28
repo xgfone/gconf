@@ -182,9 +182,19 @@ func Get(name string) (value interface{}) {
 	return Conf.Get(name)
 }
 
+// Must is equal to Conf.Must(name).
+func Must(name string) (value interface{}) {
+	return Conf.Must(name)
+}
+
 // GetBool is equal to Conf.GetBool(name).
 func GetBool(name string) bool {
 	return Conf.GetBool(name)
+}
+
+// MustBool is equal to Conf.MustBool(name).
+func MustBool(name string) bool {
+	return Conf.MustBool(name)
 }
 
 // GetDuration is equal to Conf.GetDuration(name).
@@ -192,9 +202,19 @@ func GetDuration(name string) time.Duration {
 	return Conf.GetDuration(name)
 }
 
+// MustDuration is equal to Conf.MustDuration(name).
+func MustDuration(name string) time.Duration {
+	return Conf.MustDuration(name)
+}
+
 // GetDurationSlice is equal to Conf.GetDurationSlice(name).
 func GetDurationSlice(name string) []time.Duration {
 	return Conf.GetDurationSlice(name)
+}
+
+// MustDurationSlice is equal to Conf.MustDurationSlice(name).
+func MustDurationSlice(name string) []time.Duration {
+	return Conf.MustDurationSlice(name)
 }
 
 // GetFloat64 is equal to Conf.GetFloat64(name).
@@ -202,9 +222,19 @@ func GetFloat64(name string) float64 {
 	return Conf.GetFloat64(name)
 }
 
+// MustFloat64 is equal to Conf.MustFloat64(name).
+func MustFloat64(name string) float64 {
+	return Conf.MustFloat64(name)
+}
+
 // GetFloat64Slice is equal to Conf.GetFloat64Slice(name).
 func GetFloat64Slice(name string) []float64 {
 	return Conf.GetFloat64Slice(name)
+}
+
+// MustFloat64Slice is equal to Conf.MustFloat64Slice(name).
+func MustFloat64Slice(name string) []float64 {
+	return Conf.MustFloat64Slice(name)
 }
 
 // GetInt is equal to Conf.GetInt(name).
@@ -212,9 +242,19 @@ func GetInt(name string) int {
 	return Conf.GetInt(name)
 }
 
+// MustInt is equal to Conf.MustInt(name).
+func MustInt(name string) int {
+	return Conf.MustInt(name)
+}
+
 // GetInt32 is equal to Conf.GetInt32(name).
 func GetInt32(name string) int32 {
 	return Conf.GetInt32(name)
+}
+
+// MustInt32 is equal to Conf.MustInt32(name).
+func MustInt32(name string) int32 {
+	return Conf.MustInt32(name)
 }
 
 // GetInt64 is equal to Conf.GetInt64(name).
@@ -222,9 +262,19 @@ func GetInt64(name string) int64 {
 	return Conf.GetInt64(name)
 }
 
+// MustInt64 is equal to Conf.MustInt64(name).
+func MustInt64(name string) int64 {
+	return Conf.MustInt64(name)
+}
+
 // GetIntSlice is equal to Conf.GetIntSlice(name).
 func GetIntSlice(name string) []int {
 	return Conf.GetIntSlice(name)
+}
+
+// MustIntSlice is equal to Conf.MustIntSlice(name).
+func MustIntSlice(name string) []int {
+	return Conf.MustIntSlice(name)
 }
 
 // GetString is equal to Conf.GetString(name).
@@ -232,9 +282,19 @@ func GetString(name string) string {
 	return Conf.GetString(name)
 }
 
+// MustString is equal to Conf.MustString(name).
+func MustString(name string) string {
+	return Conf.MustString(name)
+}
+
 // GetStringSlice is equal to Conf.GetStringSlice(name).
 func GetStringSlice(name string) []string {
 	return Conf.GetStringSlice(name)
+}
+
+// MustStringSlice is equal to Conf.MustStringSlice(name).
+func MustStringSlice(name string) []string {
+	return Conf.MustStringSlice(name)
 }
 
 // GetTime is equal to Conf.GetTime(name).
@@ -242,9 +302,19 @@ func GetTime(name string) time.Time {
 	return Conf.GetTime(name)
 }
 
+// MustTime is equal to Conf.MustTime(name).
+func MustTime(name string) time.Time {
+	return Conf.MustTime(name)
+}
+
 // GetUint is equal to Conf.GetUint(name).
 func GetUint(name string) uint {
 	return Conf.GetUint(name)
+}
+
+// MustUint is equal to Conf.MustUint(name).
+func MustUint(name string) uint {
+	return Conf.MustUint(name)
 }
 
 // GetUint32 is equal to Conf.GetUint32(name).
@@ -252,12 +322,27 @@ func GetUint32(name string) uint32 {
 	return Conf.GetUint32(name)
 }
 
+// MustUint32 is equal to Conf.MustUint32(name).
+func MustUint32(name string) uint32 {
+	return Conf.MustUint32(name)
+}
+
 // GetUint64 is equal to Conf.GetUint64(name).
 func GetUint64(name string) uint64 {
 	return Conf.GetUint64(name)
 }
 
+// MustUint64 is equal to Conf.MustUint64(name).
+func MustUint64(name string) uint64 {
+	return Conf.MustUint64(name)
+}
+
 // GetUintSlice is equal to Conf.GetUintSlice(name).
 func GetUintSlice(name string) []uint {
 	return Conf.GetUintSlice(name)
+}
+
+// MustUintSlice is equal to Conf.MustUintSlice(name).
+func MustUintSlice(name string) []uint {
+	return Conf.MustUintSlice(name)
 }
