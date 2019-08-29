@@ -36,6 +36,10 @@ type Opt struct {
 	// Help is the help or usage information, which is optional.
 	Help string
 
+	// The list of the aliases of the option, which will be registered to
+	// the group that the option is registered when it is being registered.
+	Aliases []string
+
 	// Default is the default value of the option, which is necessary
 	// and must not be nil. It will be used to indicate the type of the option.
 	Default interface{}
@@ -73,6 +77,13 @@ func (o Opt) validate(value interface{}) (err error) {
 		}
 	}
 	return
+}
+
+// As returns a new Opt with the new aliases based on the current option,
+// which will append them.
+func (o Opt) As(aliases ...string) Opt {
+	o.Aliases = append(o.Aliases, aliases...)
+	return o
 }
 
 // N returns a new Opt with the given name based on the current option.

@@ -224,12 +224,19 @@ func (g *OptGroup) HasOptAndIsNotSet(name string) (yes bool) {
 
 // SetOptAlias sets the alias of the option from old to new. So you can access
 // the option named new by the old name.
+//
+// Notice: it does nothing if either is "".
 func (g *OptGroup) SetOptAlias(old, new string) {
 	old = g.fixOptName(old)
 	new = g.fixOptName(new)
+	if old == "" || new == "" {
+		return
+	}
+
 	g.lock.Lock()
 	g.alias[old] = new
 	g.lock.Unlock()
+	debugf("[Config] Set the option alias from '%s' to '%s' in the group '%s'\n", old, new, g.name)
 }
 
 func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
@@ -263,6 +270,12 @@ func (g *OptGroup) registerOpt(opt Opt, force ...bool) (ok bool) {
 		debugf("[Config] Register the option '%s' into the group '%s'\n",
 			opt.Name, g.name)
 		g.conf.noticeOptRegister(g.name, []Opt{opt})
+
+		for _, alias := range opt.Aliases {
+			if alias != "" {
+				g.SetOptAlias(alias, name)
+			}
+		}
 	}
 
 	return
@@ -297,6 +310,13 @@ func (g *OptGroup) registerOpts(opts []Opt, force ...bool) (ok bool) {
 
 	if ok {
 		g.conf.noticeOptRegister(g.name, opts)
+		for _, opt := range opts {
+			for _, alias := range opt.Aliases {
+				if alias != "" {
+					g.SetOptAlias(alias, opt.Name)
+				}
+			}
+		}
 	}
 
 	return
