@@ -109,11 +109,7 @@ func New() *Config {
 	return c
 }
 
-func (c *Config) newGroup(parent, name string) *OptGroup {
-	if strings.Contains(name, c.gsep) {
-		panic(fmt.Errorf("the group name '%s' must not contain the group separator '%s'", name, c.gsep))
-	}
-
+func (c *Config) _newGroup(parent, name string) *OptGroup {
 	c.lock.Lock()
 	name = c.getGroupName(parent, name)
 	group, ok := c.groups[name]
@@ -128,6 +124,14 @@ func (c *Config) newGroup(parent, name string) *OptGroup {
 		debugf("[Config] Creating a new group '%s'\n", name)
 	}
 	return group
+}
+
+func (c *Config) newGroup(parent, name string) (group *OptGroup) {
+	for _, subname := range strings.Split(name, c.gsep) {
+		group = c._newGroup(parent, subname)
+		parent = c.getGroupName(parent, subname)
+	}
+	return
 }
 
 func (c *Config) ensureGroup2(name string) {

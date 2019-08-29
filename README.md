@@ -171,7 +171,7 @@ func main() {
 	// Register options into the group
 	gconf.RegisterOpt(gconf.StrOpt("opt1", "").D("abc"))
 	gconf.NewGroup("cmd1").RegisterOpt(gconf.IntOpt("opt2", ""))
-	gconf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpt(gconf.IntOpt("opt3", ""))
+	gconf.NewGroup("cmd1.cmd2").RegisterOpt(gconf.IntOpt("opt3", ""))
 
 	// Create and run cli app.
 	app := cli.NewApp()
