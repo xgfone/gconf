@@ -26,6 +26,8 @@ var (
 	errStrEmtpy    = fmt.Errorf("the string is empty")
 	errNotString   = fmt.Errorf("the value is not string")
 	errStrNotEmtpy = fmt.Errorf("the string is not empty")
+
+	errNotStringSlice = fmt.Errorf("the value is not []string")
 )
 
 // Validator is used to validate whether the value of the option in the group
@@ -110,6 +112,27 @@ func NewStrArrayValidator(array []string) Validator {
 			}
 		}
 		return fmt.Errorf("the value '%s' is not in %v", s, array)
+	}
+}
+
+// NewStrSliceValidator returns a validator to validate that the string element
+// of the []string value satisfies all the given validators.
+func NewStrSliceValidator(strValidators ...Validator) Validator {
+	return func(value interface{}) (err error) {
+		ss, ok := value.([]string)
+		if !ok {
+			return errNotStringSlice
+		}
+
+		for _, s := range ss {
+			for _, validator := range strValidators {
+				if err = validator(s); err != nil {
+					return
+				}
+			}
+		}
+
+		return nil
 	}
 }
 
