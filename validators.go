@@ -191,6 +191,12 @@ func NewIPValidator() Validator {
 	}
 }
 
+// NewIPSliceValidator returns a validator to validate whether the string element
+// of the []string value is a valid IP.
+func NewIPSliceValidator() Validator {
+	return NewStrSliceValidator(NewIPValidator())
+}
+
 // NewEmailValidator returns a validator to validate whether an email is valid.
 func NewEmailValidator() Validator {
 	return func(value interface{}) error {
