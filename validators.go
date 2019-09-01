@@ -236,6 +236,12 @@ func NewAddressValidator() Validator {
 	}
 }
 
+// NewAddressSliceValidator returns a validator to validate whether the string element
+// of the []string value is a valid address.
+func NewAddressSliceValidator() Validator {
+	return NewStrSliceValidator(NewAddressValidator())
+}
+
 // NewIntegerRangeValidator returns a validator to validate whether the integer
 // value is between the min and the max.
 //
