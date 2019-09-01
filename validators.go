@@ -212,6 +212,12 @@ func NewEmailValidator() Validator {
 	}
 }
 
+// NewEmailSliceValidator returns a validator to validate whether the string element
+// of the []string value is a valid email.
+func NewEmailSliceValidator() Validator {
+	return NewStrSliceValidator(NewEmailValidator())
+}
+
 // NewAddressValidator returns a validator to validate whether an address is
 // like "host:port", "host%zone:port", "[host]:port" or "[host%zone]:port".
 //
