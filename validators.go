@@ -115,7 +115,7 @@ func NewStrArrayValidator(array []string) Validator {
 	}
 }
 
-// NewStrSliceValidator returns a validator to validate that the string element
+// NewStrSliceValidator returns a validator to validate whether the string element
 // of the []string value satisfies all the given validators.
 func NewStrSliceValidator(strValidators ...Validator) Validator {
 	return func(value interface{}) (err error) {
@@ -168,6 +168,12 @@ func NewURLValidator() Validator {
 		}
 		return nil
 	}
+}
+
+// NewURLSliceValidator returns a validator to validate whether the string element
+// of the []string value is a valid URL.
+func NewURLSliceValidator() Validator {
+	return NewStrSliceValidator(NewURLValidator())
 }
 
 // NewIPValidator returns a validator to validate whether an ip is valid.
