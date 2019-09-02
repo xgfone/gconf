@@ -474,7 +474,7 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 	}
 
 	// Validate the option value
-	if err = opt.opt.validate(value); err != nil {
+	if err = opt.opt.validate(v); err != nil {
 		return nil, NewOptError(g.name, opt.opt.Name, err, v)
 	}
 
