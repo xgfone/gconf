@@ -47,9 +47,22 @@ func init() {
 // debugf prints the log message only when enabling the debug mode.
 func debugf(msg string, args ...interface{}) {
 	if defaultDebug {
-		fmt.Printf(msg, args...)
+		printMsg(fmt.Sprintf(msg, args...))
 	}
 }
+
+func printMsg(msg string) {
+	switch DefaultWriter {
+	case os.Stdout, os.Stderr:
+		fmt.Fprintln(DefaultWriter, msg)
+	default:
+		io.WriteString(DefaultWriter, msg)
+	}
+}
+
+// DefaultWriter is the default writer, which Config will write the information
+// to it by default.
+var DefaultWriter = os.Stdout
 
 // Conf is the default global Config.
 //
@@ -99,7 +112,7 @@ func New() *Config {
 	c.decAlias = make(map[string]string, 8)
 	c.OptGroup = newOptGroup(c, "")
 	c.groups[c.OptGroup.Name()] = c.OptGroup
-	c.errHandler = ErrorHandler(func(err error) { fmt.Println(err) })
+	c.errHandler = ErrorHandler(func(err error) { printMsg(err.Error()) })
 	c.AddDecoder(NewJSONDecoder())
 	c.AddDecoder(NewIniDecoder())
 	c.AddDecoder(NewYamlDecoder())
@@ -121,7 +134,7 @@ func (c *Config) _newGroup(parent, name string) *OptGroup {
 	c.lock.Unlock()
 
 	if !ok {
-		debugf("[Config] Creating a new group '%s'\n", name)
+		debugf("[Config] Creating a new group '%s'", name)
 	}
 	return group
 }
@@ -140,7 +153,7 @@ func (c *Config) ensureGroup2(name string) {
 			gname := strings.Join(gnames[:i+1], c.gsep)
 			if c.groups[gname] == nil && c.groups2[gname] == nil {
 				c.groups2[gname] = newOptGroup(c, gname)
-				debugf("[Config] Creating the auxiliary group '%s'\n", gname)
+				debugf("[Config] Creating the auxiliary group '%s'", gname)
 			}
 		}
 	}
@@ -242,8 +255,7 @@ func ErrorHandler(h func(err error)) func(error) {
 
 // SetErrHandler resets the error handler to h.
 //
-// The default is output to os.Stdout by fmt.Println(err), but it ignores
-// ErrNoOpt and ErrFrozenOpt.
+// The default is output to DefaultWriter, but it ignores ErrNoOpt and ErrFrozenOpt.
 func (c *Config) SetErrHandler(h func(error)) {
 	if h == nil {
 		panic("the error handler must not be nil")

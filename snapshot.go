@@ -66,7 +66,7 @@ func (c *Config) writeSnapshotIntoFile(lastChecksum, filename string) {
 					c.handleError(fmt.Errorf("[Config] snapshot write file[%s]: %s", filename, err.Error()))
 				} else {
 					lastChecksum = checksum
-					debugf("[Config] Write snapshot into file '%s'\n", filename)
+					debugf("[Config] Write snapshot into file '%s'", filename)
 				}
 			}
 		}

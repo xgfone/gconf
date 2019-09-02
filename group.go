@@ -250,7 +250,8 @@ func (g *OptGroup) SetOptAlias(old, new string) {
 	}
 	g.alias[old] = new
 	g.lock.Unlock()
-	debugf("[Config] Set the option alias from '%s' to '%s' in the group '%s'\n", old, new, g.name)
+	debugf("[Config] Set the option alias from '%s' to '%s' in the group '%s'",
+		old, new, g.name)
 }
 
 func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
@@ -281,8 +282,7 @@ func (g *OptGroup) registerOpt(opt Opt, force ...bool) (ok bool) {
 	g.lock.Unlock()
 
 	if ok {
-		debugf("[Config] Register the option '%s' into the group '%s'\n",
-			opt.Name, g.name)
+		debugf("[Config] Register the option '%s' into the group '%s'", opt.Name, g.name)
 		g.conf.noticeOptRegister(g.name, []Opt{opt})
 
 		for _, alias := range opt.Aliases {
@@ -316,7 +316,7 @@ func (g *OptGroup) registerOpts(opts []Opt, force ...bool) (ok bool) {
 	if !exist || (len(force) > 0 && force[0]) {
 		for i, opt := range opts {
 			g.opts[names[i]] = &groupOpt{opt: opt}
-			debugf("[Config] Register the option '%s' into the group '%s'\n", opt.Name, g.name)
+			debugf("[Config] Register the option '%s' into the group '%s'", opt.Name, g.name)
 		}
 		ok = true
 	}
@@ -498,9 +498,9 @@ func (g *OptGroup) setOptValue(name string, value interface{}) {
 	}
 
 	if g.name == "" {
-		debugf("[Config] Set [%s] to '%v'\n", name, value)
+		debugf("[Config] Set [%s] to '%v'", name, value)
 	} else {
-		debugf("[Config] Set [%s:%s] to '%v'\n", g.name, name, value)
+		debugf("[Config] Set [%s:%s] to '%v'", g.name, name, value)
 	}
 }
 
