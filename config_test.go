@@ -408,3 +408,22 @@ func TestOrValidator(t *testing.T) {
 		t.Error(v)
 	}
 }
+
+func TestOptGroup_SetOptAlias(t *testing.T) {
+	conf := New()
+	conf.RegisterOpt(StrOpt("opt", "").D("abc"))
+	conf.SetOptAlias("opt1", "opt")
+	conf.SetOptAlias("opt2", "opt")
+
+	if conf.GetString("opt1") != "abc" {
+		t.Fail()
+	} else if conf.GetString("opt2") != "abc" {
+		t.Fail()
+	} else if aliases := conf.MustOpt("opt").Aliases; len(aliases) != 2 {
+		t.Error(aliases)
+	} else if aliases[0] != "opt1" {
+		t.Error(aliases[0])
+	} else if aliases[1] != "opt2" {
+		t.Error(aliases[1])
+	}
+}

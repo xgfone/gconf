@@ -234,6 +234,20 @@ func (g *OptGroup) SetOptAlias(old, new string) {
 	}
 
 	g.lock.Lock()
+	for name, opt := range g.opts {
+		if name == new {
+			var exist bool
+			for _, alias := range opt.opt.Aliases {
+				if alias == old {
+					exist = true
+					break
+				}
+			}
+			if !exist {
+				opt.opt.Aliases = append(opt.opt.Aliases, old)
+			}
+		}
+	}
 	g.alias[old] = new
 	g.lock.Unlock()
 	debugf("[Config] Set the option alias from '%s' to '%s' in the group '%s'\n", old, new, g.name)
