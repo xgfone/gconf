@@ -51,7 +51,7 @@ var (
 //
 // By default, the string is split by the comma into string slice. However, you
 // can reset it to " ," to split the string by the whitespace and the comma.
-var StringSliceSeparator = ","
+var StringSliceSeparator = " ,"
 
 var toStringMap = types.ToStringMap
 
