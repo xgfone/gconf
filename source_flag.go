@@ -129,6 +129,10 @@ func addAndParseOptFlag(parse bool, c *Config, flagSet ...*flag.FlagSet) error {
 	flagset.Usage = func() { PrintFlagUsage(flagset) }
 	for _, group := range c.AllGroups() {
 		for _, opt := range group.AllOpts() {
+			if !opt.Cli {
+				continue
+			}
+
 			name := opt.Name
 			if gname := group.Name(); gname != "" {
 				name = fmt.Sprintf("%s.%s", gname, opt.Name)

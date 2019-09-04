@@ -37,6 +37,10 @@ func ConvertOptsToCliFlags(group *OptGroup, prefix ...string) []cli.Flag {
 	opts := group.AllOpts()
 	flags := make([]cli.Flag, len(opts))
 	for i, opt := range opts {
+		if !opt.Cli {
+			continue
+		}
+
 		name := opt.Name
 		if _prefix != "" {
 			name = fmt.Sprintf("%s-%s", _prefix, name)

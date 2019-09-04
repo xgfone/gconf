@@ -36,6 +36,9 @@ type Opt struct {
 	// Help is the help or usage information, which is optional.
 	Help string
 
+	// Cli indicates whether the option can be used for the CLI flag.
+	Cli bool
+
 	// The list of the aliases of the option, which will be registered to
 	// the group that the option is registered when it is being registered.
 	Aliases []string
@@ -83,6 +86,12 @@ func (o Opt) validate(value interface{}) (err error) {
 // which will append them.
 func (o Opt) As(aliases ...string) Opt {
 	o.Aliases = append(o.Aliases, aliases...)
+	return o
+}
+
+// C returns a new Opt with the cli flag based on the current option.
+func (o Opt) C(cli bool) Opt {
+	o.Cli = cli
 	return o
 }
 
@@ -149,8 +158,10 @@ func (o Opt) V(validators ...Validator) Opt {
 }
 
 // NewOpt returns a new Opt.
+//
+// Notice: Cli is true by default.
 func NewOpt(name string, _default interface{}, parser func(interface{}) (interface{}, error)) Opt {
-	return Opt{}.N(name).D(_default).P(parser)
+	return Opt{Cli: true}.N(name).D(_default).P(parser)
 }
 
 // BoolOpt returns a bool Opt, which is equal to
