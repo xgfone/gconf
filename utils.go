@@ -49,8 +49,8 @@ var (
 
 // StringSliceSeparator is the separator of the string slice to split the string.
 //
-// By default, the string is split by the comma into string slice. However, you
-// can reset it to " ," to split the string by the whitespace and the comma.
+// The string is split by the whitespace or the comma into string slice by
+// default. However, you can reset it before registering or parsing the options.
 var StringSliceSeparator = " ,"
 
 var toStringMap = types.ToStringMap
