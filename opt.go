@@ -39,6 +39,9 @@ type Opt struct {
 	// Cli indicates whether the option can be used for the CLI flag.
 	Cli bool
 
+	// Tags is the key-value metadata of the Opt.
+	Tags map[string]string
+
 	// The list of the aliases of the option, which will be registered to
 	// the group that the option is registered when it is being registered.
 	Aliases []string
@@ -95,30 +98,6 @@ func (o Opt) C(cli bool) Opt {
 	return o
 }
 
-// N returns a new Opt with the given name based on the current option.
-func (o Opt) N(name string) Opt {
-	if name == "" {
-		panic("the option name must not be empty")
-	}
-	o.Name = name
-	return o
-}
-
-// S returns a new Opt with the given short name based on the current option.
-func (o Opt) S(shortName string) Opt {
-	if len(shortName) > 1 {
-		panic("the short name of the option is not a single character")
-	}
-	o.Short = shortName
-	return o
-}
-
-// H returns a new Opt with the given help based on the current option.
-func (o Opt) H(help string) Opt {
-	o.Help = help
-	return o
-}
-
 // D returns a new Opt with the given default value based on the current option.
 func (o Opt) D(_default interface{}) Opt {
 	if _default == nil {
@@ -131,6 +110,21 @@ func (o Opt) D(_default interface{}) Opt {
 	} else {
 		o.Default = value
 	}
+	return o
+}
+
+// H returns a new Opt with the given help based on the current option.
+func (o Opt) H(help string) Opt {
+	o.Help = help
+	return o
+}
+
+// N returns a new Opt with the given name based on the current option.
+func (o Opt) N(name string) Opt {
+	if name == "" {
+		panic("the option name must not be empty")
+	}
+	o.Name = name
 	return o
 }
 
@@ -147,6 +141,33 @@ func (o Opt) P(parser func(interface{}) (interface{}, error)) Opt {
 			o.Default = value
 		}
 	}
+	return o
+}
+
+// S returns a new Opt with the given short name based on the current option.
+func (o Opt) S(shortName string) Opt {
+	if len(shortName) > 1 {
+		panic("the short name of the option is not a single character")
+	}
+	o.Short = shortName
+	return o
+}
+
+// T returns a new Opt with the key-value tag based on the current option,
+// which will clone the tags from the current option to the new.
+//
+// Notice: the key must not be empty, but value may be.
+func (o Opt) T(key, value string) Opt {
+	if key == "" {
+		panic("the tag key must not be empty")
+	}
+
+	tags := make(map[string]string, len(o.Tags)*2)
+	for k, v := range o.Tags {
+		tags[k] = v
+	}
+	tags[key] = value
+	o.Tags = tags
 	return o
 }
 
