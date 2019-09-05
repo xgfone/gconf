@@ -49,6 +49,10 @@ var (
 
 var toStringMap = types.ToStringMap
 
+func init() {
+	types.StringSeparator = " ,"
+}
+
 func toTime(v interface{}) (time.Time, error) {
 	return types.ToTime(v)
 }
