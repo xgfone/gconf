@@ -1,6 +1,6 @@
 [[constraint]]
     name = "github.com/xgfone/go-tools"
-    version = "v5.11.0"
+    version = "v5.13.0"
 
 [[constraint]]
     name = "github.com/fsnotify/fsnotify"

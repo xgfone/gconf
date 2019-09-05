@@ -39,19 +39,13 @@ var (
 	ToDuration = types.ToDuration // func(interface{}) (time.Duration, error)
 	ToTime     = toTime           // func(interface{}) (time.Time, error)
 
-	// For string type, it will be separated by the comma(,) by default.
+	// For string type, it will be split by using types.ToStringSlice.
 	ToIntSlice      = toIntSlice      // func(interface{}) ([]int, error)
 	ToUintSlice     = toUintSlice     // func(interface{}) ([]uint, error)
 	ToFloat64Slice  = toFloat64Slice  // func(interface{}) ([]float64, error)
 	ToStringSlice   = toStringSlice   // func(interface{}) ([]string, error)
 	ToDurationSlice = toDurationSlice // func(interface{}) ([]time.Duration, error)
 )
-
-// StringSliceSeparator is the separator of the string slice to split the string.
-//
-// The string is split by the whitespace or the comma into string slice by
-// default. However, you can reset it before registering or parsing the options.
-var StringSliceSeparator = " ,"
 
 var toStringMap = types.ToStringMap
 
@@ -71,15 +65,6 @@ func bytesToSha256(data []byte) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func isStringSliceSeparator(r rune) bool {
-	for _, c := range StringSliceSeparator {
-		if c == r {
-			return true
-		}
-	}
-	return false
-}
-
 func getStringSlice(value interface{}) []string {
 	var s string
 	switch v := value.(type) {
@@ -95,7 +80,7 @@ func getStringSlice(value interface{}) []string {
 		return nil
 	}
 
-	vs := strings.FieldsFunc(s, isStringSliceSeparator)
+	vs, _ := types.ToStringSlice(s)
 	ss := make([]string, 0, len(vs))
 	for _, s := range vs {
 		if s = strings.TrimSpace(s); s != "" {
