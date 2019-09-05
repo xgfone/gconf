@@ -129,6 +129,19 @@ func (g *OptGroup) G(group string) *OptGroup {
 	return g.Group(group)
 }
 
+// MustGroup is equal to g.Group(group), but panic if the group does not exist.
+func (g *OptGroup) MustGroup(group string) *OptGroup {
+	if _g := g.Group(group); _g != nil {
+		return _g
+	}
+	panic(fmt.Errorf("no group '%s'", group))
+}
+
+// MustG is short for g.MustGroup(group).
+func (g *OptGroup) MustG(group string) *OptGroup {
+	return g.MustGroup(group)
+}
+
 // AllOpts returns all the options in the current group.
 func (g *OptGroup) AllOpts() []Opt {
 	g.lock.RLock()

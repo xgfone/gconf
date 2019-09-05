@@ -142,6 +142,16 @@ func G(group string) *OptGroup {
 	return Conf.Group(group)
 }
 
+// MustGroup is equal to Conf.MustGroup(group).
+func MustGroup(group string) *OptGroup {
+	return Conf.MustGroup(group)
+}
+
+// MustG is short for MustGroup(group).
+func MustG(group string) *OptGroup {
+	return Conf.MustG(group)
+}
+
 // NewGroup is eqaul to Conf.NewGroup(group).
 func NewGroup(group string) *OptGroup {
 	return Conf.NewGroup(group)
