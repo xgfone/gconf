@@ -20,6 +20,19 @@ import (
 	"testing"
 )
 
+func TestOptObserver(t *testing.T) {
+	var value string
+	opt := StrOpt("opt", "").D("abc").O(func(v interface{}) { value = v.(string) })
+
+	conf := New()
+	conf.RegisterOpt(opt)
+	conf.UpdateOptValue("", "opt", "xyz")
+
+	if value != "xyz" {
+		t.Error(value, conf.MustString("opt"))
+	}
+}
+
 func ExampleConfig_Traverse() {
 	conf := New()
 	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))

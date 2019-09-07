@@ -505,7 +505,7 @@ func (g *OptGroup) setOptValue(name string, value interface{}) {
 	if old == nil {
 		old = opt.opt.Default
 	}
-	g.conf.noticeOptChange(g.name, name, old, value)
+	g.conf.noticeOptChange(g.name, name, old, value, opt.opt.Observers)
 	if opt.watch != nil {
 		opt.watch(value)
 	}

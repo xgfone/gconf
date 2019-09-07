@@ -56,6 +56,9 @@ type Opt struct {
 	// Notice: it must not panic.
 	Parser func(input interface{}) (output interface{}, err error)
 
+	// Observers are called after the value of the option is updated.
+	Observers []func(newValue interface{})
+
 	// Validators is the validators of the option, which is optional.
 	//
 	// When updating the option value, the validators will validate it.
@@ -125,6 +128,13 @@ func (o Opt) N(name string) Opt {
 		panic("the option name must not be empty")
 	}
 	o.Name = name
+	return o
+}
+
+// O returns a new Opt with the given observer based on the current option,
+// which will append them.
+func (o Opt) O(observers ...func(interface{})) Opt {
+	o.Observers = append(o.Observers, observers...)
 	return o
 }
 

@@ -194,14 +194,23 @@ func (c *Config) noticeOptRegister(group string, opts []Opt) {
 	}
 }
 
-func (c *Config) noticeOptChange(group, optname string, old, new interface{}) {
+func (c *Config) noticeOptChange(group, optname string, old, new interface{},
+	observers []func(interface{})) {
+	for _, observer := range observers {
+		c.callOptObserver(observer, new)
+	}
+
 	c.lock.RLock()
 	fs := append([]func(g, p string, o, n interface{}){}, c.setObserves...)
 	c.lock.RUnlock()
-
 	for _, observer := range fs {
 		c.callSetObserver(group, optname, old, new, observer)
 	}
+}
+
+func (c *Config) callOptObserver(observe func(interface{}), new interface{}) {
+	defer c.wrapPanic("opt")
+	observe(new)
 }
 
 func (c *Config) callRegObserver(group string, opts []Opt, cb func(string, []Opt)) {
