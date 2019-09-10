@@ -1,10 +1,20 @@
 # gconf [![Build Status](https://travis-ci.org/xgfone/gconf.svg?branch=master)](https://travis-ci.org/xgfone/gconf) [![GoDoc](https://godoc.org/github.com/xgfone/gconf?status.svg)](http://godoc.org/github.com/xgfone/gconf) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/gconf/master/LICENSE)
 An extensible and powerful go configuration manager, which is inspired by [oslo.config](https://github.com/openstack/oslo.config), [github.com/micro/go-micro/config](https://github.com/micro/go-micro/tree/master/config) and [viper](https://github.com/spf13/viper).
 
-The current version is `v3`. See [DOC](https://godoc.org/github.com/xgfone/gconf).
+The current version is `v4` to support Semantic Import Versioning, which requires `Go1.11+`. See [DOC](https://godoc.org/github.com/xgfone/gconf).
 
-The supported Go version: `1.10+`.
+## Install
+```shell
+$ go get -u github.com/xgfone/gconf/v4
+```
 
+### V3
+```shell
+$ go1.x  get -u github.com/xgfone/gconf
+$ go1.11 get -u github.com/xgfone/gconf@v3.7.0
+$ go1.12 get -u github.com/xgfone/gconf@v3.7.0
+$ GONOSUMDB="*" go1.13 get -u github.com/xgfone/gconf@v3.7.0
+```
 
 ## Goal
 

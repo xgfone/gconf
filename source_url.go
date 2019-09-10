@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xgfone/go-tools/io2"
+	"github.com/xgfone/go-tools/v6/io2"
 )
 
 var errNoContentType = fmt.Errorf("http response has no the header Content-Type")

@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xgfone/go-tools/types"
+	"github.com/xgfone/go-tools/v6/types"
 )
 
 // Some type converters, all of which have a default implementation,
