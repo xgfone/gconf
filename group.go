@@ -78,18 +78,20 @@ type OptGroup struct {
 	lock sync.RWMutex
 	conf *Config
 
-	name   string // short name
-	opts   map[string]*groupOpt
-	alias  map[string]string
-	frozen bool
+	name    string // short name
+	opts    map[string]*groupOpt
+	alias   map[string]string
+	migrate map[string]string
+	frozen  bool
 }
 
 func newOptGroup(conf *Config, name string) *OptGroup {
 	return &OptGroup{
-		conf:  conf,
-		name:  name,
-		opts:  make(map[string]*groupOpt, 16),
-		alias: make(map[string]string, 16),
+		conf:    conf,
+		name:    name,
+		opts:    make(map[string]*groupOpt, 16),
+		alias:   make(map[string]string, 4),
+		migrate: make(map[string]string, 4),
 	}
 }
 
@@ -265,6 +267,53 @@ func (g *OptGroup) SetOptAlias(old, new string) {
 	g.lock.Unlock()
 	debugf("[Config] Set the option alias from '%s' to '%s' in the group '%s'",
 		old, new, g.name)
+}
+
+// Migrate migrates the old option oldOptName to the other option of the other
+// group, newGroupOptName, which will update the value of newGroupOptName to
+// the new when the value of oldOptName is updated.
+func (g *OptGroup) Migrate(oldOptName, newGroupOptName string) {
+	oldOptName = g.fixOptName(oldOptName)
+	if oldOptName == "" || newGroupOptName == "" {
+		panic("the key must not be empty")
+	}
+
+	// Check the cycle
+	key := oldOptName
+	if g.name != "" {
+		key = fmt.Sprintf("%s%s%s", g.name, g.conf.gsep, oldOptName)
+	}
+	cycles := []string{key, newGroupOptName}
+	gname, opt := g.getGroupAndOpt(newGroupOptName)
+	for {
+		group := g.conf.Group(gname)
+		if group == nil {
+			break
+		}
+
+		if newMigrate, ok := group.migrate[opt]; ok {
+			for _, s := range cycles {
+				if s == newMigrate {
+					cycles = append(cycles, newMigrate)
+					panic(fmt.Errorf("migrating cycle: %v", cycles))
+				}
+			}
+
+			cycles = append(cycles, newMigrate)
+			gname, opt = g.getGroupAndOpt(newMigrate)
+		} else {
+			break
+		}
+	}
+
+	g.migrate[oldOptName] = newGroupOptName
+}
+
+func (g *OptGroup) getGroupAndOpt(name string) (string, string) {
+	if index := strings.Index(name, g.conf.gsep); index > -1 {
+		return name[:index], name[index+len(g.conf.gsep):]
+	}
+	return "", name
 }
 
 func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
@@ -494,7 +543,7 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 	return v, nil
 }
 
-func (g *OptGroup) setOptValue(name string, value interface{}) {
+func (g *OptGroup) setOptValue(name string, value interface{}) (string, string, interface{}, interface{}, []func(interface{})) {
 	opt := g.opts[name]
 	if opt == nil {
 		name = g.alias[name]
@@ -505,7 +554,7 @@ func (g *OptGroup) setOptValue(name string, value interface{}) {
 	if old == nil {
 		old = opt.opt.Default
 	}
-	g.conf.noticeOptChange(g.name, name, old, value, opt.opt.Observers)
+
 	if opt.watch != nil {
 		opt.watch(value)
 	}
@@ -515,6 +564,8 @@ func (g *OptGroup) setOptValue(name string, value interface{}) {
 	} else {
 		debugf("[Config] Set [%s:%s] to '%v'", g.name, name, value)
 	}
+
+	return g.migrate[name], name, old, value, opt.opt.Observers
 }
 
 // Parse the value of the option named name, which will call the parser and
@@ -543,11 +594,11 @@ func (g *OptGroup) Set(name string, value interface{}) {
 
 	name = g.fixOptName(name)
 	g.lock.Lock()
-	defer g.lock.Unlock()
 
 	// Check whether the current group or the option is frozen.
 	if g.optIsFrozen(name) {
 		g.conf.handleError(NewOptError(g.Name(), name, ErrFrozenOpt, value))
+		g.lock.Unlock()
 		return
 	}
 
@@ -556,11 +607,20 @@ func (g *OptGroup) Set(name string, value interface{}) {
 	switch err {
 	case nil:
 		// Set the option value
-		g.setOptValue(name, value)
+		migrate, name, old, new, observers := g.setOptValue(name, value)
+		g.lock.Unlock()
+
+		if migrate != "" {
+			g.conf.UpdateValue(migrate, new)
+		}
+		g.conf.noticeOptChange(g.name, name, old, new, observers)
+		return
 	case ErrNoOpt:
 		g.conf.handleError(NewOptError(g.Name(), name, err, value))
+		g.lock.Unlock()
 	default:
 		g.conf.handleError(err)
+		g.lock.Unlock()
 	}
 }
 

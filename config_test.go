@@ -49,6 +49,44 @@ func ExampleConfig_Traverse() {
 	// group=group1.group2, opt=opt3, value=456
 }
 
+func ExampleOptGroup_Migrate() {
+	conf := New()
+	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
+	conf.RegisterOpt(StrOpt("opt2", "").D("efg"))
+	conf.NewGroup("group1").RegisterOpt(StrOpt("opt3", "").D("opq"))
+	conf.NewGroup("group1").RegisterOpt(StrOpt("opt4", "").D("rst"))
+
+	conf.Migrate("opt1", "group1.opt3")
+	conf.Group("group1").Migrate("opt4", "opt2")
+
+	fmt.Printf("--- Before Updating ---\n")
+	fmt.Printf("opt1=%v\n", conf.MustString("opt1"))
+	fmt.Printf("opt2=%v\n", conf.MustString("opt2"))
+	fmt.Printf("group1.opt3=%v\n", conf.G("group1").MustString("opt3"))
+	fmt.Printf("group1.opt4=%v\n", conf.G("group1").MustString("opt4"))
+
+	conf.UpdateValue("opt1", "uvw")
+	conf.UpdateValue("group1.opt4", "xyz")
+
+	fmt.Printf("--- After Updating ---\n")
+	fmt.Printf("opt1=%v\n", conf.MustString("opt1"))
+	fmt.Printf("opt2=%v\n", conf.MustString("opt2"))
+	fmt.Printf("group1.opt3=%v\n", conf.G("group1").MustString("opt3"))
+	fmt.Printf("group1.opt4=%v\n", conf.G("group1").MustString("opt4"))
+
+	// Output:
+	// --- Before Updating ---
+	// opt1=abc
+	// opt2=efg
+	// group1.opt3=opq
+	// group1.opt4=rst
+	// --- After Updating ---
+	// opt1=uvw
+	// opt2=xyz
+	// group1.opt3=uvw
+	// group1.opt4=xyz
+}
+
 func ExampleConfig_Observe() {
 	conf := New()
 	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
