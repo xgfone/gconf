@@ -597,8 +597,8 @@ func (g *OptGroup) Set(name string, value interface{}) {
 
 	// Check whether the current group or the option is frozen.
 	if g.optIsFrozen(name) {
-		g.conf.handleError(NewOptError(g.Name(), name, ErrFrozenOpt, value))
 		g.lock.Unlock()
+		g.conf.handleError(NewOptError(g.Name(), name, ErrFrozenOpt, value))
 		return
 	}
 
@@ -614,13 +614,12 @@ func (g *OptGroup) Set(name string, value interface{}) {
 			g.conf.UpdateValue(migrate, new)
 		}
 		g.conf.noticeOptChange(g.name, name, old, new, observers)
-		return
 	case ErrNoOpt:
+		g.lock.Unlock()
 		g.conf.handleError(NewOptError(g.Name(), name, err, value))
-		g.lock.Unlock()
 	default:
-		g.conf.handleError(err)
 		g.lock.Unlock()
+		g.conf.handleError(err)
 	}
 }
 

@@ -64,6 +64,8 @@ type Opt struct {
 	// When updating the option value, the validators will validate it.
 	// If there is a validator returns an error, the updating fails and
 	// returns the error. That's, these validators are the AND relations.
+	//
+	// Notice: they must not panic.
 	Validators []Validator
 }
 
