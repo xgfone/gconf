@@ -295,7 +295,7 @@ func (g *OptGroup) Migrate(oldOptName, newGroupOptName string) {
 			for _, s := range cycles {
 				if s == newMigrate {
 					cycles = append(cycles, newMigrate)
-					panic(fmt.Errorf("migrating cycle: %v", cycles))
+					panic(fmt.Errorf("migrating cycle: %s", strings.Join(cycles, "->")))
 				}
 			}
 
