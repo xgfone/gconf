@@ -20,6 +20,7 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"strconv"
 )
 
 var (
@@ -229,9 +230,16 @@ func NewAddressValidator() Validator {
 			return errNotString
 		}
 
-		if _, _, err := net.SplitHostPort(s); err != nil {
-			return err
+		if ip, port, err := net.SplitHostPort(s); err != nil {
+			return fmt.Errorf("invalid address '%s': %s", s, err.Error())
+		} else if ip != "" && net.ParseIP(ip) == nil {
+			return fmt.Errorf("invalid address ip '%s'", ip)
+		} else if port == "" {
+			return fmt.Errorf("the address '%s' miss port", s)
+		} else if _, err = strconv.ParseUint(port, 10, 16); err != nil {
+			return fmt.Errorf("invalid address port '%s': %s", port, err.Error())
 		}
+
 		return nil
 	}
 }
