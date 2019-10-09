@@ -171,6 +171,12 @@ func NewURLValidator() Validator {
 	}
 }
 
+// NewMaybeURLValidator returns a validator to validate the value may be empty
+// or a URL.
+func NewMaybeURLValidator() Validator {
+	return Or(NewEmptyStrValidator(), NewURLValidator())
+}
+
 // NewURLSliceValidator returns a validator to validate whether the string element
 // of the []string value is a valid URL.
 func NewURLSliceValidator() Validator {
@@ -192,6 +198,12 @@ func NewIPValidator() Validator {
 	}
 }
 
+// NewMaybeIPValidator returns a validator to validate the value may be empty
+// or a ip.
+func NewMaybeIPValidator() Validator {
+	return Or(NewEmptyStrValidator(), NewIPValidator())
+}
+
 // NewIPSliceValidator returns a validator to validate whether the string element
 // of the []string value is a valid IP.
 func NewIPSliceValidator() Validator {
@@ -211,6 +223,12 @@ func NewEmailValidator() Validator {
 		}
 		return nil
 	}
+}
+
+// NewMaybeEmailValidator returns a validator to validate the value may be empty
+// or an email.
+func NewMaybeEmailValidator() Validator {
+	return Or(NewEmptyStrValidator(), NewEmailValidator())
 }
 
 // NewEmailSliceValidator returns a validator to validate whether the string element
@@ -244,10 +262,34 @@ func NewAddressValidator() Validator {
 	}
 }
 
+// NewMaybeAddressValidator returns a validator to validate the value may be
+// empty or an address.
+func NewMaybeAddressValidator() Validator {
+	return Or(NewEmptyStrValidator(), NewAddressValidator())
+}
+
+// NewAddressOrIPValidator is equal to NewAddressValidator, but it maybe miss
+// the port.
+func NewAddressOrIPValidator() Validator {
+	return Or(NewIPValidator(), NewAddressValidator())
+}
+
+// NewMaybeAddressOrIPValidator returns a validator to validate the value may be
+// empty or an address or an ip.
+func NewMaybeAddressOrIPValidator() Validator {
+	return Or(NewEmptyStrValidator(), NewAddressOrIPValidator())
+}
+
 // NewAddressSliceValidator returns a validator to validate whether the string element
 // of the []string value is a valid address.
 func NewAddressSliceValidator() Validator {
 	return NewStrSliceValidator(NewAddressValidator())
+}
+
+// NewAddressOrIPSliceValidator returns a validator to validate whether
+// the string element of the []string value is an address or ip.
+func NewAddressOrIPSliceValidator() Validator {
+	return NewStrSliceValidator(NewAddressOrIPValidator())
 }
 
 // NewIntegerRangeValidator returns a validator to validate whether the integer
