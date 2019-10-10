@@ -20,6 +20,30 @@ import (
 	"testing"
 )
 
+func ExampleOpt_F() {
+	fix := func(v interface{}) (interface{}, error) { return v.(int) + 1, nil }
+	opt1 := IntOpt("opt1", "test fix with default").D(10).F(fix, true)
+	opt2 := IntOpt("opt2", "test fix without default").D(20).F(fix)
+
+	conf := New()
+	conf.RegisterOpts([]Opt{opt1, opt2})
+
+	fmt.Printf("opt1=%s\n", conf.MustString("opt1"))
+	fmt.Printf("opt2=%s\n", conf.MustString("opt2"))
+
+	conf.UpdateValue("opt1", 30)
+	conf.UpdateValue("opt2", 40)
+
+	fmt.Printf("opt1=%s\n", conf.MustString("opt1"))
+	fmt.Printf("opt2=%s\n", conf.MustString("opt2"))
+
+	// Output:
+	// opt1=11
+	// opt2=20
+	// opt1=31
+	// opt2=41
+}
+
 func TestOptObserver(t *testing.T) {
 	var value string
 	opt := StrOpt("opt", "").D("abc").O(func(v interface{}) { value = v.(string) })

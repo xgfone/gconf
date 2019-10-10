@@ -56,6 +56,17 @@ type Opt struct {
 	// Notice: it must not panic.
 	Parser func(input interface{}) (output interface{}, err error)
 
+	// Fix is used to fix the parsed value.
+	//
+	// The different between Parser and Fix:
+	//   1. Parser only parses the value from the arbitrary type to a specific.
+	//   2. Fix only changes the value, not the type, that's, input and output
+	//      should be the same type. For example, input is the NIC name,
+	//      and Fix can get the ip by the NIC name then return it as output.
+	//      So it ensures that input may be NIC or IP, and that the value
+	//      of the option is always a IP.
+	Fix func(input interface{}) (output interface{}, err error)
+
 	// Observers are called after the value of the option is updated.
 	Observers []func(newValue interface{})
 
@@ -67,6 +78,8 @@ type Opt struct {
 	//
 	// Notice: they must not panic.
 	Validators []Validator
+
+	fixDefault bool
 }
 
 func (o Opt) check() {
@@ -115,6 +128,30 @@ func (o Opt) D(_default interface{}) Opt {
 	} else {
 		o.Default = value
 	}
+	return o
+}
+
+func (o *Opt) fix() error {
+	if o.fixDefault && o.Fix != nil && o.Default != nil {
+		_default, err := o.Fix(o.Default)
+		if err != nil {
+			return err
+		}
+		o.Default = _default
+	}
+	return nil
+}
+
+// F returns a new Opt with the given fix function based on the current option.
+//
+// If fixDefault is true, it will fix the default value when registering
+// the option.
+func (o Opt) F(fix func(interface{}) (interface{}, error), fixDefault ...bool) Opt {
+	o.Fix = fix
+	if len(fixDefault) > 0 {
+		o.fixDefault = fixDefault[0]
+	}
+
 	return o
 }
 

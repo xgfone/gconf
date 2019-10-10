@@ -331,7 +331,9 @@ func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
 
 func (g *OptGroup) registerOpt(opt Opt, force ...bool) (ok bool) {
 	opt.check()
-	if err := opt.validate(opt.Default); err != nil {
+	if err := opt.fix(); err != nil {
+		panic(NewOptError(g.name, opt.Name, err, opt.Default))
+	} else if err := opt.validate(opt.Default); err != nil {
 		panic(NewOptError(g.name, opt.Name, err, opt.Default))
 	}
 
@@ -361,7 +363,9 @@ func (g *OptGroup) registerOpts(opts []Opt, force ...bool) (ok bool) {
 	names := make([]string, len(opts))
 	for i := range opts {
 		opts[i].check()
-		if err := opts[i].validate(opts[i].Default); err != nil {
+		if err := opts[i].fix(); err != nil {
+			panic(NewOptError(g.name, opts[i].Name, err, opts[i].Default))
+		} else if err := opts[i].validate(opts[i].Default); err != nil {
 			panic(NewOptError(g.name, opts[i].Name, err, opts[i].Default))
 		}
 		names[i] = g.fixOptName(opts[i].Name)
@@ -533,6 +537,15 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 	v, err := opt.opt.Parser(value)
 	if err != nil {
 		return nil, NewOptError(g.name, opt.opt.Name, err, value)
+	}
+
+	// Fix the parsed value
+	if opt.opt.Fix != nil {
+		_v, err := opt.opt.Fix(v)
+		if err != nil {
+			return nil, NewOptError(g.name, opt.opt.Name, err, v)
+		}
+		v = _v
 	}
 
 	// Validate the option value
