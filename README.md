@@ -60,7 +60,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/xgfone/gconf"
+	"github.com/xgfone/gconf/v4"
 )
 
 func main() {
@@ -101,7 +101,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/xgfone/gconf"
+	"github.com/xgfone/gconf/v4"
 )
 
 var opts = []gconf.Opt{
@@ -140,7 +140,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xgfone/gconf"
+	"github.com/xgfone/gconf/v4"
 )
 
 func main() {
@@ -174,7 +174,7 @@ import (
 	"fmt"
 
 	"github.com/urfave/cli"
-	"github.com/xgfone/gconf"
+	"github.com/xgfone/gconf/v4"
 )
 
 func main() {
@@ -234,7 +234,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xgfone/gconf"
+	"github.com/xgfone/gconf/v4"
 )
 
 var opts = []gconf.Opt{
@@ -284,7 +284,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/xgfone/gconf"
+	"github.com/xgfone/gconf/v4"
 )
 
 type Group struct {
@@ -519,7 +519,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xgfone/gconf"
+	"github.com/xgfone/gconf/v4"
 )
 
 // AppConfig is used to configure the application.
