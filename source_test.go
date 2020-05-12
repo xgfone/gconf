@@ -33,11 +33,11 @@ func ExampleNewCliSource() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{&cli.StringFlag{Name: "opt1"}}
 	app.Commands = []*cli.Command{
-		&cli.Command{
+		{
 			Name:  "cmd1",
 			Flags: []cli.Flag{&cli.IntFlag{Name: "opt2"}},
 			Subcommands: []*cli.Command{
-				&cli.Command{
+				{
 					Name:  "cmd2",
 					Flags: []cli.Flag{&cli.IntFlag{Name: "opt3"}},
 					Action: func(ctx *cli.Context) error {

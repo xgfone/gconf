@@ -22,7 +22,7 @@ import (
 )
 
 // ConvertOptsToCliFlags converts the options from the group to flags of
-// github.com/urfave/cli.
+// github.com/urfave/cli/v2.
 //
 // If prefix is not empty, it will add the prefix to the flag name,
 // and join them with the character "-".
@@ -53,59 +53,59 @@ func ConvertOptsToCliFlags(group *OptGroup, prefix ...string) []cli.Flag {
 		var flag cli.Flag
 		switch v := opt.Default.(type) {
 		case bool:
-			flag = &cli.BoolFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.BoolFlag{Name: name, Value: v, Aliases: opt.Aliases, Usage: opt.Help}
 		case int:
-			flag = &cli.IntFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.IntFlag{Name: name, Value: v, Aliases: opt.Aliases, Usage: opt.Help}
 		case int32:
-			flag = &cli.IntFlag{Name: name, Value: int(v), Usage: opt.Help}
+			flag = &cli.IntFlag{Name: name, Value: int(v), Aliases: opt.Aliases, Usage: opt.Help}
 		case int64:
-			flag = &cli.Int64Flag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.Int64Flag{Name: name, Value: v, Aliases: opt.Aliases, Usage: opt.Help}
 		case uint:
-			flag = &cli.UintFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.UintFlag{Name: name, Value: v, Aliases: opt.Aliases, Usage: opt.Help}
 		case uint32:
-			flag = &cli.UintFlag{Name: name, Value: uint(v), Usage: opt.Help}
+			flag = &cli.UintFlag{Name: name, Value: uint(v), Aliases: opt.Aliases, Usage: opt.Help}
 		case uint64:
-			flag = &cli.Uint64Flag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.Uint64Flag{Name: name, Value: v, Aliases: opt.Aliases, Usage: opt.Help}
 		case float64:
-			flag = &cli.Float64Flag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.Float64Flag{Name: name, Value: v, Aliases: opt.Aliases, Usage: opt.Help}
 		case string:
-			flag = &cli.StringFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: v, Aliases: opt.Aliases, Usage: opt.Help}
 		case time.Duration:
-			flag = &cli.DurationFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.DurationFlag{Name: name, Value: v, Aliases: opt.Aliases, Usage: opt.Help}
 		case time.Time:
-			flag = &cli.StringFlag{Name: name, Value: v.Format(time.RFC3339), Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: v.Format(time.RFC3339), Aliases: opt.Aliases, Usage: opt.Help}
 		case []int:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Aliases: opt.Aliases, Usage: opt.Help}
 		case []uint:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Aliases: opt.Aliases, Usage: opt.Help}
 		case []float64:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Aliases: opt.Aliases, Usage: opt.Help}
 		case []string:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Aliases: opt.Aliases, Usage: opt.Help}
 		case []time.Duration:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Aliases: opt.Aliases, Usage: opt.Help}
 		default:
-			flag = &cli.StringFlag{Name: name, Value: fmt.Sprintf("%v", v), Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: fmt.Sprintf("%v", v), Aliases: opt.Aliases, Usage: opt.Help}
 		}
 		flags[i] = flag
 	}
