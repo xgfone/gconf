@@ -16,12 +16,11 @@ package gconf
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	neturl "net/url"
 	"strings"
 	"time"
-
-	"github.com/xgfone/go-tools/v6/io2"
 )
 
 var errNoContentType = fmt.Errorf("http response has no the header Content-Type")
@@ -84,7 +83,7 @@ func (u urlSource) Read() (DataSet, error) {
 	}
 
 	// Read the body of the response.
-	data, err := io2.ReadN(resp.Body, resp.ContentLength)
+	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return DataSet{Source: u.id, Format: format}, err
 	}

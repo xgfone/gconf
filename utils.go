@@ -21,25 +21,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xgfone/go-tools/v6/types"
+	"github.com/xgfone/cast"
 )
 
 // Some type converters, all of which have a default implementation,
 // but you can reset them to yourself implementations.
 var (
-	ToBool     = types.ToBool     // func(interface{}) (bool, error)
-	ToInt      = types.ToInt      // func(interface{}) (int, error)
-	ToInt32    = types.ToInt32    // func(interface{}) (int32, error)
-	ToInt64    = types.ToInt64    // func(interface{}) (int64, error)
-	ToUint     = types.ToUint     // func(interface{}) (uint, error)
-	ToUint32   = types.ToUint32   // func(interface{}) (uint32, error)
-	ToUint64   = types.ToUint64   // func(interface{}) (uint64, error)
-	ToFloat64  = types.ToFloat64  // func(interface{}) (float64, error)
-	ToString   = types.ToString   // func(interface{}) (string, error)
-	ToDuration = types.ToDuration // func(interface{}) (time.Duration, error)
-	ToTime     = toTime           // func(interface{}) (time.Time, error)
+	ToBool     = cast.ToBool     // func(interface{}) (bool, error)
+	ToInt      = cast.ToInt      // func(interface{}) (int, error)
+	ToInt32    = cast.ToInt32    // func(interface{}) (int32, error)
+	ToInt64    = cast.ToInt64    // func(interface{}) (int64, error)
+	ToUint     = cast.ToUint     // func(interface{}) (uint, error)
+	ToUint32   = cast.ToUint32   // func(interface{}) (uint32, error)
+	ToUint64   = cast.ToUint64   // func(interface{}) (uint64, error)
+	ToFloat64  = cast.ToFloat64  // func(interface{}) (float64, error)
+	ToString   = cast.ToString   // func(interface{}) (string, error)
+	ToDuration = cast.ToDuration // func(interface{}) (time.Duration, error)
+	ToTime     = toTime          // func(interface{}) (time.Time, error)
 
-	// For string type, it will be split by using types.ToStringSlice.
+	// For string type, it will be split by using cast.ToStringSlice.
 	ToIntSlice      = toIntSlice      // func(interface{}) ([]int, error)
 	ToUintSlice     = toUintSlice     // func(interface{}) ([]uint, error)
 	ToFloat64Slice  = toFloat64Slice  // func(interface{}) ([]float64, error)
@@ -47,14 +47,14 @@ var (
 	ToDurationSlice = toDurationSlice // func(interface{}) ([]time.Duration, error)
 )
 
-var toStringMap = types.ToStringMap
+var toStringMap = cast.ToStringMap
 
 func init() {
-	types.StringSeparator = " ,"
+	cast.StringSeparator = " ,"
 }
 
 func toTime(v interface{}) (time.Time, error) {
-	return types.ToTime(v)
+	return cast.ToTime(v)
 }
 
 func bytesToMd5(data []byte) string {
@@ -84,7 +84,7 @@ func getStringSlice(value interface{}) []string {
 		return nil
 	}
 
-	vs, _ := types.ToStringSlice(s)
+	vs, _ := cast.ToStringSlice(s)
 	ss := make([]string, 0, len(vs))
 	for _, s := range vs {
 		if s = strings.TrimSpace(s); s != "" {
@@ -105,7 +105,7 @@ func toIntSlice(value interface{}) ([]int, error) {
 		}
 		return vs, nil
 	}
-	return types.ToIntSlice(value)
+	return cast.ToIntSlice(value)
 }
 
 func toUintSlice(value interface{}) (v []uint, err error) {
@@ -119,7 +119,7 @@ func toUintSlice(value interface{}) (v []uint, err error) {
 		}
 		return vs, nil
 	}
-	return types.ToUintSlice(value)
+	return cast.ToUintSlice(value)
 }
 
 func toFloat64Slice(value interface{}) ([]float64, error) {
@@ -133,14 +133,14 @@ func toFloat64Slice(value interface{}) ([]float64, error) {
 		}
 		return vs, nil
 	}
-	return types.ToFloat64Slice(value)
+	return cast.ToFloat64Slice(value)
 }
 
 func toStringSlice(value interface{}) ([]string, error) {
 	if ss := getStringSlice(value); ss != nil {
 		return ss, nil
 	}
-	return types.ToStringSlice(value)
+	return cast.ToStringSlice(value)
 }
 
 func toDurationSlice(value interface{}) ([]time.Duration, error) {
@@ -154,5 +154,5 @@ func toDurationSlice(value interface{}) ([]time.Duration, error) {
 		}
 		return vs, nil
 	}
-	return types.ToDurationSlice(value)
+	return cast.ToDurationSlice(value)
 }
