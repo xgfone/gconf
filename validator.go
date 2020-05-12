@@ -31,6 +31,28 @@ var (
 	errNotStringSlice = fmt.Errorf("the value is not []string")
 )
 
+// Predefine some constant validators.
+var (
+	AddressOrIPSliceValidator = NewAddressOrIPSliceValidator()
+	AddressOrIPValidator      = NewAddressOrIPValidator()
+	AddressSliceValidator     = NewAddressSliceValidator()
+	AddressValidator          = NewAddressValidator()
+	EmailSliceValidator       = NewEmailSliceValidator()
+	EmailValidator            = NewEmailValidator()
+	EmptyStrValidator         = NewEmptyStrValidator()
+	IPSliceValidator          = NewIPSliceValidator()
+	IPValidator               = NewIPValidator()
+	MaybeAddressOrIPValidator = NewMaybeAddressOrIPValidator()
+	MaybeAddressValidator     = NewMaybeAddressValidator()
+	MaybeEmailValidator       = NewMaybeEmailValidator()
+	MaybeIPValidator          = NewMaybeIPValidator()
+	MaybeURLValidator         = NewMaybeURLValidator()
+	PortValidator             = NewPortValidator()
+	StrNotEmptyValidator      = NewStrNotEmptyValidator()
+	URLSliceValidator         = NewURLSliceValidator()
+	URLValidator              = NewURLValidator()
+)
+
 // Validator is used to validate whether the value of the option in the group
 // is valid.
 type Validator func(value interface{}) error
