@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func ExampleNewCliSource() {
@@ -31,19 +31,20 @@ func ExampleNewCliSource() {
 	conf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpt(IntOpt("opt3", ""))
 
 	app := cli.NewApp()
-	app.Flags = []cli.Flag{cli.StringFlag{Name: "opt1"}}
-	app.Commands = []cli.Command{
-		cli.Command{
+	app.Flags = []cli.Flag{&cli.StringFlag{Name: "opt1"}}
+	app.Commands = []*cli.Command{
+		&cli.Command{
 			Name:  "cmd1",
-			Flags: []cli.Flag{cli.IntFlag{Name: "opt2"}},
-			Subcommands: []cli.Command{
-				cli.Command{
+			Flags: []cli.Flag{&cli.IntFlag{Name: "opt2"}},
+			Subcommands: []*cli.Command{
+				&cli.Command{
 					Name:  "cmd2",
-					Flags: []cli.Flag{cli.IntFlag{Name: "opt3"}},
+					Flags: []cli.Flag{&cli.IntFlag{Name: "opt3"}},
 					Action: func(ctx *cli.Context) error {
-						conf.LoadSource(NewCliSource(ctx, "cmd1", "cmd2"))
-						conf.LoadSource(NewCliSource(ctx.Parent(), "cmd1"))
-						conf.LoadSource(NewCliSource(ctx.Parent().Parent()))
+						ctxs := ctx.Lineage()
+						conf.LoadSource(NewCliSource(ctxs[0], "cmd1", "cmd2"))
+						conf.LoadSource(NewCliSource(ctxs[1], "cmd1"))
+						conf.LoadSource(NewCliSource(ctxs[2]))
 
 						fmt.Println(conf.GetString("opt1"))
 						fmt.Println(conf.Group("cmd1").GetInt("opt2"))

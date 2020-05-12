@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 // ConvertOptsToCliFlags converts the options from the group to flags of
@@ -53,63 +53,59 @@ func ConvertOptsToCliFlags(group *OptGroup, prefix ...string) []cli.Flag {
 		var flag cli.Flag
 		switch v := opt.Default.(type) {
 		case bool:
-			if v {
-				flag = cli.BoolTFlag{Name: name, Usage: opt.Help}
-			} else {
-				flag = cli.BoolFlag{Name: name, Usage: opt.Help}
-			}
+			flag = &cli.BoolFlag{Name: name, Value: v, Usage: opt.Help}
 		case int:
-			flag = cli.IntFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.IntFlag{Name: name, Value: v, Usage: opt.Help}
 		case int32:
-			flag = cli.IntFlag{Name: name, Value: int(v), Usage: opt.Help}
+			flag = &cli.IntFlag{Name: name, Value: int(v), Usage: opt.Help}
 		case int64:
-			flag = cli.Int64Flag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.Int64Flag{Name: name, Value: v, Usage: opt.Help}
 		case uint:
-			flag = cli.UintFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.UintFlag{Name: name, Value: v, Usage: opt.Help}
 		case uint32:
-			flag = cli.UintFlag{Name: name, Value: uint(v), Usage: opt.Help}
+			flag = &cli.UintFlag{Name: name, Value: uint(v), Usage: opt.Help}
 		case uint64:
-			flag = cli.Uint64Flag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.Uint64Flag{Name: name, Value: v, Usage: opt.Help}
 		case float64:
-			flag = cli.Float64Flag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.Float64Flag{Name: name, Value: v, Usage: opt.Help}
 		case string:
-			flag = cli.StringFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: v, Usage: opt.Help}
 		case time.Duration:
-			flag = cli.DurationFlag{Name: name, Value: v, Usage: opt.Help}
+			flag = &cli.DurationFlag{Name: name, Value: v, Usage: opt.Help}
 		case time.Time:
-			flag = cli.StringFlag{Name: name, Value: v.Format(time.RFC3339), Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: v.Format(time.RFC3339), Usage: opt.Help}
 		case []int:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
 		case []uint:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
 		case []float64:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
 		case []string:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
 		case []time.Duration:
 			var s string
 			if len(v) > 0 {
 				s = fmt.Sprintf("%v", v)
 			}
-			flag = cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: s, Usage: opt.Help}
 		default:
-			flag = cli.StringFlag{Name: name, Value: fmt.Sprintf("%v", v), Usage: opt.Help}
+			flag = &cli.StringFlag{Name: name, Value: fmt.Sprintf("%v", v), Usage: opt.Help}
 		}
 		flags[i] = flag
 	}
@@ -143,13 +139,8 @@ type cliSource struct {
 func (c cliSource) Watch(load func(DataSet, error), exit <-chan struct{}) {}
 
 func (c cliSource) Read() (DataSet, error) {
-	names := c.ctx.FlagNames()
-	if len(names) == 0 {
-		names = c.ctx.GlobalFlagNames()
-	}
-
 	opts := make(map[string]string, 16)
-	c.getFlags(c.group, c.ctx, names, opts)
+	c.getFlags(c.group, c.ctx, c.ctx.FlagNames(), opts)
 	if len(opts) == 0 {
 		return DataSet{Source: "cli", Format: "json"}, nil
 	}
@@ -176,12 +167,7 @@ func (c cliSource) getFlags(group string, ctx *cli.Context, names []string, opts
 			continue
 		}
 
-		opt := ctx.GlobalGeneric(name)
-		if opt == nil {
-			opt = ctx.Generic(name)
-		}
-
-		switch v := opt.(type) {
+		switch v := ctx.Generic(name).(type) {
 		case nil:
 			continue
 		case fmt.Stringer:
