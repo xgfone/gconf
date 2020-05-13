@@ -45,9 +45,6 @@ type DataSet struct {
 	Source    string    // Such as "file:/path/to/file", "zk:127.0.0.1:2181", etc.
 	Checksum  string    // Such as "md5:7d2f31e6fff478337478413ee1b70d2a", etc.
 	Timestamp time.Time // The timestamp when the data is modified.
-
-	// Callback will be called after loading the dataset, if it exists.
-	Callback func(DataSet)
 }
 
 // Md5 returns the md5 checksum of the DataSet data
@@ -81,10 +78,6 @@ func (c *Config) LoadDataSet(ds DataSet, force ...bool) {
 		c.handleError(NewSourceError(ds.Source, ds.Format, ds.Data, err))
 	} else {
 		c.LoadMap(ms, force...)
-	}
-
-	if ds.Callback != nil {
-		ds.Callback(ds)
 	}
 }
 
