@@ -99,7 +99,8 @@ func (c *Config) loadDataSetWithError(ds DataSet, err error, force bool) {
 	}
 }
 
-func (c *Config) loadDataSetCallback(ds DataSet, err error) {
+// LoadDataSetCallback is a callback used by the watcher.
+func (c *Config) LoadDataSetCallback(ds DataSet, err error) {
 	c.loadDataSetWithError(ds, err, true)
 }
 
@@ -115,34 +116,7 @@ type Source interface {
 	Watch(load func(DataSet, error), close <-chan struct{})
 }
 
-// LoadSource loads the sources, and call Watch to watch the source.
-//
-// When loading the source, if a certain option of a certain group has been set,
-// it will be ignored. But you can set force to true to reset the value of this
-// option.
-func (c *Config) LoadSource(source Source, force ...bool) {
-	c.loadSource(source, true, nil, force...)
-}
-
-// LoadSourceWithoutWatch is the same as LoadSource, but does not call
-// the Watch method of the source to watch the source.
-func (c *Config) LoadSourceWithoutWatch(source Source, force ...bool) {
-	c.loadSource(source, false, nil, force...)
-}
-
-// LoadSourceAndCallback is the same as LoadSource, but set the callback
-// of the Dataset to cb.
-func (c *Config) LoadSourceAndCallback(source Source, cb func(DataSet), force ...bool) {
-	c.loadSource(source, true, cb, force...)
-}
-
-// LoadSourceAndCallbackWithoutWatch is the same as LoadSourceWithoutWatch,
-// but set the callback of the Dataset to cb.
-func (c *Config) LoadSourceAndCallbackWithoutWatch(source Source, cb func(DataSet), force ...bool) {
-	c.loadSource(source, false, cb, force...)
-}
-
-func (c *Config) loadSource(source Source, watch bool, cb func(DataSet), force ...bool) {
+func (c *Config) loadSource(source Source, force ...bool) {
 	if source == nil {
 		panic("the source is nil")
 	}
@@ -153,9 +127,25 @@ func (c *Config) loadSource(source Source, watch bool, cb func(DataSet), force .
 	}
 
 	ds, err := source.Read()
-	ds.Callback = cb
 	c.loadDataSetWithError(ds, err, _force)
-	if watch {
-		source.Watch(c.loadDataSetCallback, c.exit)
-	}
+}
+
+// LoadSource loads the sources, and call Watch to watch the source, which is
+// equal to
+//
+//   c.LoadSourceWithoutWatch(source, force...)
+//   source.Watch(c.LoadDataSetCallback, c.CloseNotice())
+//
+// When loading the source, if a certain option of a certain group has been set,
+// it will be ignored. But you can set force to true to reset the value of this
+// option.
+func (c *Config) LoadSource(source Source, force ...bool) {
+	c.loadSource(source, force...)
+	source.Watch(c.LoadDataSetCallback, c.exit)
+}
+
+// LoadSourceWithoutWatch is the same as LoadSource, but does not call
+// the Watch method of the source to watch the source.
+func (c *Config) LoadSourceWithoutWatch(source Source, force ...bool) {
+	c.loadSource(source, force...)
 }
