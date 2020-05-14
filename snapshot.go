@@ -59,7 +59,7 @@ func (c *Config) writeSnapshotIntoFile(filename string) {
 				return
 			}
 		case <-ticker.C:
-			gen, data, err := c.snap.MarshalJSON()
+			gen, data, err := c.snap.getData()
 			if err != nil {
 				c.handleError(fmt.Errorf("[Config] snapshot marshal json: %s", err.Error()))
 			} else if gen == lastgen {
@@ -138,15 +138,9 @@ func (s *snapshot) ChangeObserver(group, opt string, old, new interface{}) {
 	}
 }
 
-func (s *snapshot) MarshalJSON() (uint64, []byte, error) {
+func (s *snapshot) getData() (uint64, []byte, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	data, err := json.Marshal(s.maps)
 	return s.gen, data, err
-}
-
-func (s *snapshot) UnmarshalJSON(data []byte) error {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-	return json.Unmarshal(data, &s.maps)
 }
