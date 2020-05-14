@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xgfone/gconf/v4"
+	"github.com/xgfone/gconf/v5"
 )
 
 // SafeValue is used to set and get the value safely.

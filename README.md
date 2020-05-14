@@ -1,11 +1,10 @@
 # gconf [![Build Status](https://travis-ci.org/xgfone/gconf.svg?branch=master)](https://travis-ci.org/xgfone/gconf) [![GoDoc](https://godoc.org/github.com/xgfone/gconf?status.svg)](http://godoc.org/github.com/xgfone/gconf) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/gconf/master/LICENSE)
 An extensible and powerful go configuration manager, which is inspired by [oslo.config](https://github.com/openstack/oslo.config), [github.com/micro/go-micro/config](https://github.com/micro/go-micro/tree/master/config) and [viper](https://github.com/spf13/viper).
 
-The current version is `v4` to support **Semantic Import Versioning**, which requires `Go1.11+`. See [DOC](https://godoc.org/github.com/xgfone/gconf).
 
 ## Install
 ```shell
-$ go get -u github.com/xgfone/gconf/v4
+$ go get -u github.com/xgfone/gconf/v5
 ```
 
 ### V3
@@ -60,7 +59,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/xgfone/gconf/v4"
+	"github.com/xgfone/gconf/v5"
 )
 
 func main() {
@@ -101,7 +100,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/xgfone/gconf/v4"
+	"github.com/xgfone/gconf/v5"
 )
 
 var opts = []gconf.Opt{
@@ -140,7 +139,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xgfone/gconf/v4"
+	"github.com/xgfone/gconf/v5"
 )
 
 func main() {
@@ -174,7 +173,7 @@ import (
 	"fmt"
 
 	"github.com/urfave/cli/v2"
-	"github.com/xgfone/gconf/v4"
+	"github.com/xgfone/gconf/v5"
 )
 
 func main() {
@@ -235,7 +234,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xgfone/gconf/v4"
+	"github.com/xgfone/gconf/v5"
 )
 
 var opts = []gconf.Opt{
@@ -285,7 +284,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/xgfone/gconf/v4"
+	"github.com/xgfone/gconf/v5"
 )
 
 type Group struct {
@@ -520,8 +519,8 @@ import (
 	"fmt"
 	"time"
 
-    "github.com/xgfone/gconf/v4"
-    "github.com/xgfone/gconf/v4/field"
+    "github.com/xgfone/gconf/v5"
+    "github.com/xgfone/gconf/v5/field"
 )
 
 // AppConfig is used to configure the application.

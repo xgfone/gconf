@@ -1,4 +1,4 @@
-module github.com/xgfone/gconf/v4
+module github.com/xgfone/gconf/v5
 
 require (
 	github.com/BurntSushi/toml v0.3.1

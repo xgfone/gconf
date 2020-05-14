@@ -20,8 +20,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/xgfone/gconf/v4"
-	"github.com/xgfone/gconf/v4/field"
+	"github.com/xgfone/gconf/v5"
+	"github.com/xgfone/gconf/v5/field"
 )
 
 func ExampleOptField() {
