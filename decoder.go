@@ -62,24 +62,7 @@ type Decoder struct {
 	//         "group11.group12.opt122": "value122"
 	//     }
 	//
-	// When loading it, it will be flatted to
-	//
-	//     map[string]interface{} {
-	//         "opt1": "value1",
-	//         "opt2": "value2",
-	//         "group1.opt1": "value11",
-	//         "group1.opt2": "value12",
-	//         "group1.group2.XXX": "XXX",
-	//         "group1.group3.group4.XXX": "XXX",
-	//         "group5.group6.group7.opt71": "value71",
-	//         "group5.group6.group7.opt72": "value72",
-	//         "group5.group6.group7.group8.XXX": "XXX",
-	//         "group5.group6.group7.group9.group10.XXX": "XXX",
-	//         "group11.group12.opt121": "value121",
-	//         "group11.group12.opt122": "value122"
-	//     }
-	//
-	// So the option name must not contain the dot(.).
+	// Notice: The option name must not contain the dot(.).
 	Decode func(src []byte, dst map[string]interface{}) error
 }
 
