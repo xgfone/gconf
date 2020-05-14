@@ -7,13 +7,6 @@ An extensible and powerful go configuration manager, which is inspired by [oslo.
 $ go get -u github.com/xgfone/gconf/v5
 ```
 
-### V3
-```shell
-$ go1.x  get -u github.com/xgfone/gconf
-$ go1.11 get -u github.com/xgfone/gconf@v3.7.0
-$ go1.12 get -u github.com/xgfone/gconf@v3.7.0
-$ GONOSUMDB="*" go1.13 get -u github.com/xgfone/gconf@v3.7.0
-```
 
 ## Goal
 
@@ -29,6 +22,7 @@ $ GONOSUMDB="*" go1.13 get -u github.com/xgfone/gconf@v3.7.0
 Source is used to read the configuration data. You can load lots of sources to read the configuration data from many storage locations. The default has implemented some sources, such as `flag`, `cli`, `env`, `file`, `url`, `zookeeper`. But you can also implement other sources, such as `ETCD`, etc.
 
 **Notice:** If the source supports the watcher, it will add it to watch the changed of the source data automatically.
+
 
 ## Decoder
 
