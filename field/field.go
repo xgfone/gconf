@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2020 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gconf
+package field
 
 import (
 	"sync"
 	"time"
+
+	"github.com/xgfone/gconf/v4"
 )
-
-// OptField is used to describe a struct field option, which can get or set
-// the value of the struct field safely.
-type OptField interface {
-	// Default returns the default value of the field option.
-	Default() interface{}
-
-	// Parse converts the input to output.
-	//
-	// Notice: the type of output must be identical with the types of the value
-	// returned by Default() and the argument of Set().
-	Parse(input interface{}) (output interface{}, err error)
-
-	// Set is used to update the value of the field, which must be goroutine-safe.
-	Set(interface{})
-}
 
 // SafeValue is used to set and get the value safely.
 //
@@ -74,7 +60,7 @@ func (f *BoolOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *BoolOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToBool(input)
+	return gconf.ToBool(input)
 }
 
 // Set implements OptField.Set().
@@ -101,7 +87,7 @@ func (f *BoolTOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *BoolTOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToBool(input)
+	return gconf.ToBool(input)
 }
 
 // Set implements OptField.Set().
@@ -126,7 +112,7 @@ func (f *IntOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *IntOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToInt(input)
+	return gconf.ToInt(input)
 }
 
 // Set implements OptField.Set().
@@ -151,7 +137,7 @@ func (f *Int32OptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *Int32OptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToInt32(input)
+	return gconf.ToInt32(input)
 }
 
 // Set implements OptField.Set().
@@ -176,7 +162,7 @@ func (f *Int64OptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *Int64OptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToInt64(input)
+	return gconf.ToInt64(input)
 }
 
 // Set implements OptField.Set().
@@ -201,7 +187,7 @@ func (f *UintOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *UintOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToUint(input)
+	return gconf.ToUint(input)
 }
 
 // Set implements OptField.Set().
@@ -226,7 +212,7 @@ func (f *Uint32OptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *Uint32OptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToUint32(input)
+	return gconf.ToUint32(input)
 }
 
 // Set implements OptField.Set().
@@ -251,7 +237,7 @@ func (f *Uint64OptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *Uint64OptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToUint64(input)
+	return gconf.ToUint64(input)
 }
 
 // Set implements OptField.Set().
@@ -276,7 +262,7 @@ func (f *Float64OptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *Float64OptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToFloat64(input)
+	return gconf.ToFloat64(input)
 }
 
 // Set implements OptField.Set().
@@ -301,7 +287,7 @@ func (f *StringOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *StringOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToString(input)
+	return gconf.ToString(input)
 }
 
 // Set implements OptField.Set().
@@ -326,7 +312,7 @@ func (f *DurationOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *DurationOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToDuration(input)
+	return gconf.ToDuration(input)
 }
 
 // Set implements OptField.Set().
@@ -351,7 +337,7 @@ func (f *TimeOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *TimeOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToTime(input)
+	return gconf.ToTime(input)
 }
 
 // Set implements OptField.Set().
@@ -376,7 +362,7 @@ func (f *IntSliceOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *IntSliceOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToIntSlice(input)
+	return gconf.ToIntSlice(input)
 }
 
 // Set implements OptField.Set().
@@ -401,7 +387,7 @@ func (f *UintSliceOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *UintSliceOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToUintSlice(input)
+	return gconf.ToUintSlice(input)
 }
 
 // Set implements OptField.Set().
@@ -426,7 +412,7 @@ func (f *Float64SliceOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *Float64SliceOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToFloat64Slice(input)
+	return gconf.ToFloat64Slice(input)
 }
 
 // Set implements OptField.Set().
@@ -451,7 +437,7 @@ func (f *StringSliceOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *StringSliceOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToStringSlice(input)
+	return gconf.ToStringSlice(input)
 }
 
 // Set implements OptField.Set().
@@ -476,7 +462,7 @@ func (f *DurationSliceOptField) Default() interface{} {
 
 // Parse implements OptField.Parse().
 func (f *DurationSliceOptField) Parse(input interface{}) (output interface{}, err error) {
-	return ToDurationSlice(input)
+	return gconf.ToDurationSlice(input)
 }
 
 // Set implements OptField.Set().

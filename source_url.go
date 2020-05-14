@@ -98,7 +98,7 @@ func (u urlSource) Read() (DataSet, error) {
 	return ds, nil
 }
 
-func (u urlSource) Watch(load func(DataSet, error), exit <-chan struct{}) {
+func (u urlSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {
 	go u.watchurl(load, exit)
 }
 
@@ -110,7 +110,7 @@ type urlWatcher struct {
 	sleep time.Duration
 }
 
-func (u urlSource) watchurl(load func(DataSet, error), exit <-chan struct{}) {
+func (u urlSource) watchurl(load func(DataSet, error) bool, exit <-chan struct{}) {
 	last := DataSet{}
 	first := true
 	for {
@@ -129,8 +129,9 @@ func (u urlSource) watchurl(load func(DataSet, error), exit <-chan struct{}) {
 		if ds, err := u.Read(); err != nil {
 			load(ds, err)
 		} else if len(ds.Data) > 0 && ds.Checksum != last.Checksum {
-			last = ds
-			load(ds, nil)
+			if load(ds, nil) {
+				last = ds
+			}
 		}
 	}
 }

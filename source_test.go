@@ -26,20 +26,20 @@ import (
 
 func ExampleNewCliSource() {
 	conf := New()
-	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("cmd1").RegisterOpt(IntOpt("opt2", ""))
-	conf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpt(IntOpt("opt3", ""))
+	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
+	conf.NewGroup("cmd1").RegisterOpts(IntOpt("opt2", ""))
+	conf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpts(IntOpt("opt3", ""))
 
 	app := cli.NewApp()
-	app.Flags = []cli.Flag{&cli.StringFlag{Name: "opt1"}}
+	app.Flags = ConvertOptsToCliFlags(conf.OptGroup)
 	app.Commands = []*cli.Command{
 		{
 			Name:  "cmd1",
-			Flags: []cli.Flag{&cli.IntFlag{Name: "opt2"}},
+			Flags: ConvertOptsToCliFlags(conf.Group("cmd1")),
 			Subcommands: []*cli.Command{
 				{
 					Name:  "cmd2",
-					Flags: []cli.Flag{&cli.IntFlag{Name: "opt3"}},
+					Flags: ConvertOptsToCliFlags(conf.Group("cmd1.cmd2")),
 					Action: func(ctx *cli.Context) error {
 						ctxs := ctx.Lineage()
 						conf.LoadSource(NewCliSource(ctxs[0], "cmd1", "cmd2"))
@@ -76,9 +76,9 @@ func TestNewEnvSource(t *testing.T) {
 	os.Setenv("ABC", "xyz")
 
 	conf := New()
-	conf.RegisterOpt(IntOpt("opt1", ""))
-	conf.NewGroup("group1").RegisterOpt(BoolOpt("opt2", ""))
-	conf.Group("group1").NewGroup("group2").RegisterOpt(Float64Opt("opt3", ""))
+	conf.RegisterOpts(IntOpt("opt1", ""))
+	conf.NewGroup("group1").RegisterOpts(BoolOpt("opt2", ""))
+	conf.Group("group1").NewGroup("group2").RegisterOpts(Float64Opt("opt3", ""))
 
 	conf.LoadSource(NewEnvSource())
 	if v := conf.GetInt("opt1"); v != 123 {
@@ -125,9 +125,9 @@ func TestNewFileSource_INI(t *testing.T) {
 
 	// Load the config
 	conf := New()
-	conf.RegisterOpt(IntOpt("opt1", ""))
-	conf.NewGroup("group1").RegisterOpt(BoolOpt("opt2", ""))
-	conf.Group("group1").NewGroup("group2").RegisterOpt(Float64Opt("opt3", ""))
+	conf.RegisterOpts(IntOpt("opt1", ""))
+	conf.NewGroup("group1").RegisterOpts(BoolOpt("opt2", ""))
+	conf.Group("group1").NewGroup("group2").RegisterOpts(Float64Opt("opt3", ""))
 	conf.LoadSource(NewFileSource(filename))
 
 	// Check the config
@@ -167,9 +167,9 @@ func TestNewFileSource_JSON(t *testing.T) {
 
 	// Load the config
 	conf := New()
-	conf.RegisterOpt(IntOpt("opt1", ""))
-	conf.NewGroup("group1").RegisterOpt(BoolOpt("opt2", ""))
-	conf.Group("group1").NewGroup("group2").RegisterOpt(Float64Opt("opt3", ""))
+	conf.registerOpts(IntOpt("opt1", ""))
+	conf.NewGroup("group1").RegisterOpts(BoolOpt("opt2", ""))
+	conf.Group("group1").NewGroup("group2").RegisterOpts(Float64Opt("opt3", ""))
 	conf.LoadSource(NewFileSource(filename))
 
 	// Check the config
@@ -199,7 +199,7 @@ func TestNewURLSource(t *testing.T) {
 	time.Sleep(time.Millisecond * 50) // Wait that the http server finishes to start.
 
 	conf := New()
-	conf.RegisterOpt(IntOpt("opt", ""))
+	conf.RegisterOpts(IntOpt("opt", ""))
 	conf.LoadSource(NewURLSource("http://127.0.0.1:12345/", time.Millisecond*100))
 
 	if v := conf.GetInt("opt"); v != 123 {

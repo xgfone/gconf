@@ -22,6 +22,8 @@ import (
 	"time"
 )
 
+var errHasBeenRegistered = fmt.Errorf("has been registered")
+
 var (
 	// ErrNoOpt is returned when no corresponding option.
 	ErrNoOpt = fmt.Errorf("no option")
@@ -237,18 +239,13 @@ func (g *OptGroup) HasOptAndIsNotSet(name string) (yes bool) {
 	return
 }
 
-// SetOptAlias sets the alias of the option from old to new. So you can access
-// the option named new by the old name.
-//
-// Notice: it does nothing if either is "".
-func (g *OptGroup) SetOptAlias(old, new string) {
+func (g *OptGroup) setOptAlias(old, new string) {
 	old = g.fixOptName(old)
 	new = g.fixOptName(new)
 	if old == "" || new == "" {
 		return
 	}
 
-	g.lock.Lock()
 	for name, opt := range g.opts {
 		if name == new {
 			var exist bool
@@ -263,10 +260,40 @@ func (g *OptGroup) SetOptAlias(old, new string) {
 			}
 		}
 	}
+
 	g.alias[old] = new
-	g.lock.Unlock()
 	debugf("[Config] Set the option alias from '%s' to '%s' in the group '%s'",
 		old, new, g.name)
+}
+
+func (g *OptGroup) unsetOptAlias(name string) {
+	delete(g.alias, name)
+	for oldname, newname := range g.alias {
+		if newname == name {
+			delete(g.alias, oldname)
+			debugf("[Config] Unset the option alias from '%s' to '%s' in the group '%s'",
+				oldname, newname, g.name)
+		}
+	}
+}
+
+// SetOptAlias sets the alias of the option from old to new. So you can access
+// the option named new by the old name.
+//
+// Notice: it does nothing if either is "".
+func (g *OptGroup) SetOptAlias(old, new string) {
+	g.lock.Lock()
+	g.setOptAlias(old, new)
+	g.lock.Unlock()
+}
+
+func (g *OptGroup) unmigrate(name string) {
+	delete(g.migrate, name)
+	for oldname, newname := range g.migrate {
+		if newname == name {
+			delete(g.migrate, oldname)
+		}
+	}
 }
 
 // Migrate migrates the old option oldOptName to the other option of the other
@@ -316,6 +343,8 @@ func (g *OptGroup) getGroupAndOpt(name string) (string, string) {
 	return "", name
 }
 
+/// --------------------------------------------------------------------------
+
 func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
 	name = g.fixOptName(name)
 	g.lock.Lock()
@@ -329,37 +358,7 @@ func (g *OptGroup) setOptWatch(name string, watch func(interface{})) {
 	g.lock.Unlock()
 }
 
-func (g *OptGroup) registerOpt(opt Opt, force ...bool) (ok bool) {
-	opt.check()
-	if err := opt.fix(); err != nil {
-		panic(NewOptError(g.name, opt.Name, err, opt.Default))
-	} else if err := opt.validate(opt.Default); err != nil {
-		panic(NewOptError(g.name, opt.Name, err, opt.Default))
-	}
-
-	name := g.fixOptName(opt.Name)
-	g.lock.Lock()
-	if _, exist := g.opts[name]; !exist || (len(force) > 0 && force[0]) {
-		g.opts[name] = &groupOpt{opt: opt}
-		ok = true
-	}
-	g.lock.Unlock()
-
-	if ok {
-		debugf("[Config] Register the option '%s' into the group '%s'", opt.Name, g.name)
-		g.conf.noticeOptRegister(g.name, []Opt{opt})
-
-		for _, alias := range opt.Aliases {
-			if alias != "" {
-				g.SetOptAlias(alias, name)
-			}
-		}
-	}
-
-	return
-}
-
-func (g *OptGroup) registerOpts(opts []Opt, force ...bool) (ok bool) {
+func (g *OptGroup) registerOpts(opts ...Opt) {
 	names := make([]string, len(opts))
 	for i := range opts {
 		opts[i].check()
@@ -371,53 +370,47 @@ func (g *OptGroup) registerOpts(opts []Opt, force ...bool) (ok bool) {
 		names[i] = g.fixOptName(opts[i].Name)
 	}
 
-	var exist bool
 	g.lock.Lock()
-	for _, name := range names {
+	for i, name := range names {
 		if _, ok := g.opts[name]; ok {
-			exist = true
-			break
+			g.lock.Unlock()
+			panic(NewOptError(g.name, opts[i].Name, errHasBeenRegistered, opts[i].Default))
 		}
 	}
-	if !exist || (len(force) > 0 && force[0]) {
-		for i, opt := range opts {
-			g.opts[names[i]] = &groupOpt{opt: opt}
-			debugf("[Config] Register the option '%s' into the group '%s'", opt.Name, g.name)
+	for i, opt := range opts {
+		debugf("[Config] Register the option '%s' into the group '%s'", opt.Name, g.name)
+		g.opts[names[i]] = &groupOpt{opt: opt}
+		for _, alias := range opt.Aliases {
+			g.setOptAlias(alias, opt.Name)
 		}
-		ok = true
 	}
 	g.lock.Unlock()
-
-	if ok {
-		g.conf.noticeOptRegister(g.name, opts)
-		for _, opt := range opts {
-			for _, alias := range opt.Aliases {
-				if alias != "" {
-					g.SetOptAlias(alias, opt.Name)
-				}
-			}
-		}
-	}
-
-	return
 }
 
-// RegisterOpt registers an option and returns true.
-//
-// Notice: if the option has existed, it won't register it and return false.
-// But you can set force to true to override it forcibly then to return true.
-func (g *OptGroup) RegisterOpt(opt Opt, force ...bool) (ok bool) {
-	return g.registerOpt(opt, force...)
+func (g *OptGroup) unRegisterOpt(opt string) {
+	name := g.fixOptName(opt)
+	delete(g.opts, name)
+	g.unmigrate(name)
+	g.unsetOptAlias(name)
 }
 
 // RegisterOpts registers a set of options and returns true.
 //
-// Notice: if a certain option has existed, it won't register them
-// and return false. But you can set force to true to override it forcibly
-// then to return true.
-func (g *OptGroup) RegisterOpts(opts []Opt, force ...bool) (ok bool) {
-	return g.registerOpts(opts, force...)
+// Notice: if a certain option has existed, it will panic.
+func (g *OptGroup) RegisterOpts(opts ...Opt) {
+	g.registerOpts(opts...)
 }
+
+// UnregisterOpts unregisters the registered options.
+func (g *OptGroup) UnregisterOpts(opts ...Opt) {
+	g.lock.Lock()
+	defer g.lock.Unlock()
+	for _, opt := range opts {
+		g.unRegisterOpt(opt.Name)
+	}
+}
+
+/// --------------------------------------------------------------------------
 
 // FreezeGroup freezes the current group and disable its options to be set.
 //
@@ -519,6 +512,8 @@ func (g *OptGroup) optIsFrozen(name string) bool {
 	return false
 }
 
+/// --------------------------------------------------------------------------
+
 func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, error) {
 	if value == nil {
 		return nil, nil
@@ -556,7 +551,21 @@ func (g *OptGroup) parseOptValue(name string, value interface{}) (interface{}, e
 	return v, nil
 }
 
-func (g *OptGroup) setOptValue(name string, value interface{}) (string, string, interface{}, interface{}, []func(interface{})) {
+// Parse the value of the option named name, which will call the parser and
+// the validators of this option.
+//
+// If no the option named `name`, it will return ErrNoOpt.
+// If there is an other error, it will return an OptError.
+func (g *OptGroup) Parse(name string, value interface{}) (interface{}, error) {
+	name = g.fixOptName(name)
+	g.lock.RLock()
+	value, err := g.parseOptValue(name, value)
+	g.lock.RUnlock()
+	return value, err
+}
+
+func (g *OptGroup) setOptValue(name string, value interface{}) (
+	string, string, interface{}, interface{}, []func(interface{})) {
 	opt := g.opts[name]
 	if opt == nil {
 		name = g.alias[name]
@@ -581,17 +590,21 @@ func (g *OptGroup) setOptValue(name string, value interface{}) (string, string, 
 	return g.migrate[name], name, old, value, opt.opt.Observers
 }
 
-// Parse the value of the option named name, which will call the parser and
-// the validators of this option.
-//
-// If no the option named `name`, it will return ErrNoOpt.
-// If there is an other error, it will return an OptError.
-func (g *OptGroup) Parse(name string, value interface{}) (interface{}, error) {
-	name = g.fixOptName(name)
-	g.lock.RLock()
-	value, err := g.parseOptValue(name, value)
-	g.lock.RUnlock()
-	return value, err
+func (g *OptGroup) setOptWithLock(name string, value interface{}) {
+	g.lock.Lock()
+	if g.optIsFrozen(name) {
+		g.lock.Unlock()
+		g.conf.handleError(NewOptError(g.Name(), name, ErrFrozenOpt, value))
+		return
+	}
+
+	migrate, name, old, new, observers := g.setOptValue(name, value)
+	g.lock.Unlock()
+
+	if migrate != "" {
+		g.conf.UpdateValue(migrate, new)
+	}
+	g.conf.noticeOptChange(g.name, name, old, new, observers)
 }
 
 // Set parses and sets the option value named name in the current group to value.
@@ -600,26 +613,21 @@ func (g *OptGroup) Parse(name string, value interface{}) (interface{}, error) {
 // is equal to "abcd_efg".
 //
 // If there is not the option or the value is nil, it will ignore it.
-func (g *OptGroup) Set(name string, value interface{}) {
+func (g *OptGroup) Set(name string, value interface{}) error {
 	if value == nil {
-		return
+		return nil
 	}
 
 	name = g.fixOptName(name)
 	g.lock.Lock()
 
-	// Check whether the current group or the option is frozen.
 	if g.optIsFrozen(name) {
 		g.lock.Unlock()
-		g.conf.handleError(NewOptError(g.Name(), name, ErrFrozenOpt, value))
-		return
+		return NewOptError(g.Name(), name, ErrFrozenOpt, value)
 	}
 
-	// Parse the option value
-	value, err := g.parseOptValue(name, value)
-	switch err {
+	switch value, err := g.parseOptValue(name, value); err {
 	case nil:
-		// Set the option value
 		migrate, name, old, new, observers := g.setOptValue(name, value)
 		g.lock.Unlock()
 
@@ -627,12 +635,13 @@ func (g *OptGroup) Set(name string, value interface{}) {
 			g.conf.UpdateValue(migrate, new)
 		}
 		g.conf.noticeOptChange(g.name, name, old, new, observers)
+		return nil
 	case ErrNoOpt:
 		g.lock.Unlock()
-		g.conf.handleError(NewOptError(g.Name(), name, err, value))
+		return NewOptError(g.Name(), name, err, value)
 	default:
 		g.lock.Unlock()
-		g.conf.handleError(err)
+		return err
 	}
 }
 
@@ -656,6 +665,8 @@ func (g *OptGroup) Get(name string) (value interface{}) {
 	g.lock.RUnlock()
 	return
 }
+
+/// --------------------------------------------------------------------------
 
 // Must is the same as Get(name), but panic if the option does not exist.
 func (g *OptGroup) Must(name string) (value interface{}) {

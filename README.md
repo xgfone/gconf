@@ -66,9 +66,9 @@ import (
 func main() {
 	// Register options
 	conf := gconf.New()
-	conf.RegisterOpt(gconf.StrOpt("ip", "the ip address").D("0.0.0.0").V(gconf.NewIPValidator()))
-	conf.RegisterOpt(gconf.IntOpt("port", "the port").D(80))
-	conf.NewGroup("redis").RegisterOpt(gconf.StrOpt("conn", "the redis connection url"))
+	conf.RegisterOpts(gconf.StrOpt("ip", "the ip address").D("0.0.0.0").V(gconf.NewIPValidator()))
+	conf.RegisterOpts(gconf.IntOpt("port", "the port").D(80))
+	conf.NewGroup("redis").RegisterOpts(gconf.StrOpt("conn", "the redis connection url"))
 
 	// Set the CLI version and exit when giving the CLI option version.
 	conf.SetVersion(gconf.VersionOpt.D("1.0.0"))
@@ -111,7 +111,7 @@ var opts = []gconf.Opt{
 
 func main() {
 	// Register options
-	gconf.RegisterOpts(opts)
+	gconf.RegisterOpts(opts...)
 
 	// Add the options to flag.CommandLine and parse the CLI
 	gconf.AddAndParseOptFlag(gconf.Conf)
@@ -145,8 +145,8 @@ import (
 
 func main() {
 	// Register the options
-	gconf.RegisterOpt(gconf.StrOpt("opt1", "").D("abc"))
-	gconf.NewGroup("group").RegisterOpt(gconf.IntOpt("opt2", "").D(123))
+	gconf.RegisterOpts(gconf.StrOpt("opt1", "").D("abc"))
+	gconf.NewGroup("group").RegisterOpts(gconf.IntOpt("opt2", "").D(123))
 
 	// Add the observer
 	gconf.Observe(func(group, opt string, old, new interface{}) {
@@ -173,32 +173,33 @@ package main
 import (
 	"fmt"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"github.com/xgfone/gconf/v4"
 )
 
 func main() {
 	// Register options into the group
-	gconf.RegisterOpt(gconf.StrOpt("opt1", "").D("abc"))
-	gconf.NewGroup("cmd1").RegisterOpt(gconf.IntOpt("opt2", ""))
-	gconf.NewGroup("cmd1.cmd2").RegisterOpt(gconf.IntOpt("opt3", ""))
+	gconf.RegisterOpts(gconf.StrOpt("opt1", "").D("abc"))
+	gconf.NewGroup("cmd1").RegisterOpts(gconf.IntOpt("opt2", ""))
+	gconf.NewGroup("cmd1.cmd2").RegisterOpts(gconf.IntOpt("opt3", ""))
 
 	// Create and run cli app.
 	app := cli.NewApp()
 	app.Flags = gconf.ConvertOptsToCliFlags(gconf.Conf.OptGroup)
-	app.Commands = []cli.Command{
-		cli.Command{
+	app.Commands = []*cli.Command{
+		{
 			Name:  "cmd1",
 			Flags: gconf.ConvertOptsToCliFlags(gconf.Group("cmd1")),
-			Subcommands: []cli.Command{
-				cli.Command{
+			Subcommands: []*cli.Command{
+				{
 					Name:  "cmd2",
 					Flags: gconf.ConvertOptsToCliFlags(gconf.Group("cmd1.cmd2")),
 					Action: func(ctx *cli.Context) error {
 						// Load the sources
-						gconf.LoadSource(gconf.NewCliSource(ctx, "cmd1.cmd2"))      // cmd2
-						gconf.LoadSource(gconf.NewCliSource(ctx.Parent(), "cmd1"))  // cmd1
-						gconf.LoadSource(gconf.NewCliSource(ctx.Parent().Parent())) // global
+						ctxs := ctx.Lineage()
+						gconf.LoadSource(gconf.NewCliSource(ctxs[0], "cmd1", "cmd2")) // cmd2
+						gconf.LoadSource(gconf.NewCliSource(ctxs[1], "cmd1"))         // cmd1
+						gconf.LoadSource(gconf.NewCliSource(ctxs[2]))                 // global
 
 						// Read and print the option
 						fmt.Println(gconf.GetString("opt1"))
@@ -246,7 +247,7 @@ func main() {
 	// Register options
 	//
 	// Notice: the default global Conf has registered gconf.O.
-	gconf.RegisterOpts(opts)
+	gconf.RegisterOpts(opts...)
 
 	// Add the options to flag.CommandLine and parse the CLI
 	gconf.AddAndParseOptFlag(gconf.Conf)
@@ -519,38 +520,39 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xgfone/gconf/v4"
+    "github.com/xgfone/gconf/v4"
+    "github.com/xgfone/gconf/v4/field"
 )
 
 // AppConfig is used to configure the application.
 type AppConfig struct {
-	Bool      gconf.BoolOptField
-	BoolT     gconf.BoolTOptField
-	Int       gconf.IntOptField
-	Int32     gconf.Int32OptField
-	Int64     gconf.Int64OptField
-	Uint      gconf.UintOptField
-	Uint32    gconf.Uint32OptField
-	Uint64    gconf.Uint64OptField
-	Float64   gconf.Float64OptField
-	String    gconf.StringOptField
-	Duration  gconf.DurationOptField
-	Time      gconf.TimeOptField
-	Ints      gconf.IntSliceOptField
-	Uints     gconf.UintSliceOptField
-	Float64s  gconf.Float64SliceOptField
-	Strings   gconf.StringSliceOptField
-	Durations gconf.DurationSliceOptField
+	Bool      field.BoolOptField
+	BoolT     field.BoolTOptField
+	Int       field.IntOptField
+	Int32     field.Int32OptField
+	Int64     field.Int64OptField
+	Uint      field.UintOptField
+	Uint32    field.Uint32OptField
+	Uint64    field.Uint64OptField
+	Float64   field.Float64OptField
+	String    field.StringOptField
+	Duration  field.DurationOptField
+	Time      field.TimeOptField
+	Ints      field.IntSliceOptField
+	Uints     field.UintSliceOptField
+	Float64s  field.Float64SliceOptField
+	Strings   field.StringSliceOptField
+	Durations field.DurationSliceOptField
 
 	// Pointer Example
-	IntP   *gconf.IntOptField `default:"123" short:"i" help:"test int pointer"`
-	Ignore *gconf.StringOptField
+	IntP   *field.IntOptField `default:"123" short:"i" help:"test int pointer"`
+	Ignore *field.StringOptField
 }
 
 func main() {
 	// Notice: for the pointer to the option field, it must be initialized.
 	// Or it will be ignored.
-	config := AppConfig{IntP: &gconf.IntOptField{}}
+	config := AppConfig{IntP: &field.IntOptField{}}
 	conf := gconf.New()
 	conf.RegisterStruct(&config)
 

@@ -62,39 +62,43 @@ func (ds DataSet) Sha256() string {
 //
 // If a certain option has been set, it will be ignored. But you can set force
 // to true to reset the value of this option.
-func (c *Config) LoadDataSet(ds DataSet, force ...bool) {
+func (c *Config) LoadDataSet(ds DataSet, force ...bool) (err error) {
 	if len(ds.Data) == 0 {
-		return
+		return nil
 	}
 
 	decoder, ok := c.GetDecoder(ds.Format)
 	if !ok {
-		c.handleError(NewSourceError(ds.Source, ds.Format, ds.Data, errNoDecoder))
-		return
+		err = NewSourceError(ds.Source, ds.Format, ds.Data, errNoDecoder)
+		c.handleError(err)
+		return err
 	}
 
 	ms := make(map[string]interface{}, 32)
 	if err := decoder.Decode(ds.Data, ms); err != nil {
-		c.handleError(NewSourceError(ds.Source, ds.Format, ds.Data, err))
-	} else {
-		c.LoadMap(ms, force...)
+		err = NewSourceError(ds.Source, ds.Format, ds.Data, err)
+		c.handleError(err)
+		return err
 	}
+
+	return c.LoadMap(ms, force...)
 }
 
-func (c *Config) loadDataSetWithError(ds DataSet, err error, force bool) {
+func (c *Config) loadDataSetWithError(ds DataSet, err error, force ...bool) (ok bool) {
 	switch err.(type) {
 	case nil:
-		c.LoadDataSet(ds, force)
+		ok = c.LoadDataSet(ds, force...) == nil
 	case SourceError:
 		c.handleError(err)
 	default:
 		c.handleError(NewSourceError(ds.Source, ds.Format, ds.Data, err))
 	}
+	return
 }
 
 // LoadDataSetCallback is a callback used by the watcher.
-func (c *Config) LoadDataSetCallback(ds DataSet, err error) {
-	c.loadDataSetWithError(ds, err, true)
+func (c *Config) LoadDataSetCallback(ds DataSet, err error) bool {
+	return c.loadDataSetWithError(ds, err, true)
 }
 
 // Source represents a data source where the data is.
@@ -106,21 +110,14 @@ type Source interface {
 	//
 	// The source can check whether close is closed to determine whether the
 	// configuration is closed and to do any cleanup.
-	Watch(load func(DataSet, error), close <-chan struct{})
+	//
+	// Notice: load returns true only the DataSet is loaded successfully.
+	Watch(load func(DataSet, error) bool, close <-chan struct{})
 }
 
 func (c *Config) loadSource(source Source, force ...bool) {
-	if source == nil {
-		panic("the source is nil")
-	}
-
-	var _force bool
-	if len(force) > 0 {
-		_force = force[0]
-	}
-
 	ds, err := source.Read()
-	c.loadDataSetWithError(ds, err, _force)
+	c.loadDataSetWithError(ds, err, force...)
 }
 
 // LoadSource loads the sources, and call Watch to watch the source, which is

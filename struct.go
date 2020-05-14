@@ -21,6 +21,22 @@ import (
 	"time"
 )
 
+// OptField is used to describe a struct field option, which can get or set
+// the value of the struct field safely.
+type OptField interface {
+	// Default returns the default value of the field option.
+	Default() interface{}
+
+	// Parse converts the input to output.
+	//
+	// Notice: the type of output must be identical with the types of the value
+	// returned by Default() and the argument of Set().
+	Parse(input interface{}) (output interface{}, err error)
+
+	// Set is used to update the value of the field, which must be goroutine-safe.
+	Set(interface{})
+}
+
 // RegisterStruct retusters the struct fields as the options into the current group.
 //
 // Supproted types for the struct filed:
@@ -215,7 +231,7 @@ func (g *OptGroup) registerStructByValue(sv, orig reflect.Value) {
 			}
 		}
 
-		group.registerOpt(opt)
+		group.registerOpts(opt)
 		group.setOptWatch(opt.Name, setter)
 	}
 }

@@ -190,7 +190,7 @@ type flagSource struct {
 	flagSet *flag.FlagSet
 }
 
-func (f flagSource) Watch(load func(DataSet, error), exit <-chan struct{}) {}
+func (f flagSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {}
 
 func (f flagSource) Read() (DataSet, error) {
 	if !f.flagSet.Parsed() {

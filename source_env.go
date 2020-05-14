@@ -43,7 +43,7 @@ type envSource struct {
 	prefix string
 }
 
-func (e envSource) Watch(load func(DataSet, error), exit <-chan struct{}) {}
+func (e envSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {}
 
 func (e envSource) Read() (DataSet, error) {
 	vs := make(map[string]string, 32)

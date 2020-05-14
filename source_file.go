@@ -83,11 +83,11 @@ func (f fileSource) Read() (DataSet, error) {
 	return ds, nil
 }
 
-func (f fileSource) Watch(load func(DataSet, error), exit <-chan struct{}) {
+func (f fileSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {
 	go f.watchfile(load, exit)
 }
 
-func (f fileSource) watchfile(load func(DataSet, error), exit <-chan struct{}) {
+func (f fileSource) watchfile(load func(DataSet, error) bool, exit <-chan struct{}) {
 	fw, err := fsnotify.NewWatcher()
 	if err != nil {
 		load(DataSet{Source: f.id, Format: f.format}, err)

@@ -136,7 +136,7 @@ type cliSource struct {
 	group string
 }
 
-func (c cliSource) Watch(load func(DataSet, error), exit <-chan struct{}) {}
+func (c cliSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {}
 
 func (c cliSource) Read() (DataSet, error) {
 	opts := make(map[string]string, 16)

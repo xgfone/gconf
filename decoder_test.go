@@ -57,14 +57,15 @@ group:
 
 func TestNewYamlDecoder(t *testing.T) {
 	conf := New()
-	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("group").RegisterOpt(IntOpt("opt2", "").D(123))
+	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
+	conf.NewGroup("group").RegisterOpts(IntOpt("opt2", "").D(123))
 
 	ms := make(map[string]interface{})
 	if err := NewYamlDecoder().Decode([]byte(yamlData), ms); err != nil {
 		t.Error(err)
+	} else if err = conf.LoadMap(ms); err != nil {
+		t.Error(err)
 	} else {
-		conf.LoadMap(ms)
 		if v := conf.GetString("opt1"); v != "xyz" {
 			t.Error(v)
 		} else if v := conf.Group("group").GetInt("opt2"); v != 456 {
@@ -81,8 +82,8 @@ opt2 = 456
 
 func TestNewTomlDecoder(t *testing.T) {
 	conf := New()
-	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("group").RegisterOpt(IntOpt("opt2", "").D(123))
+	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
+	conf.NewGroup("group").RegisterOpts(IntOpt("opt2", "").D(123))
 
 	ms := make(map[string]interface{})
 	if err := NewTomlDecoder().Decode([]byte(tomlData), ms); err != nil {

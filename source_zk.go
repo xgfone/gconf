@@ -95,13 +95,12 @@ func (z zkSource) Read() (ds DataSet, err error) {
 	return
 }
 
-func (z zkSource) Watch(load func(DataSet, error), exit <-chan struct{}) {
+func (z zkSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {
 	go z.watchZkPath(load, exit)
 }
 
-func (z zkSource) watchZkPath(load func(DataSet, error), exit <-chan struct{}) {
+func (z zkSource) watchZkPath(load func(DataSet, error) bool, exit <-chan struct{}) {
 	last := DataSet{}
-	first := true
 	interval := time.Second * 10
 
 	for {
@@ -112,11 +111,10 @@ func (z zkSource) watchZkPath(load func(DataSet, error), exit <-chan struct{}) {
 			ds.Timestamp = time.Unix(mt/int64(time.Second), mt%int64(time.Second))
 			ds.Checksum = ds.Md5()
 
-			if first {
-				last = ds
-				first = false
-			} else if len(ds.Data) > 0 && ds.Checksum != last.Checksum {
-				load(ds, nil)
+			if len(ds.Data) > 0 && ds.Checksum != last.Checksum {
+				if load(ds, nil) {
+					last = ds
+				}
 			}
 
 			select {

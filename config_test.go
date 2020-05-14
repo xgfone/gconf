@@ -26,7 +26,7 @@ func ExampleOpt_F() {
 	opt2 := IntOpt("opt2", "test fix without default").D(20).F(fix)
 
 	conf := New()
-	conf.RegisterOpts([]Opt{opt1, opt2})
+	conf.RegisterOpts(opt1, opt2)
 
 	fmt.Printf("opt1=%s\n", conf.MustString("opt1"))
 	fmt.Printf("opt2=%s\n", conf.MustString("opt2"))
@@ -49,7 +49,7 @@ func TestOptObserver(t *testing.T) {
 	opt := StrOpt("opt", "").D("abc").O(func(v interface{}) { value = v.(string) })
 
 	conf := New()
-	conf.RegisterOpt(opt)
+	conf.RegisterOpts(opt)
 	conf.UpdateOptValue("", "opt", "xyz")
 
 	if value != "xyz" {
@@ -59,9 +59,9 @@ func TestOptObserver(t *testing.T) {
 
 func ExampleConfig_Traverse() {
 	conf := New()
-	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("group1").RegisterOpt(IntOpt("opt2", "").D(123))
-	conf.NewGroup("group1").NewGroup("group2").RegisterOpt(IntOpt("opt3", "").D(456))
+	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
+	conf.NewGroup("group1").RegisterOpts(IntOpt("opt2", "").D(123))
+	conf.NewGroup("group1").NewGroup("group2").RegisterOpts(IntOpt("opt3", "").D(456))
 
 	conf.Traverse(func(group, opt string, value interface{}) {
 		fmt.Printf("group=%s, opt=%s, value=%v\n", group, opt, value)
@@ -75,10 +75,10 @@ func ExampleConfig_Traverse() {
 
 func ExampleOptGroup_Migrate() {
 	conf := New()
-	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
-	conf.RegisterOpt(StrOpt("opt2", "").D("efg"))
-	conf.NewGroup("group1").RegisterOpt(StrOpt("opt3", "").D("opq"))
-	conf.NewGroup("group1").RegisterOpt(StrOpt("opt4", "").D("rst"))
+	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
+	conf.RegisterOpts(StrOpt("opt2", "").D("efg"))
+	conf.NewGroup("group1").RegisterOpts(StrOpt("opt3", "").D("opq"))
+	conf.NewGroup("group1").RegisterOpts(StrOpt("opt4", "").D("rst"))
 
 	conf.Migrate("opt1", "group1.opt3")
 	conf.Group("group1").Migrate("opt4", "opt2")
@@ -113,8 +113,8 @@ func ExampleOptGroup_Migrate() {
 
 func ExampleConfig_Observe() {
 	conf := New()
-	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("group").RegisterOpt(IntOpt("opt2", "").D(123))
+	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
+	conf.NewGroup("group").RegisterOpts(IntOpt("opt2", "").D(123))
 	conf.Observe(func(group, opt string, old, new interface{}) {
 		fmt.Printf("Setting: group=%s, opt=%s, old=%v, new=%v\n", group, opt, old, new)
 	})
@@ -127,59 +127,24 @@ func ExampleConfig_Observe() {
 	// Setting: group=group, opt=opt2, old=123, new=789
 }
 
-func ExampleConfig_ObserveRegister() {
-	conf := New()
-	conf.ObserveRegister(func(group string, opts []Opt) {
-		for _, opt := range opts {
-			fmt.Printf("Register Opt: group=%s, opt=%s\n", group, opt.Name)
-		}
-	})
-
-	conf.RegisterOpt(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("group").RegisterOpt(IntOpt("opt2", "").D(123))
-
-	// Output:
-	// Register Opt: group=, opt=opt1
-	// Register Opt: group=group, opt=opt2
-}
-
-func ExampleConfig_SetErrHandler() {
-	conf := New()
-	conf.RegisterOpt(StrOpt("opt1", "").D("abc").V(NewStrLenValidator(0, 6)))
-	conf.NewGroup("group").RegisterOpt(IntOpt("opt2", "").D(123).V(NewIntegerRangeValidator(100, 200)))
-	conf.SetErrHandler(func(err error) { fmt.Println(err) })
-
-	conf.Set("opt1", "abcdefg")
-	conf.Group("group").Set("opt2", 300)
-
-	// Output:
-	// [Config] invalid setting for 'opt1': the length of 'abcdefg' is 7, not between 0 and 6
-	// [Config] invalid setting for 'group:opt2': the value '300' is not between 100 and 200
-}
-
 func ExampleOptGroup_FreezeOpt() {
 	conf := New()
-	conf.NewGroup("group1").RegisterOpts([]Opt{StrOpt("opt1", "").D("a"), StrOpt("opt2", "").D("b")})
-	conf.NewGroup("group2").RegisterOpts([]Opt{StrOpt("opt3", "").D("c"), StrOpt("opt4", "").D("d")})
+	conf.NewGroup("group1").RegisterOpts(StrOpt("opt1", "").D("a"), StrOpt("opt2", "").D("b"))
+	conf.NewGroup("group2").RegisterOpts(StrOpt("opt3", "").D("c"), StrOpt("opt4", "").D("d"))
 	conf.Group("group1").FreezeOpt("opt2")
 	conf.Group("group2").FreezeGroup()
-
-	errs := make([]error, 0, 4)
-	conf.SetErrHandler(func(err error) { errs = append(errs, err) })
 
 	conf.UpdateValue("group1.opt1", "o")
 	conf.UpdateOptValue("group1", "opt2", "p")
 	conf.UpdateOptValue("group2", "opt3", "q")
 	conf.UpdateOptValue("group2", "opt4", "r")
 
-	fmt.Println(len(errs))
 	fmt.Println(conf.Group("group1").GetString("opt1"))
 	fmt.Println(conf.Group("group1").GetString("opt2"))
 	fmt.Println(conf.Group("group2").GetString("opt3"))
 	fmt.Println(conf.Group("group2").GetString("opt4"))
 
 	// Output:
-	// 3
 	// o
 	// b
 	// c
@@ -188,9 +153,9 @@ func ExampleOptGroup_FreezeOpt() {
 
 func ExampleConfig_Snapshot() {
 	conf := New()
-	conf.RegisterOpt(StrOpt("opt1", ""))
-	conf.NewGroup("group1").RegisterOpt(IntOpt("opt2", ""))
-	conf.NewGroup("group1").NewGroup("group2").RegisterOpt(IntOpt("opt3", ""))
+	conf.RegisterOpts(StrOpt("opt1", ""))
+	conf.NewGroup("group1").RegisterOpts(IntOpt("opt2", ""))
+	conf.NewGroup("group1").NewGroup("group2").RegisterOpts(IntOpt("opt3", ""))
 
 	// For test
 	print := func(snap map[string]interface{}) {
@@ -210,9 +175,9 @@ func ExampleConfig_Snapshot() {
 	print(conf.Snapshot())
 
 	// Output:
-	// {"group1.group2.opt3":0,"group1.opt2":0,"opt1":""}
-	// {"group1.group2.opt3":0,"group1.opt2":0,"opt1":"abc"}
-	// {"group1.group2.opt3":0,"group1.opt2":123,"opt1":"abc"}
+	// {}
+	// {"opt1":"abc"}
+	// {"group1.opt2":123,"opt1":"abc"}
 	// {"group1.group2.opt3":456,"group1.opt2":123,"opt1":"abc"}
 }
 
@@ -239,13 +204,13 @@ func ExampleConfig() {
 	}
 
 	conf := New()
-	conf.RegisterOpts(opts)
+	conf.RegisterOpts(opts...)
 
 	group1 := conf.NewGroup("group1")
-	group1.RegisterOpts(opts)
+	group1.RegisterOpts(opts...)
 
 	group2 := group1.NewGroup("group2") // Or conf.NewGroup("group1.group2")
-	group2.RegisterOpts(opts)
+	group2.RegisterOpts(opts...)
 
 	conf.Set("bool", "1")
 	conf.Set("string", "abc")
@@ -412,7 +377,7 @@ func ExampleConfig() {
 
 func ExampleOptGroup_SetOptAlias() {
 	conf := New()
-	conf.RegisterOpt(IntOpt("newopt", "test alias").D(123))
+	conf.RegisterOpts(IntOpt("newopt", "test alias").D(123))
 	conf.SetOptAlias("oldopt", "newopt")
 
 	fmt.Printf("newopt=%d, oldopt=%d\n", conf.GetInt("newopt"), conf.GetInt("oldopt"))
@@ -426,7 +391,7 @@ func ExampleOptGroup_SetOptAlias() {
 
 func TestOptGroupAlias(t *testing.T) {
 	conf := New()
-	conf.RegisterOpt(IntOpt("int", "test alias"))
+	conf.RegisterOpts(IntOpt("int", "test alias"))
 	conf.SetOptAlias("opt", "int")
 
 	if opt, exist := conf.Opt("opt"); !exist || opt.Name != "int" {
@@ -471,8 +436,8 @@ func TestOrValidator(t *testing.T) {
 	}()
 
 	conf := New()
-	conf.RegisterOpt(StrOpt("ip1", "").V(Or(NewIPValidator(), NewEmptyStrValidator())))
-	conf.RegisterOpt(StrOpt("ip2", "").D("0.0.0.0").V(Or(NewIPValidator(), NewEmptyStrValidator())))
+	conf.RegisterOpts(StrOpt("ip1", "").V(Or(NewIPValidator(), NewEmptyStrValidator())))
+	conf.RegisterOpts(StrOpt("ip2", "").D("0.0.0.0").V(Or(NewIPValidator(), NewEmptyStrValidator())))
 
 	conf.Set("ip1", "127.0.0.1")
 	conf.Set("ip2", "")
@@ -486,7 +451,7 @@ func TestOrValidator(t *testing.T) {
 
 func TestOptGroup_SetOptAlias(t *testing.T) {
 	conf := New()
-	conf.RegisterOpt(StrOpt("opt", "").D("abc"))
+	conf.RegisterOpts(StrOpt("opt", "").D("abc"))
 	conf.SetOptAlias("opt1", "opt")
 	conf.SetOptAlias("opt2", "opt")
 

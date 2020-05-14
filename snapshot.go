@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -41,13 +42,15 @@ func (c *Config) LoadBackupFile(filename string) error {
 		return err
 	}
 
-	c.updateFlattedMap(ms, false)
-	go c.writeSnapshotIntoFile(bytesToMd5(data), filename)
+	c.snap.InitMap(ms)
+	c.LoadMap(ms, false)
+	go c.writeSnapshotIntoFile(filename)
 
 	return nil
 }
 
-func (c *Config) writeSnapshotIntoFile(lastChecksum, filename string) {
+func (c *Config) writeSnapshotIntoFile(filename string) {
+	var lastgen uint64
 	ticker := time.NewTicker(time.Minute)
 	for {
 		select {
@@ -56,24 +59,25 @@ func (c *Config) writeSnapshotIntoFile(lastChecksum, filename string) {
 				return
 			}
 		case <-ticker.C:
-			data, err := c.snap.MarshalJSON()
+			gen, data, err := c.snap.MarshalJSON()
 			if err != nil {
 				c.handleError(fmt.Errorf("[Config] snapshot marshal json: %s", err.Error()))
+			} else if gen == lastgen {
+				continue
 			}
 
-			if checksum := bytesToMd5(data); checksum != lastChecksum {
-				if err = ioutil.WriteFile(filename, data, os.ModePerm); err != nil {
-					c.handleError(fmt.Errorf("[Config] snapshot write file[%s]: %s", filename, err.Error()))
-				} else {
-					lastChecksum = checksum
-					debugf("[Config] Write snapshot into file '%s'", filename)
-				}
+			if err = ioutil.WriteFile(filename, data, os.ModePerm); err != nil {
+				c.handleError(fmt.Errorf("[Config] snapshot write file[%s]: %s", filename, err.Error()))
+			} else {
+				lastgen = gen
+				debugf("[Config] Write snapshot into file '%s'", filename)
 			}
 		}
 	}
 }
 
-// Snapshot returns the snapshot of the whole configuration options.
+// Snapshot returns the snapshot of the whole configuration options
+// excpet for the their default values.
 //
 // Notice: the key includes the group name and the option name, for instance,
 //
@@ -90,7 +94,6 @@ func (c *Config) Snapshot() map[string]interface{} {
 
 func newSnapshot(c *Config) *snapshot {
 	snap := &snapshot{conf: c, maps: make(map[string]interface{}, 64)}
-	c.ObserveRegister(snap.RegisterObserver)
 	c.Observe(snap.ChangeObserver)
 	return snap
 }
@@ -99,6 +102,15 @@ type snapshot struct {
 	conf *Config
 	lock sync.RWMutex
 	maps map[string]interface{}
+	gen  uint64
+}
+
+func (s *snapshot) InitMap(ms map[string]interface{}) {
+	s.lock.Lock()
+	for k, v := range ms {
+		s.maps[k] = v
+	}
+	s.lock.Unlock()
 }
 
 func (s *snapshot) ToMap() map[string]interface{} {
@@ -111,18 +123,6 @@ func (s *snapshot) ToMap() map[string]interface{} {
 	return dst
 }
 
-func (s *snapshot) RegisterObserver(group string, opts []Opt) {
-	s.lock.Lock()
-	for _, opt := range opts {
-		key := s.conf.fixOptName(opt.Name)
-		if group != "" {
-			key = fmt.Sprintf("%s%s%s", group, s.conf.gsep, key)
-		}
-		s.maps[key] = opt.Default
-	}
-	s.lock.Unlock()
-}
-
 func (s *snapshot) ChangeObserver(group, opt string, old, new interface{}) {
 	key := opt
 	if group != "" {
@@ -130,14 +130,19 @@ func (s *snapshot) ChangeObserver(group, opt string, old, new interface{}) {
 	}
 
 	s.lock.Lock()
-	s.maps[key] = new
-	s.lock.Unlock()
+	defer s.lock.Unlock()
+
+	if value, ok := s.maps[key]; !ok || !reflect.DeepEqual(value, new) {
+		s.gen++
+		s.maps[key] = new
+	}
 }
 
-func (s *snapshot) MarshalJSON() ([]byte, error) {
+func (s *snapshot) MarshalJSON() (uint64, []byte, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return json.Marshal(s.maps)
+	data, err := json.Marshal(s.maps)
+	return s.gen, data, err
 }
 
 func (s *snapshot) UnmarshalJSON(data []byte) error {

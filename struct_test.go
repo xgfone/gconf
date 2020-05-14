@@ -12,44 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gconf
+package gconf_test
 
 import (
 	"flag"
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/xgfone/gconf/v4"
+	"github.com/xgfone/gconf/v4/field"
 )
 
 func ExampleOptField() {
 	type AppConfig struct {
-		Bool      BoolOptField
-		BoolT     BoolTOptField
-		Int       IntOptField
-		Int32     Int32OptField
-		Int64     Int64OptField
-		Uint      UintOptField
-		Uint32    Uint32OptField
-		Uint64    Uint64OptField
-		Float64   Float64OptField
-		String    StringOptField
-		Duration  DurationOptField
-		Time      TimeOptField
-		Ints      IntSliceOptField
-		Uints     UintSliceOptField
-		Float64s  Float64SliceOptField
-		Strings   StringSliceOptField
-		Durations DurationSliceOptField
+		Bool      field.BoolOptField
+		BoolT     field.BoolTOptField
+		Int       field.IntOptField
+		Int32     field.Int32OptField
+		Int64     field.Int64OptField
+		Uint      field.UintOptField
+		Uint32    field.Uint32OptField
+		Uint64    field.Uint64OptField
+		Float64   field.Float64OptField
+		String    field.StringOptField
+		Duration  field.DurationOptField
+		Time      field.TimeOptField
+		Ints      field.IntSliceOptField
+		Uints     field.UintSliceOptField
+		Float64s  field.Float64SliceOptField
+		Strings   field.StringSliceOptField
+		Durations field.DurationSliceOptField
 
 		// Pointer Example
-		IntP   *IntOptField `default:"123"`
-		Ignore *StringOptField
+		IntP   *field.IntOptField `default:"123"`
+		Ignore *field.StringOptField
 	}
 
 	// Notice: for the pointer to the option field, it must be initialized.
 	// Or it will be ignored.
-	config := AppConfig{IntP: &IntOptField{}}
-	conf := New()
+	config := AppConfig{IntP: &field.IntOptField{}}
+	conf := gconf.New()
 	conf.RegisterStruct(&config)
 
 	fmt.Println("--- Registered Options ---")
@@ -244,18 +247,18 @@ func ExampleOptGroup_RegisterStruct() {
 
 	// Register the option from struct
 	var data DataConfig
-	conf := New()
+	conf := gconf.New()
 	conf.RegisterStruct(&data)
 
 	// Add options to flag, and parse them from flag.
 	flagSet := flag.NewFlagSet("test_struct", flag.ExitOnError)
-	AddOptFlag(conf, flagSet)
+	gconf.AddOptFlag(conf, flagSet)
 	flagSet.Parse([]string{
 		"--bool=true",
 		"--time=2019-06-11T20:00:00Z",
 		"--group1.bool=1",
 	})
-	conf.LoadSource(NewFlagSource(flagSet))
+	conf.LoadSource(gconf.NewFlagSource(flagSet))
 
 	fmt.Println("--- Struct ---")
 	fmt.Printf("bool: %t\n", data.Bool)

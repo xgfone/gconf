@@ -27,7 +27,7 @@ import (
 var defaultDebug bool
 
 func init() {
-	Conf.RegisterOpt(ConfigFileOpt)
+	Conf.RegisterOpts(ConfigFileOpt)
 
 	for _, env := range os.Environ() {
 		index := strings.IndexByte(env, '=')
@@ -85,8 +85,7 @@ type Config struct {
 	decAlias map[string]string
 	version  Opt
 
-	setObserves []func(string, string, interface{}, interface{})
-	regObserves []func(string, []Opt)
+	observes []func(string, string, interface{}, interface{})
 }
 
 // New returns a new Config.
@@ -180,20 +179,6 @@ func (c *Config) getGroup(parent, name string) *OptGroup {
 	return group
 }
 
-func (c *Config) noticeOptRegister(group string, opts []Opt) {
-	if len(opts) == 0 {
-		return
-	}
-
-	c.lock.RLock()
-	fs := append([]func(string, []Opt){}, c.regObserves...)
-	c.lock.RUnlock()
-
-	for _, observer := range fs {
-		c.callRegObserver(group, opts, observer)
-	}
-}
-
 func (c *Config) noticeOptChange(group, optname string, old, new interface{},
 	observers []func(interface{})) {
 	for _, observer := range observers {
@@ -201,7 +186,7 @@ func (c *Config) noticeOptChange(group, optname string, old, new interface{},
 	}
 
 	c.lock.RLock()
-	fs := append([]func(g, p string, o, n interface{}){}, c.setObserves...)
+	fs := append([]func(g, p string, o, n interface{}){}, c.observes...)
 	c.lock.RUnlock()
 	for _, observer := range fs {
 		c.callSetObserver(group, optname, old, new, observer)
@@ -211,11 +196,6 @@ func (c *Config) noticeOptChange(group, optname string, old, new interface{},
 func (c *Config) callOptObserver(observe func(interface{}), new interface{}) {
 	defer c.wrapPanic("opt")
 	observe(new)
-}
-
-func (c *Config) callRegObserver(group string, opts []Opt, cb func(string, []Opt)) {
-	defer c.wrapPanic("register")
-	cb(group, opts)
 }
 
 func (c *Config) callSetObserver(group, optname string, old, new interface{},
@@ -281,17 +261,7 @@ func (c *Config) Observe(observer func(group string, opt string, oldValue, newVa
 		panic("the observer must not be nil")
 	}
 	c.lock.Lock()
-	c.setObserves = append(c.setObserves, observer)
-	c.lock.Unlock()
-}
-
-// ObserveRegister appends the observer to watch the register of the option.
-func (c *Config) ObserveRegister(observer func(group string, opts []Opt)) {
-	if observer == nil {
-		panic("the observer must not be nil")
-	}
-	c.lock.Lock()
-	c.regObserves = append(c.regObserves, observer)
+	c.observes = append(c.observes, observer)
 	c.lock.Unlock()
 }
 
@@ -368,13 +338,16 @@ func (c *Config) Traverse(f func(group string, opt string, value interface{})) {
 	}
 }
 
+/// --------------------------------------------------------------------------
+
 // UpdateOptValue updates the value of the option of the group.
 //
 // If the group or the option does not exist, it will be ignored.
-func (c *Config) UpdateOptValue(groupName, optName string, optValue interface{}) {
+func (c *Config) UpdateOptValue(groupName, optName string, optValue interface{}) (err error) {
 	if group := c.Group(groupName); group != nil {
-		group.Set(optName, optValue)
+		err = group.Set(optName, optValue)
 	}
+	return
 }
 
 // UpdateValue is the same as UpdateOptValue, but key is equal to
@@ -384,16 +357,17 @@ func (c *Config) UpdateOptValue(groupName, optName string, optValue interface{})
 //   c.UpdateOptValue(groupName, optName, optValue)
 // is equal to
 //   c.UpdateValue(fmt.Sprintf("%s.%s", groupName, optName), optValue)
-func (c *Config) UpdateValue(key string, value interface{}) {
+func (c *Config) UpdateValue(key string, value interface{}) error {
 	var group string
 	if index := strings.LastIndex(key, c.gsep); index > 0 {
 		group = key[:index]
 		key = key[index+len(c.gsep):]
 	}
-	c.UpdateOptValue(group, key, value)
+	return c.UpdateOptValue(group, key, value)
 }
 
-// LoadMap loads the configuration options from the map m.
+// LoadMap loads the configuration options from the map m and returns true
+// only if all options are parsed and set successfully.
 //
 // If a certain option has been set, it will be ignored.
 // But you can set force to true to reset the value of this option.
@@ -428,70 +402,82 @@ func (c *Config) UpdateValue(key string, value interface{}) {
 //         "group11.group12.opt122": "value122"
 //     }
 //
-// When loading it, it will be flatted to
-//
-//     map[string]interface{} {
-//         "opt1": "value1",
-//         "opt2": "value2",
-//         "group1.opt1": "value11",
-//         "group1.opt2": "value12",
-//         "group1.group2.XXX": "XXX",
-//         "group1.group3.group4.XXX": "XXX",
-//         "group5.group6.group7.opt71": "value71",
-//         "group5.group6.group7.opt72": "value72",
-//         "group5.group6.group7.group8.XXX": "XXX",
-//         "group5.group6.group7.group9.group10.XXX": "XXX",
-//         "group11.group12.opt121": "value121",
-//         "group11.group12.opt122": "value122"
-//     }
-//
-// So the option name must not contain the dot(.).
-func (c *Config) LoadMap(m map[string]interface{}, force ...bool) {
+func (c *Config) LoadMap(m map[string]interface{}, force ...bool) error {
+	opts := make([]groupOptValue, 0, len(m))
+	opts, err := c.parseMap(c.OptGroup, m, opts)
+	if err != nil {
+		c.handleError(err)
+		return err
+	}
+
 	var _force bool
 	if len(force) > 0 && force[0] {
 		_force = true
 	}
 
-	// Flat the map and update it
-	maps := make(map[string]interface{}, len(m)*2)
-	c.flatMap("", m, maps)
-	c.updateFlattedMap(maps, _force)
+	c.loadMap(opts, _force)
+	return nil
 }
 
-func (c *Config) updateFlattedMap(maps map[string]interface{}, force bool) {
-	for key, value := range maps {
-		group := c.OptGroup
-		if index := strings.LastIndex(key, c.gsep); index > -1 {
-			if group = c.Group(key[:index]); group == nil {
-				continue
-			}
-			key = key[index+len(c.gsep):]
-		}
+type groupOptValue struct {
+	Group *OptGroup
+	Name  string
+	Value interface{}
+}
 
-		if force || group.HasOptAndIsNotSet(key) {
-			group.Set(key, value)
+func (c *Config) parseMap(g *OptGroup, m map[string]interface{},
+	opts []groupOptValue) ([]groupOptValue, error) {
+	var err error
+	var ms map[string]interface{}
+
+	for key, value := range m {
+		// fmt.Printf("@@@@@ %s: %#v\n", key, value)
+		switch m := value.(type) {
+		case map[string]interface{}:
+			if _g := g.Group(key); _g != nil {
+				if opts, err = c.parseMap(_g, m, opts); err != nil {
+					return opts, err
+				}
+			}
+		case map[interface{}]interface{}:
+			if ms, err = toStringMap(m); err != nil {
+				return opts, err
+			}
+
+			if _g := g.Group(key); _g != nil {
+				if opts, err = c.parseMap(_g, ms, opts); err != nil {
+					return opts, err
+				}
+			}
+		default:
+			_g := g
+			if index := strings.LastIndex(key, c.gsep); index > 0 {
+				if _g = _g.Group(key[:index]); _g == nil {
+					continue
+				}
+
+				key = key[index+1:]
+			}
+
+			key = _g.fixOptName(key)
+			switch v, err := _g.Parse(key, value); err {
+			case nil:
+				opts = append(opts, groupOptValue{Group: _g, Name: key, Value: v})
+			case ErrNoOpt:
+			default:
+				return opts, err
+			}
 		}
 	}
+
+	return opts, nil
 }
 
-func (c *Config) flatMap(parent string, src, dst map[string]interface{}) {
-	for key, value := range src {
-		if _, ok := value.(map[interface{}]interface{}); ok {
-			value, _ = toStringMap(value)
+func (c *Config) loadMap(opts []groupOptValue, force bool) {
+	for _, opt := range opts {
+		// fmt.Println("------", opt.Group.name, opt.Name, opt.Value)
+		if force || opt.Group.HasOptAndIsNotSet(opt.Name) {
+			opt.Group.setOptWithLock(opt.Name, opt.Value)
 		}
-
-		if ms, ok := value.(map[string]interface{}); ok {
-			group := key
-			if parent != "" {
-				group = strings.Join([]string{parent, key}, c.gsep)
-			}
-			c.flatMap(group, ms, dst)
-			continue
-		}
-
-		if parent != "" {
-			key = strings.Join([]string{parent, key}, c.gsep)
-		}
-		dst[key] = value
 	}
 }
