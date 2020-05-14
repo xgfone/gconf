@@ -32,18 +32,18 @@ func SetStringVersion(version string) {
 }
 
 // LoadMap is equal to Conf.LoadMap(m, force...).
-func LoadMap(m map[string]interface{}, force ...bool) {
-	Conf.LoadMap(m, force...)
+func LoadMap(m map[string]interface{}, force ...bool) error {
+	return Conf.LoadMap(m, force...)
 }
 
 // LoadDataSet is equal to Conf.LoadDataSet(ds, force...).
-func LoadDataSet(ds DataSet, force ...bool) {
-	Conf.LoadDataSet(ds, force...)
+func LoadDataSet(ds DataSet, force ...bool) error {
+	return Conf.LoadDataSet(ds, force...)
 }
 
 // LoadDataSetCallback is equal to Conf.LoadDataSetCallback(ds, err).
-func LoadDataSetCallback(ds DataSet, err error) {
-	Conf.LoadDataSetCallback(ds, err)
+func LoadDataSetCallback(ds DataSet, err error) bool {
+	return Conf.LoadDataSetCallback(ds, err)
 }
 
 // LoadSource is equal to Conf.LoadSource(source, force...).
