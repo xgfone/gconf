@@ -115,16 +115,19 @@ func ExampleConfig_Observe() {
 	conf := New()
 	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
 	conf.NewGroup("group").RegisterOpts(IntOpt("opt2", "").D(123))
+	conf.Group("group").NewGroup("subgroup").RegisterOpts(IntOpt("opt3", ""))
 	conf.Observe(func(group, opt string, old, new interface{}) {
 		fmt.Printf("Setting: group=%s, opt=%s, old=%v, new=%v\n", group, opt, old, new)
 	})
 
 	conf.Set("opt1", "xyz")
 	conf.Group("group").Set("opt2", 789)
+	conf.Group("group").Group("subgroup").Set("opt3", 456)
 
 	// Output:
 	// Setting: group=, opt=opt1, old=abc, new=xyz
 	// Setting: group=group, opt=opt2, old=123, new=789
+	// Setting: group=group.subgroup, opt=opt3, old=0, new=456
 }
 
 func ExampleOptGroup_FreezeOpt() {

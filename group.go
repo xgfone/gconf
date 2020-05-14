@@ -80,7 +80,7 @@ type OptGroup struct {
 	lock sync.RWMutex
 	conf *Config
 
-	name    string // short name
+	name    string // long full name, such as "group.subgroup1.subgroup2".
 	opts    map[string]*groupOpt
 	alias   map[string]string
 	migrate map[string]string
