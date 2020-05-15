@@ -431,7 +431,6 @@ func (c *Config) parseMap(g *OptGroup, m map[string]interface{},
 	var ms map[string]interface{}
 
 	for key, value := range m {
-		// fmt.Printf("@@@@@ %s: %#v\n", key, value)
 		switch m := value.(type) {
 		case map[string]interface{}:
 			if _g := g.Group(key); _g != nil {
@@ -475,7 +474,6 @@ func (c *Config) parseMap(g *OptGroup, m map[string]interface{},
 
 func (c *Config) loadMap(opts []groupOptValue, force bool) {
 	for _, opt := range opts {
-		// fmt.Println("------", opt.Group.name, opt.Name, opt.Value)
 		if force || opt.Group.HasOptAndIsNotSet(opt.Name) {
 			opt.Group.setOptWithLock(opt.Name, opt.Value)
 		}
