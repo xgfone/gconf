@@ -208,7 +208,13 @@ func (f flagSource) Read() (DataSet, error) {
 	if err != nil {
 		return DataSet{Source: "flag", Format: "json"}, err
 	}
-	ds := DataSet{Data: data, Format: "json", Source: "flag", Timestamp: time.Now()}
+	ds := DataSet{
+		Args:      f.flagSet.Args(),
+		Data:      data,
+		Format:    "json",
+		Source:    "flag",
+		Timestamp: time.Now(),
+	}
 	ds.Checksum = fmt.Sprintf("md5:%s", ds.Md5())
 	return ds, nil
 }

@@ -40,6 +40,7 @@ func NewSourceError(source, format string, data []byte, err error) SourceError {
 
 // DataSet represents the information of the configuration data.
 type DataSet struct {
+	Args      []string  // The CLI arguments filled by the CLI source such as flag.
 	Data      []byte    // The original data.
 	Format    string    // Such as "json", "xml", etc.
 	Source    string    // Such as "file:/path/to/file", "zk:127.0.0.1:2181", etc.
@@ -81,7 +82,12 @@ func (c *Config) LoadDataSet(ds DataSet, force ...bool) (err error) {
 		return err
 	}
 
-	return c.LoadMap(ms, force...)
+	if err = c.LoadMap(ms, force...); err == nil && ds.Args != nil {
+		if c.Args() == nil || (len(force) > 0 && force[0]) {
+			c.SetArgs(ds.Args)
+		}
+	}
+	return
 }
 
 func (c *Config) loadDataSetWithError(ds DataSet, err error, force ...bool) (ok bool) {

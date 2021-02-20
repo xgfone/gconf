@@ -78,6 +78,7 @@ type Config struct {
 	lock sync.RWMutex
 	gsep string // The separator between the group names.
 
+	args     []string
 	snap     *snapshot
 	groups   map[string]*OptGroup // the option groups
 	groups2  map[string]*OptGroup // The auxiliary groups
@@ -310,6 +311,21 @@ func (c *Config) GetVersion() (version Opt) {
 	version = c.version
 	c.lock.RUnlock()
 	return
+}
+
+// Args returns the rest CLI arguments.
+func (c *Config) Args() []string {
+	c.lock.RLock()
+	args := c.args
+	c.lock.RUnlock()
+	return args
+}
+
+// SetArgs sets the rest CLI arguments to args.
+func (c *Config) SetArgs(args []string) {
+	c.lock.Lock()
+	c.args = args
+	c.lock.Unlock()
 }
 
 // PrintGroup prints the information of all groups to w.

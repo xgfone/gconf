@@ -16,6 +16,16 @@ package gconf
 
 import "time"
 
+// Args is equal to Conf.Args().
+func Args() []string {
+	return Conf.Args()
+}
+
+// SetArgs is equal to Conf.SetArgs(args).
+func SetArgs(args []string) {
+	Conf.SetArgs(args)
+}
+
 // GetVersion is equal to Conf.GetVersion().
 func GetVersion() Opt {
 	return Conf.GetVersion()

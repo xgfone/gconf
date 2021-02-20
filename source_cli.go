@@ -147,6 +147,7 @@ func (c cliSource) Read() (DataSet, error) {
 
 	data, _ := json.Marshal(opts)
 	ds := DataSet{
+		Args:      c.ctx.Args().Slice(),
 		Data:      data,
 		Format:    "json",
 		Source:    "cli",
