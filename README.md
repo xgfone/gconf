@@ -74,7 +74,7 @@ func main() {
 	fmt.Println(conf.GetString("ip"))
 	fmt.Println(conf.GetInt("port"))
 	fmt.Println(conf.Group("redis").GetString("conn"))
-	fmt.Println(flag.Args())
+	fmt.Println(conf.Args())
 
 	// Execute:
 	//     PROGRAM --ip 1.2.3.4 --redis.conn=redis://127.0.0.1:6379/0 aa bb cc
