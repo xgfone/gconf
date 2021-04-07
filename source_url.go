@@ -102,14 +102,6 @@ func (u urlSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {
 	go u.watchurl(load, exit)
 }
 
-type urlWatcher struct {
-	src   Source
-	last  DataSet
-	exit  chan struct{}
-	value chan interface{}
-	sleep time.Duration
-}
-
 func (u urlSource) watchurl(load func(DataSet, error) bool, exit <-chan struct{}) {
 	last := DataSet{}
 	first := true

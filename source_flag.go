@@ -25,22 +25,6 @@ import (
 	"time"
 )
 
-// isZeroValue determines whether the string represents the zero
-// value for a flag.
-func isZeroValue(f *flag.Flag, value string) bool {
-	// Build a zero value of the flag's Value type, and see if the
-	// result of calling its String method equals the value passed in.
-	// This works unless the Value type is itself an interface type.
-	typ := reflect.TypeOf(f.Value)
-	var z reflect.Value
-	if typ.Kind() == reflect.Ptr {
-		z = reflect.New(typ.Elem())
-	} else {
-		z = reflect.Zero(typ)
-	}
-	return value == z.Interface().(flag.Value).String()
-}
-
 // PrintFlagUsage prints the flag usage instead of the default.
 func PrintFlagUsage(flagSet *flag.FlagSet) {
 	flagSet.VisitAll(func(f *flag.Flag) {
@@ -74,26 +58,25 @@ func PrintFlagUsage(flagSet *flag.FlagSet) {
 		}
 		s += strings.Replace(usage, "\n", "\n    \t", -1)
 
-		if !isZeroValue(f, f.DefValue) {
-			vf := reflect.ValueOf(f.Value)
-			if vf.Kind() == reflect.Ptr {
-				vf = vf.Elem()
-			}
-
-			switch vf.Kind() {
-			case reflect.String:
-				// put quotes on the value
-				s += fmt.Sprintf(" (default %q)", f.DefValue)
-			case reflect.Int64:
-				if _, err := time.ParseDuration(f.DefValue); err != nil {
-					s += fmt.Sprintf(" (default %s)", f.DefValue)
-				} else {
-					s += fmt.Sprintf(" (default %q)", f.DefValue)
-				}
-			default:
-				s += fmt.Sprintf(" (default %s)", f.DefValue)
-			}
+		vf := reflect.ValueOf(f.Value)
+		if vf.Kind() == reflect.Ptr {
+			vf = vf.Elem()
 		}
+
+		switch vf.Kind() {
+		case reflect.String:
+			// put quotes on the value
+			s += fmt.Sprintf(" (default %q)", f.DefValue)
+		case reflect.Int64:
+			if _, err := time.ParseDuration(f.DefValue); err != nil {
+				s += fmt.Sprintf(" (default %s)", f.DefValue)
+			} else {
+				s += fmt.Sprintf(" (default %q)", f.DefValue)
+			}
+		default:
+			s += fmt.Sprintf(" (default %s)", f.DefValue)
+		}
+
 		fmt.Fprint(flagSet.Output(), s, "\n")
 	})
 }
