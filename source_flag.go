@@ -57,38 +57,27 @@ func PrintFlagUsage(flagSet *flag.FlagSet) {
 			s += "\n    \t"
 		}
 		s += strings.Replace(usage, "\n", "\n    \t", -1)
-
-		vf := reflect.ValueOf(f.Value)
-		if vf.Kind() == reflect.Ptr {
-			vf = vf.Elem()
-		}
-
-		switch vf.Kind() {
-		case reflect.String:
-			// put quotes on the value
-			s += fmt.Sprintf(" (default %q)", f.DefValue)
-		case reflect.Int64:
-			if _, err := time.ParseDuration(f.DefValue); err != nil {
-				s += fmt.Sprintf(" (default %s)", f.DefValue)
-			} else {
-				s += fmt.Sprintf(" (default %q)", f.DefValue)
-			}
-		default:
-			s += fmt.Sprintf(" (default %s)", f.DefValue)
-		}
-
+		s += fmt.Sprintf(" (default: %q)", f.DefValue)
 		fmt.Fprint(flagSet.Output(), s, "\n")
 	})
 }
 
 // AddOptFlag adds the option to the flagSet, which is flag.CommandLine
 // by default.
+//
+// Notice: for the slice option, it maybe occur many times, and they are
+// combined with the comma as the string representation of slice. For example,
+//
+//   $APP --slice-opt v1  --slice-opt v2  --slice-opt v3
+//   $APP --slice-opt v1,v2  --slice-opt v3
+//   $APP --slice-opt v1,v2,v3
+//
+// They are equivalent.
 func AddOptFlag(c *Config, flagSet ...*flag.FlagSet) {
 	addAndParseOptFlag(false, c, flagSet...)
 }
 
-// AddAndParseOptFlag adds the option to the flagSet, which is flag.CommandLine
-// by default, then parses the flagSet.
+// AddAndParseOptFlag is the same as AddOptFlag, but parses the CLI arguments.
 //
 // Notice: if there is the version flag and it is true, it will print the version
 // and exit.
@@ -136,7 +125,16 @@ func addAndParseOptFlag(parse bool, c *Config, flagSet ...*flag.FlagSet) error {
 			case time.Duration:
 				flagset.Duration(name, v, opt.Help)
 			default:
-				flagset.String(name, fmt.Sprintf("%v", v), opt.Help)
+				switch vf := reflect.ValueOf(opt.Default); vf.Kind() {
+				case reflect.Slice, reflect.Array:
+					sv := &flagSliceValue{values: make([]string, vf.Len())}
+					for i, _len := 0, vf.Len(); i < _len; i++ {
+						sv.values[i] = fmt.Sprint(vf.Index(i).Interface())
+					}
+					flagset.Var(sv, name, opt.Help)
+				default:
+					flagset.String(name, fmt.Sprintf("%v", v), opt.Help)
+				}
 			}
 		}
 	}
@@ -156,6 +154,30 @@ func addAndParseOptFlag(parse bool, c *Config, flagSet ...*flag.FlagSet) error {
 		}
 	}
 
+	return nil
+}
+
+type flagSliceValue struct {
+	values []string
+	isset  bool
+}
+
+func (v *flagSliceValue) String() string {
+	if v == nil {
+		return ""
+	}
+	return strings.Join(v.values, ",")
+}
+
+func (v *flagSliceValue) Set(s string) error {
+	if v != nil {
+		if !v.isset {
+			v.isset = true
+			v.values = []string{s}
+		} else {
+			v.values = append(v.values, s)
+		}
+	}
 	return nil
 }
 
