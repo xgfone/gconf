@@ -50,39 +50,46 @@ func (o *OptProxy) Set(value interface{}) (err error) {
 	return o.config.Set(o.option.opt.Name, value)
 }
 
-// OnUpdate resets the update callback function of the option.
-func (o *OptProxy) OnUpdate(callback func(old, new interface{})) {
+// OnUpdate resets the update callback function of the option and returns self.
+func (o *OptProxy) OnUpdate(callback func(old, new interface{})) *OptProxy {
 	o.option.opt.OnUpdate = callback
+	return o
 }
 
-// IsCli resets the cli flag of the option.
-func (o *OptProxy) IsCli(cli bool) {
+// IsCli resets the cli flag of the option and returns self.
+func (o *OptProxy) IsCli(cli bool) *OptProxy {
 	o.option.opt.IsCli = cli
+	return o
 }
 
-// Aliases appends the aliases of the option.
-func (o *OptProxy) Aliases(aliases ...string) {
+// Aliases appends the aliases of the option and returns self.
+func (o *OptProxy) Aliases(aliases ...string) *OptProxy {
 	o.option.opt = o.option.opt.As(aliases...)
+	return o
 }
 
-// Short resets the short name of the option.
-func (o *OptProxy) Short(short string) {
+// Short resets the short name of the option and returns self.
+func (o *OptProxy) Short(short string) *OptProxy {
 	o.option.opt = o.option.opt.S(short)
+	return o
 }
 
-// Validators appends the validators of the option.
-func (o *OptProxy) Validators(validators ...Validator) {
+// Validators appends the validators of the option and returns self.
+func (o *OptProxy) Validators(validators ...Validator) *OptProxy {
 	o.option.opt = o.option.opt.V(validators...)
+	return o
 }
 
-// Default resets the default value of the option.
-func (o *OptProxy) Default(_default interface{}) {
+// Default resets the default value of the option and returns self.
+func (o *OptProxy) Default(_default interface{}) *OptProxy {
 	o.option.opt = o.option.opt.D(_default)
+	return o
 }
 
-// Parser resets the parser of the option.
-func (o *OptProxy) Parser(parser Parser) {
+// Parser resets the parser of the option and returns self.
+func (o *OptProxy) Parser(parser Parser) *OptProxy {
 	o.option.opt = o.option.opt.P(parser)
+	return o
 }
 
 ////////////////////////////////////////////////////////////////////////////
