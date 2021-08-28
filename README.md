@@ -57,7 +57,7 @@ func main() {
 		fmt.Printf("option=%s: %v -> %v\n", optName, oldValue, newValue)
 	})
 
-	////// Update the value of the option thread-safely during app is running.
+	// Update the value of the option thread-safely during app is running.
 	gconf.Set("opt1", true)
 	gconf.Set("opt2", "abc")
 	gconf.Set("opt3", "456")
@@ -65,7 +65,7 @@ func main() {
 	gconf.Set("opt6", 100)
 	gconf.Set("opt7", 1.2)
 
-	////// Get the values of the options thread-safely.
+	// Get the values of the options thread-safely.
 	fmt.Println(gconf.Get("opt1"))
 	fmt.Println(gconf.Get("opt2"))
 	fmt.Println(gconf.Get("opt3"))
@@ -163,7 +163,7 @@ func main() {
 	opt5 := group2.NewUint("opt5", 456, "opt5 help doc")             // For "group1.group2.opt5"
 	opt6 := group2.NewBool("opt6", false, "opt6 help doc")           // For "group1.group2.opt6"
 
-	////// Update the value of the option thread-safely during app is running.
+	/// Update the value of the option thread-safely during app is running.
 	//
 	// Method 1: Update the value of the option by the full name.
 	gconf.Set("opt1", "aaa")
@@ -193,7 +193,7 @@ func main() {
 	opt5.Set(444)
 	opt6.Set("true")
 
-	////// Get the values of the options thread-safely.
+	/// Get the values of the options thread-safely.
 	//
 	// Method 1: Get the value of the option by the full name.
 	gconf.Get("opt1")
@@ -250,7 +250,7 @@ type Source interface {
 }
 ```
 
-You can load lots of sources to update the options. It has implemented the sourced based on `flag`, `env`, `file` and `url`. But you can implement other sources, such as `ZooKeeper`, `ETCD`, etc.
+You can load lots of sources to update the options. It has implemented the sources based on `flag`, `env`, `file` and `url`. But you can implement other sources, such as `ZooKeeper`, `ETCD`, etc.
 
 ```go
 package main
@@ -354,15 +354,19 @@ func main() {
 	gconf.LoadSource(gconf.NewFlagSource())
 	gconf.LoadSource(gconf.NewEnvSource(""))
 
-	// Load and update the configuration from the backup file,
-	// then watch the change of all configuration options and write them
-	// into the backup file.
+	// Load and update the configuration from the backup file which will watch
+	// the change of all configuration options and write them into the backup
+	// file to wait to be loaded when the program starts up next time.
 	gconf.LoadBackupFile("config-file.backup")
 
 	fmt.Println(gconf.Get("opt1"))
 	fmt.Println(gconf.Get("opt2"))
 	fmt.Println(group.Get("opt1"))
 	fmt.Println(group.Get("opt2"))
+
+	/// Get the snapshot of all configuration options at any time.
+	// generation, snapshots := gconf.Snapshot()
+	// fmt.Println(generation, snapshots)
 
 	// $ go run main.go
 	// abc
