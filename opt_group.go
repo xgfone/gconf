@@ -62,6 +62,14 @@ func (g *OptGroup) Group(name string) *OptGroup {
 // Prefix returns the prefix of the group.
 func (g *OptGroup) Prefix() string { return g.prefix }
 
+// Self makes itself into a bool option proxy with the default value "false".
+func (g *OptGroup) Self(help string) *OptProxyBool {
+	if g.prefix == "" {
+		panic("the group name is empty")
+	}
+	return g.config.NewBool(strings.TrimSuffix(g.prefix, g.config.gsep), false, help)
+}
+
 // RegisterOpts registers a set of options.
 //
 // Notice: if a certain option has existed, it will panic.

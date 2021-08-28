@@ -170,6 +170,7 @@ func TestOptGroupEmptyName(t *testing.T) {
 
 	group3 := group1.Group("group1")
 	group3.RegisterOpts(StrOpt("opt3", "help"))
+	group3.Self("help")
 
 	group4 := group3.Group("")
 	group4.RegisterOpts(StrOpt("opt4", "help"))
@@ -178,7 +179,7 @@ func TestOptGroupEmptyName(t *testing.T) {
 	group5.RegisterOpts(StrOpt("opt5", "help"))
 
 	opts := config.GetAllOpts()
-	if len(opts) != 5 {
+	if len(opts) != 6 {
 		t.Error(opts)
 	}
 
@@ -187,6 +188,7 @@ func TestOptGroupEmptyName(t *testing.T) {
 		case
 			"opt1",
 			"opt2",
+			"group1",
 			"group1.opt3",
 			"group1.opt4",
 			"group1.group2.opt5":
