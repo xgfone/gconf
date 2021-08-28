@@ -15,7 +15,6 @@
 package gconf
 
 import (
-	"fmt"
 	"strings"
 	"time"
 )
@@ -37,7 +36,7 @@ func (c *Config) Group(name string) *OptGroup {
 	sep := c.GetGroupSep()
 	gname := strings.TrimSuffix(strings.TrimPrefix(name, sep), sep)
 	if gname == "" {
-		panic(fmt.Errorf("invalid group name '%s'", name))
+		return &OptGroup{config: c}
 	}
 
 	return &OptGroup{
@@ -51,7 +50,7 @@ func (g *OptGroup) Group(name string) *OptGroup {
 	sep := g.config.GetGroupSep()
 	gname := strings.TrimSuffix(strings.TrimPrefix(name, sep), sep)
 	if gname == "" {
-		panic(fmt.Errorf("invalid group name '%s'", name))
+		return &OptGroup{prefix: g.prefix, config: g.config}
 	}
 
 	return &OptGroup{

@@ -159,3 +159,39 @@ func TestOptGroup(t *testing.T) {
 		t.Errorf("unexpected options: %v", registeredOpts)
 	}
 }
+
+func TestOptGroupEmptyName(t *testing.T) {
+	config := New()
+	group1 := config.Group("")
+	group1.RegisterOpts(StrOpt("opt1", "help"))
+
+	group2 := group1.Group("")
+	group2.RegisterOpts(StrOpt("opt2", "help"))
+
+	group3 := group1.Group("group1")
+	group3.RegisterOpts(StrOpt("opt3", "help"))
+
+	group4 := group3.Group("")
+	group4.RegisterOpts(StrOpt("opt4", "help"))
+
+	group5 := group3.Group("group2")
+	group5.RegisterOpts(StrOpt("opt5", "help"))
+
+	opts := config.GetAllOpts()
+	if len(opts) != 5 {
+		t.Error(opts)
+	}
+
+	for _, opt := range opts {
+		switch opt.Name {
+		case
+			"opt1",
+			"opt2",
+			"group1.opt3",
+			"group1.opt4",
+			"group1.group2.opt5":
+		default:
+			t.Errorf("unexpected opt '%s'", opt.Name)
+		}
+	}
+}
