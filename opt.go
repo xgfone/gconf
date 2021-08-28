@@ -24,7 +24,7 @@ type Parser func(input interface{}) (output interface{}, err error)
 
 // Opt is used to represent a option vlaue.
 type Opt struct {
-	// Name is the long name of the option.
+	// Name is the long name of the option, which should be lower case.
 	//
 	// Required!
 	Name string
