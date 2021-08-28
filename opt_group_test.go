@@ -170,7 +170,7 @@ func TestOptGroupEmptyName(t *testing.T) {
 
 	group3 := group1.Group("group1")
 	group3.RegisterOpts(StrOpt("opt3", "help"))
-	group3.Self("help")
+	group3.SelfBool("help")
 
 	group4 := group3.Group("")
 	group4.RegisterOpts(StrOpt("opt4", "help"))
