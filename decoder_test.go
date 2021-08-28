@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2021 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ func ExampleNewJSONDecoder() {
 	}`)
 
 	ms := make(map[string]interface{})
-	err := NewJSONDecoder().Decode(data, ms)
+	err := NewJSONDecoder()(data, ms)
 
 	fmt.Println(err)
 	fmt.Println(len(ms))
@@ -51,48 +51,29 @@ func ExampleNewJSONDecoder() {
 
 var yamlData = `
 opt1: xyz
-group:
+group1:
     opt2: 456
+    group2:
+        opt3: 789
 `
 
 func TestNewYamlDecoder(t *testing.T) {
 	conf := New()
 	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("group").RegisterOpts(IntOpt("opt2", "").D(123))
+	conf.Group("group1").RegisterOpts(IntOpt("opt2", "").D(123))
+	conf.Group("group1.group2").RegisterOpts(IntOpt("opt3", ""))
 
 	ms := make(map[string]interface{})
-	if err := NewYamlDecoder().Decode([]byte(yamlData), ms); err != nil {
+	if err := NewYamlDecoder()([]byte(yamlData), ms); err != nil {
 		t.Error(err)
 	} else if err = conf.LoadMap(ms); err != nil {
 		t.Error(err)
 	} else {
 		if v := conf.GetString("opt1"); v != "xyz" {
 			t.Error(v)
-		} else if v := conf.Group("group").GetInt("opt2"); v != 456 {
+		} else if v := conf.Group("group1").GetInt("opt2"); v != 456 {
 			t.Error(v)
-		}
-	}
-}
-
-var tomlData = `
-opt1 = "xyz"
-[group]
-opt2 = 456
-`
-
-func TestNewTomlDecoder(t *testing.T) {
-	conf := New()
-	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("group").RegisterOpts(IntOpt("opt2", "").D(123))
-
-	ms := make(map[string]interface{})
-	if err := NewTomlDecoder().Decode([]byte(tomlData), ms); err != nil {
-		t.Error(err)
-	} else {
-		conf.LoadMap(ms)
-		if v := conf.GetString("opt1"); v != "xyz" {
-			t.Error(v)
-		} else if v := conf.Group("group").GetInt("opt2"); v != 456 {
+		} else if v := conf.GetInt("group1.group2.opt3"); v != 789 {
 			t.Error(v)
 		}
 	}

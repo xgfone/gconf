@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2021 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,204 +15,106 @@
 package gconf
 
 import (
+	"errors"
 	"fmt"
-	"io"
-	"os"
+	"log"
+	"reflect"
 	"sort"
-	"strconv"
 	"strings"
-	"sync"
+	"sync/atomic"
+	"time"
 )
 
-var defaultDebug bool
-
-func init() {
-	Conf.RegisterOpts(ConfigFileOpt)
-
-	for _, env := range os.Environ() {
-		index := strings.IndexByte(env, '=')
-		if index == -1 {
-			continue
-		}
-
-		if strings.ToUpper(env[:index]) == "DEBUG" {
-			if v, _ := strconv.ParseBool(env[index+1:]); v {
-				defaultDebug = v
-			}
-			break
-		}
-	}
-}
-
-// debugf prints the log message only when enabling the debug mode.
-func debugf(msg string, args ...interface{}) {
-	if defaultDebug {
-		printMsg(fmt.Sprintf(msg, args...))
-	}
-}
-
-func printMsg(msg string) {
-	switch DefaultWriter {
-	case os.Stdout, os.Stderr:
-		fmt.Fprintln(DefaultWriter, msg)
-	default:
-		io.WriteString(DefaultWriter, msg)
-	}
-}
-
-// DefaultWriter is the default writer, which Config will write the information
-// to it by default.
-var DefaultWriter = os.Stdout
+// ErrNoOpt represents an error that the option does not exist.
+var ErrNoOpt = errors.New("no option")
 
 // Conf is the default global Config.
-//
-// The default global Conf will register the option ConfigFileOpt.
 var Conf = New()
 
-// Config is used to manage the configuration options.
-type Config struct {
-	*OptGroup  // The default group.
-	errHandler func(error)
+type atomicValue atomic.Value
 
-	exit chan struct{}
-	lock sync.RWMutex
-	gsep string // The separator between the group names.
+func (v *atomicValue) Load() interface{} { return (*atomic.Value)(v).Load() }
 
-	args     []string
-	snap     *snapshot
-	groups   map[string]*OptGroup // the option groups
-	groups2  map[string]*OptGroup // The auxiliary groups
-	decoders map[string]Decoder
-	decAlias map[string]string
-	version  Opt
-
-	observes []func(string, string, interface{}, interface{})
+type option struct {
+	value atomicValue
+	opt   Opt
 }
 
-// New returns a new Config.
-//
-// By default, it will add the "json", "yaml", "toml" and "ini" decoders,
-// and set the aliases of "conf" and "yml" to "ini" and "yaml", for example,
-//
-//   c.AddDecoder(NewJSONDecoder())
-//   c.AddDecoder(NewIniDecoder())
-//   c.AddDecoder(NewYamlDecoder())
-//   c.AddDecoder(NewTomlDecoder())
-//   c.AddDecoderAlias("conf", "ini")
-//   c.AddDecoderAlias("yml", "yaml")
-//
-func New() *Config {
-	c := new(Config)
-	c.gsep = "."
-	c.snap = newSnapshot(c)
-	c.exit = make(chan struct{})
-	c.groups = make(map[string]*OptGroup, 8)
-	c.groups2 = make(map[string]*OptGroup, 8)
-	c.decoders = make(map[string]Decoder, 8)
-	c.decAlias = make(map[string]string, 8)
-	c.OptGroup = newOptGroup(c, "")
-	c.groups[c.OptGroup.Name()] = c.OptGroup
-	c.errHandler = ErrorHandler(func(err error) { printMsg(err.Error()) })
-	c.AddDecoder(NewJSONDecoder())
-	c.AddDecoder(NewIniDecoder())
-	c.AddDecoder(NewYamlDecoder())
-	c.AddDecoder(NewTomlDecoder())
-	c.AddDecoderAlias("conf", "ini")
-	c.AddDecoderAlias("yml", "yaml")
-	return c
+func (o *option) GetValue() interface{} {
+	return o.value.Load()
 }
 
-func (c *Config) _newGroup(parent, name string) *OptGroup {
-	c.lock.Lock()
-	name = c.getGroupName(parent, name)
-	group, ok := c.groups[name]
-	if !ok {
-		group = newOptGroup(c, name)
-		c.groups[name] = group
-		c.ensureGroup2(name)
-	}
-	c.lock.Unlock()
-
-	if !ok {
-		debugf("[Config] Creating a new group '%s'", name)
-	}
-	return group
-}
-
-func (c *Config) newGroup(parent, name string) (group *OptGroup) {
-	for _, subname := range strings.Split(name, c.gsep) {
-		group = c._newGroup(parent, subname)
-		parent = c.getGroupName(parent, subname)
+func (o *option) Get() (value interface{}) {
+	if value = o.value.Load(); value == nil {
+		value = o.opt.Default
 	}
 	return
 }
 
-func (c *Config) ensureGroup2(name string) {
-	if gnames := strings.Split(name, c.gsep); len(gnames) >= 1 {
-		for i := range gnames {
-			gname := strings.Join(gnames[:i+1], c.gsep)
-			if c.groups[gname] == nil && c.groups2[gname] == nil {
-				c.groups2[gname] = newOptGroup(c, gname)
-				debugf("[Config] Creating the auxiliary group '%s'", gname)
-			}
-		}
+func (o *option) Set(c *Config, newvalue interface{}) {
+	oldvalue := o.value.Swap(newvalue)
+	if oldvalue == nil {
+		oldvalue = o.opt.Default
 	}
+	c.observe(o.opt.Name, oldvalue, newvalue)
 }
 
-func (c *Config) getGroupName(parent, name string) string {
-	name = strings.Trim(name, c.gsep)
-	if parent == "" {
-		return name
-	} else if name == "" {
-		return parent
+// Observer is used to observe the change of the option value.
+type Observer func(optName string, oldValue, newValue interface{})
+
+// Config is used to manage the configuration options.
+type Config struct {
+	// Args is the CLI rest arguments.
+	//
+	// Default: nil
+	Args []string
+
+	// Version is the version of the application, which is used by CLI.
+	Version Opt
+
+	// Errorf is used to log the error.
+	//
+	// Default: log.Printf
+	Errorf func(format string, args ...interface{})
+
+	gen       uint64
+	gsep      string
+	ignore    bool
+	options   map[string]*option
+	aliases   map[string]string
+	daliases  map[string]string
+	decoders  map[string]Decoder
+	observers []Observer
+	exit      chan struct{}
+}
+
+// New returns a new Config with the "json", "yaml/yml" and "ini" decoder.
+func New() *Config {
+	c := &Config{
+		gsep:     ".",
+		ignore:   true,
+		options:  make(map[string]*option, 32),
+		aliases:  make(map[string]string, 8),
+		daliases: make(map[string]string, 4),
+		decoders: make(map[string]Decoder, 4),
+		exit:     make(chan struct{}),
 	}
-	return strings.Join([]string{parent, name}, c.gsep)
+
+	c.AddDecoder("ini", NewIniDecoder())
+	c.AddDecoder("yaml", NewYamlDecoder())
+	c.AddDecoder("json", NewJSONDecoder())
+	c.AddDecoderTypeAliases("yaml", "yml")
+	return c
 }
 
-func (c *Config) getGroup(parent, name string) *OptGroup {
-	c.lock.RLock()
-	name = c.getGroupName(parent, name)
-	group, ok := c.groups[name]
-	if !ok {
-		group = c.groups[name]
-	}
-	c.lock.RUnlock()
-	return group
+// reset clears the whole config for test.
+func (c *Config) reset() {
+	c.options = make(map[string]*option)
+	c.aliases = make(map[string]string)
 }
 
-func (c *Config) noticeOptChange(group, optname string, old, new interface{},
-	observers []func(interface{})) {
-	for _, observer := range observers {
-		c.callOptObserver(observer, new)
-	}
-
-	c.lock.RLock()
-	fs := append([]func(g, p string, o, n interface{}){}, c.observes...)
-	c.lock.RUnlock()
-	for _, observer := range fs {
-		c.callSetObserver(group, optname, old, new, observer)
-	}
-}
-
-func (c *Config) callOptObserver(observe func(interface{}), new interface{}) {
-	defer c.wrapPanic("opt")
-	observe(new)
-}
-
-func (c *Config) callSetObserver(group, optname string, old, new interface{},
-	cb func(string, string, interface{}, interface{})) {
-	defer c.wrapPanic("set")
-	cb(group, optname, old, new)
-}
-
-func (c *Config) wrapPanic(s string) {
-	if err := recover(); err != nil {
-		c.handleError(fmt.Errorf("[Config] option %s observer panic: %v", s, err))
-	}
-}
-
-// Close closes all the watchers and disables anyone to add the watcher into it.
-func (c *Config) Close() {
+// Stop stops the watchers of all the sources.
+func (c *Config) Stop() {
 	select {
 	case <-c.exit:
 	default:
@@ -220,278 +122,411 @@ func (c *Config) Close() {
 	}
 }
 
-// CloseNotice returns a close channel, which will also be closed when the config
-// is closed.
-func (c *Config) CloseNotice() <-chan struct{} {
-	return c.exit
+func (c *Config) fixOptionName(name string) string {
+	return strings.Replace(name, "-", "_", -1)
 }
 
-func (c *Config) handleError(err error) {
-	c.lock.RLock()
-	handler := c.errHandler
-	c.lock.RUnlock()
-	handler(err)
+func (c *Config) errorf(format string, args ...interface{}) {
+	if c.Errorf == nil {
+		log.Printf(format, args...)
+	} else {
+		c.Errorf(format, args...)
+	}
 }
 
-// ErrorHandler returns a error handler, which will ignore ErrNoOpt
-// and ErrFrozenOpt, and pass the others to h.
-func ErrorHandler(h func(err error)) func(error) {
-	return func(err error) {
-		if !IsErrNoOpt(err) && !IsErrFrozenOpt(err) {
-			h(err)
+// IgnoreNoOptError sets whether to ignore the error when updating the value
+// of the
+func (c *Config) IgnoreNoOptError(ignore bool) { c.ignore = ignore }
+
+// Observe appends the observers to watch the change of all the option values.
+func (c *Config) Observe(observers ...Observer) {
+	c.observers = append(c.observers, observers...)
+}
+
+func (c *Config) observe(name string, old, new interface{}) {
+	if !reflect.DeepEqual(old, new) {
+		atomic.AddUint64(&c.gen, 1)
+		for _, observe := range c.observers {
+			observe(name, old, new)
 		}
 	}
 }
 
-// SetErrHandler resets the error handler to h.
+func (c *Config) setOptAlias(old, new string) {
+	old = c.fixOptionName(old)
+	new = c.fixOptionName(new)
+	if old == "" || new == "" {
+		return
+	}
+
+	if opt, ok := c.options[new]; ok && !inString(old, opt.opt.Aliases) {
+		opt.opt.Aliases = append(opt.opt.Aliases, old)
+	}
+
+	c.aliases[old] = new
+}
+
+func (c *Config) unsetOptAlias(name string) {
+	delete(c.aliases, name)
+	for oldname, newname := range c.aliases {
+		if newname == name {
+			delete(c.aliases, oldname)
+		}
+	}
+}
+
+func (c *Config) registerOpt(opt Opt) (o *option) {
+	opt.check()
+	if err := opt.validate(opt.Default); err != nil {
+		panic(fmt.Errorf("invalid default '%v' for option named '%s': %s",
+			opt.Default, opt.Name, err))
+	}
+
+	name := c.fixOptionName(opt.Name)
+	if _, ok := c.options[name]; ok {
+		panic(fmt.Errorf("the option named '%s' has been registered", name))
+	}
+
+	for _, alias := range opt.Aliases {
+		c.setOptAlias(alias, opt.Name)
+	}
+
+	o = &option{opt: opt}
+	c.options[name] = o
+	return
+}
+
+// RegisterOpts registers a set of options.
 //
-// The default is output to DefaultWriter, but it ignores ErrNoOpt and ErrFrozenOpt.
-func (c *Config) SetErrHandler(h func(error)) {
-	if h == nil {
-		panic("the error handler must not be nil")
+// Notice: if a certain option has existed, it will panic.
+func (c *Config) RegisterOpts(opts ...Opt) {
+	names := make([]string, len(opts))
+	for i, opt := range opts {
+		opt.check()
+		if err := opt.validate(opt.Default); err != nil {
+			panic(fmt.Errorf("invalid default '%v' for option named '%s': %s",
+				opt.Default, opt.Name, err))
+		}
+		names[i] = c.fixOptionName(opt.Name)
 	}
 
-	c.lock.Lock()
-	c.errHandler = h
-	c.lock.Unlock()
-}
-
-// Observe appends the observer to watch the change of all the option value.
-func (c *Config) Observe(observer func(group string, opt string, oldValue, newValue interface{})) {
-	if observer == nil {
-		panic("the observer must not be nil")
+	for _, name := range names {
+		if _, ok := c.options[name]; ok {
+			panic(fmt.Errorf("the option named '%s' has been registered", name))
+		}
 	}
-	c.lock.Lock()
-	c.observes = append(c.observes, observer)
-	c.lock.Unlock()
+
+	for i, opt := range opts {
+		for _, alias := range opt.Aliases {
+			c.setOptAlias(alias, opt.Name)
+		}
+		c.options[names[i]] = &option{opt: opt}
+	}
 }
 
-// AllGroups returns all the groups, containing the default group.
-func (c *Config) AllGroups() []*OptGroup {
-	c.lock.RLock()
-	groups := make([]*OptGroup, len(c.groups))
+// UnregisterOpts unregisters the registered options.
+func (c *Config) UnregisterOpts(optNames ...string) {
+	for _, name := range optNames {
+		c.unregisterOpt(name)
+	}
+}
+
+func (c *Config) unregisterOpt(name string) {
+	name = c.fixOptionName(name)
+	delete(c.options, name)
+	c.unsetOptAlias(name)
+}
+
+// OptIsSet reports whether the option named name is set.
+//
+// Return false if the option does not exist.
+func (c *Config) OptIsSet(name string) (yes bool) {
+	name = c.fixOptionName(name)
+	if opt, ok := c.options[name]; ok {
+		yes = opt.value.Load() != nil
+	} else if name, ok = c.aliases[name]; ok {
+		if opt, ok = c.options[name]; ok {
+			yes = opt.value.Load() != nil
+		}
+	}
+	return
+}
+
+// HasOpt reports whether the option named name has been registered.
+func (c *Config) HasOpt(name string) (yes bool) {
+	name = c.fixOptionName(name)
+	if _, yes = c.options[name]; !yes {
+		if alias, ok := c.aliases[name]; ok {
+			_, yes = c.options[alias]
+		}
+	}
+	return
+}
+
+// GetOpt returns the registered option by the name.
+func (c *Config) GetOpt(name string) (opt Opt, ok bool) {
+	name = c.fixOptionName(name)
+	option, ok := c.options[name]
+	if ok {
+		opt = option.opt
+	} else if name, ok = c.aliases[name]; ok {
+		if option, ok = c.options[name]; ok {
+			opt = option.opt
+		}
+	}
+	return
+}
+
+// GetAllOpts returns all the registered options.
+func (c *Config) GetAllOpts() []Opt {
+	opts := make([]Opt, len(c.options))
 	var index int
-	for _, group := range c.groups {
-		groups[index] = group
+	for _, opt := range c.options {
+		opts[index] = opt.opt
 		index++
 	}
-	c.lock.RUnlock()
-
-	sort.Slice(groups, func(i, j int) bool { return groups[i].Name() < groups[j].Name() })
-	return groups
+	sort.Slice(opts, func(i, j int) bool { return opts[i].Name < opts[j].Name })
+	return opts
 }
 
-// SetStringVersion is equal to c.SetVersion(VersionOpt.D(version)).
-func (c *Config) SetStringVersion(version string) {
-	c.SetVersion(VersionOpt.D(version))
-}
-
-// SetVersion sets the version information.
-//
-// Notice: the field Default must be a string.
-func (c *Config) SetVersion(version Opt) {
-	if v, ok := version.Default.(string); !ok {
-		panic("the version is not a string value")
-	} else if v == "" {
-		panic("the version must not be empty")
+func (c *Config) updateOpt(name string, value interface{}, set bool) (
+	*option, interface{}, error) {
+	if value == nil {
+		return nil, nil, nil
 	}
 
-	version.check()
-	c.lock.Lock()
-	c.version = version
-	c.lock.Unlock()
-}
-
-// GetVersion returns a the version information.
-//
-// Notice: the Default filed is a string representation of the version value.
-// But it is "" if no version.
-func (c *Config) GetVersion() (version Opt) {
-	c.lock.RLock()
-	version = c.version
-	c.lock.RUnlock()
-	return
-}
-
-// Args returns the rest CLI arguments.
-func (c *Config) Args() []string {
-	c.lock.RLock()
-	args := c.args
-	c.lock.RUnlock()
-	return args
-}
-
-// SetArgs sets the rest CLI arguments to args.
-func (c *Config) SetArgs(args []string) {
-	c.lock.Lock()
-	c.args = args
-	c.lock.Unlock()
-}
-
-// PrintGroup prints the information of all groups to w.
-func (c *Config) PrintGroup(w io.Writer) error {
-	for _, group := range c.AllGroups() {
-		if gname := group.Name(); gname == "" {
-			fmt.Fprintf(w, "[DEFAULT]\n")
-		} else {
-			fmt.Fprintf(w, "[%s]\n", gname)
-		}
-
-		for _, opt := range group.AllOpts() {
-			fmt.Fprintf(w, "    %s\n", opt.Name)
+	// Get the option by the name.
+	opt, ok := c.options[name]
+	if !ok {
+		if alias, ok := c.aliases[name]; !ok {
+			return nil, nil, ErrNoOpt
+		} else if opt, ok = c.options[alias]; !ok {
+			return nil, nil, ErrNoOpt
 		}
 	}
-	return nil
-}
 
-// Traverse traverses all the options of all the groups.
-func (c *Config) Traverse(f func(group string, opt string, value interface{})) {
-	for _, group := range c.AllGroups() {
-		for _, opt := range group.AllOpts() {
-			name := group.fixOptName(opt.Name)
-			f(group.Name(), name, group.Get(name))
-		}
-	}
-}
-
-/// --------------------------------------------------------------------------
-
-// UpdateOptValue updates the value of the option of the group.
-//
-// If the group or the option does not exist, it will be ignored.
-func (c *Config) UpdateOptValue(groupName, optName string, optValue interface{}) (err error) {
-	if group := c.Group(groupName); group != nil {
-		err = group.Set(optName, optValue)
-	}
-	return
-}
-
-// UpdateValue is the same as UpdateOptValue, but key is equal to
-// `fmt.Sprintf("%s.%s", groupName, optName)`.
-//
-// that's,
-//   c.UpdateOptValue(groupName, optName, optValue)
-// is equal to
-//   c.UpdateValue(fmt.Sprintf("%s.%s", groupName, optName), optValue)
-func (c *Config) UpdateValue(key string, value interface{}) error {
-	var group string
-	if index := strings.LastIndex(key, c.gsep); index > 0 {
-		group = key[:index]
-		key = key[index+len(c.gsep):]
-	}
-	return c.UpdateOptValue(group, key, value)
-}
-
-// LoadMap loads the configuration options from the map m and returns true
-// only if all options are parsed and set successfully.
-//
-// If a certain option has been set, it will be ignored.
-// But you can set force to true to reset the value of this option.
-//
-// The map may be the formats as follow:
-//
-//     map[string]interface{} {
-//         "opt1": "value1",
-//         "opt2": "value2",
-//         // ...
-//         "group1": map[string]interface{} {
-//             "opt11": "value11",
-//             "opt12": "value12",
-//             "group2": map[string]interface{} {
-//                 // ...
-//             },
-//             "group3.group4": map[string]interface{} {
-//                 // ...
-//             }
-//         },
-//         "group5.group6.group7": map[string]interface{} {
-//             "opt71": "value71",
-//             "opt72": "value72",
-//             "group8": map[string]interface{} {
-//                 // ...
-//             },
-//             "group9.group10": map[string]interface{} {
-//                 // ...
-//             }
-//         },
-//         "group11.group12.opt121": "value121",
-//         "group11.group12.opt122": "value122"
-//     }
-//
-func (c *Config) LoadMap(m map[string]interface{}, force ...bool) error {
-	opts := make([]groupOptValue, 0, len(m))
-	opts, err := c.parseMap(c.OptGroup, m, opts)
+	// Parse the option value
+	newvalue, err := opt.opt.Parser(value)
 	if err != nil {
-		c.handleError(err)
-		return err
+		return nil, nil, err
+	} else if newvalue == nil {
+		panic(fmt.Errorf("the parser of option named '%s' returns nil", name))
+	}
+
+	// Validate the option value
+	if err = opt.opt.validate(newvalue); err != nil {
+		return nil, nil, err
+	}
+
+	if set {
+		opt.Set(c, newvalue)
+	}
+
+	return opt, newvalue, nil
+}
+
+func (c *Config) checkMultilayerMap(ms map[string]interface{}) (yes bool) {
+	for _, value := range ms {
+		switch value.(type) {
+		case map[string]string,
+			map[string]interface{},
+			map[interface{}]interface{}:
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Config) flatmap2(prefix string, results map[string]interface{},
+	maps map[interface{}]interface{}) {
+	if prefix != "" {
+		prefix += c.gsep
+	}
+
+	for key, value := range maps {
+		var k string
+		if _key, ok := key.(string); ok {
+			k = _key
+		} else {
+			k = fmt.Sprint(k)
+		}
+
+		switch vs := value.(type) {
+		case map[string]string:
+			for _k, _v := range vs {
+				results[prefix+k+c.gsep+_k] = _v
+			}
+		case map[string]interface{}:
+			c.flatmap(prefix+k, results, vs)
+		case map[interface{}]interface{}:
+			c.flatmap2(prefix+k, results, vs)
+		default:
+			results[prefix+k] = value
+		}
+	}
+}
+
+func (c *Config) flatmap(prefix string, results, maps map[string]interface{}) {
+	if prefix != "" {
+		prefix += c.gsep
+	}
+
+	for key, value := range maps {
+		switch vs := value.(type) {
+		case map[string]string:
+			for k, v := range vs {
+				results[prefix+key+c.gsep+k] = v
+			}
+		case map[string]interface{}:
+			c.flatmap(prefix+key, results, vs)
+		case map[interface{}]interface{}:
+			c.flatmap2(prefix+key, results, vs)
+		default:
+			results[prefix+key] = value
+		}
+	}
+
+	return
+}
+
+func (c *Config) flatMap(maps map[string]interface{}) map[string]interface{} {
+	if c.checkMultilayerMap(maps) {
+		tmp := make(map[string]interface{}, len(maps)*2)
+		c.flatmap("", tmp, maps)
+		return tmp
+	}
+	return maps
+}
+
+// LoadMap updates a set of the options together, but terminates to parse
+// and load all if failing to parse the value of any option.
+//
+// If force is missing or false, ignore the assigned options.
+func (c *Config) LoadMap(options map[string]interface{}, force ...bool) error {
+	if len(options) == 0 {
+		return nil
 	}
 
 	var _force bool
-	if len(force) > 0 && force[0] {
-		_force = true
+	if len(force) > 0 {
+		_force = force[0]
 	}
 
-	c.loadMap(opts, _force)
+	type opt struct {
+		name   string
+		value  interface{}
+		option *option
+	}
+
+	options = c.flatMap(options)
+	opts := make([]opt, 0, len(options))
+
+	for name, value := range options {
+		name = c.fixOptionName(name)
+		o, newv, err := c.updateOpt(name, value, false)
+		switch err {
+		case nil:
+			if o.value.Load() != nil && !_force {
+				continue
+			}
+		case ErrNoOpt:
+			if c.ignore {
+				continue
+			}
+			return fmt.Errorf("no option named '%s'", name)
+		default:
+			return err
+		}
+		opts = append(opts, opt{name: name, value: newv, option: o})
+	}
+
+	for _, opt := range opts {
+		opt.option.Set(c, opt.value)
+	}
+
 	return nil
 }
 
-type groupOptValue struct {
-	Group *OptGroup
-	Name  string
-	Value interface{}
+// Parse parses the option value named name, and returns it.
+func (c *Config) Parse(name string, value interface{}) (interface{}, error) {
+	name = c.fixOptionName(name)
+	_, value, err := c.updateOpt(name, value, false)
+	return value, err
 }
 
-func (c *Config) parseMap(g *OptGroup, m map[string]interface{},
-	opts []groupOptValue) ([]groupOptValue, error) {
-	var err error
-	var ms map[string]interface{}
-
-	for key, value := range m {
-		switch m := value.(type) {
-		case map[string]interface{}:
-			if _g := g.Group(key); _g != nil {
-				if opts, err = c.parseMap(_g, m, opts); err != nil {
-					return opts, err
-				}
-			}
-		case map[interface{}]interface{}:
-			if ms, err = toStringMap(m); err != nil {
-				return opts, err
-			}
-
-			if _g := g.Group(key); _g != nil {
-				if opts, err = c.parseMap(_g, ms, opts); err != nil {
-					return opts, err
-				}
-			}
-		default:
-			_g := g
-			if index := strings.LastIndex(key, c.gsep); index > 0 {
-				if _g = _g.Group(key[:index]); _g == nil {
-					continue
-				}
-
-				key = key[index+1:]
-			}
-
-			key = _g.fixOptName(key)
-			switch v, err := _g.Parse(key, value); err {
-			case nil:
-				opts = append(opts, groupOptValue{Group: _g, Name: key, Value: v})
-			case ErrNoOpt:
-			default:
-				return opts, err
-			}
-		}
+// Set is used to reset the option named name to value.
+func (c *Config) Set(name string, value interface{}) (err error) {
+	name = c.fixOptionName(name)
+	_, _, err = c.updateOpt(name, value, true)
+	if err == ErrNoOpt && c.ignore {
+		err = nil
 	}
-
-	return opts, nil
+	return
 }
 
-func (c *Config) loadMap(opts []groupOptValue, force bool) {
-	for _, opt := range opts {
-		if force || opt.Group.HasOptAndIsNotSet(opt.Name) {
-			opt.Group.setOptWithLock(opt.Name, opt.Value)
-		}
+// Get returns the value of the option named name.
+//
+// Return nil if this option does not exist.
+func (c *Config) Get(name string) (value interface{}) {
+	name = c.fixOptionName(name)
+	if opt, ok := c.options[name]; ok {
+		value = opt.Get()
 	}
+	return
 }
+
+// Must is the same as Get, but panic if the returned value is nil.
+func (c *Config) Must(name string) (value interface{}) {
+	if value = c.Get(name); value == nil {
+		panic(fmt.Errorf("no option named name '%s'", name))
+	}
+	return
+}
+
+// GetBool returns the value of the option named name as bool.
+func (c *Config) GetBool(name string) bool { return c.Must(name).(bool) }
+
+// GetInt returns the value of the option named name as int.
+func (c *Config) GetInt(name string) int { return c.Must(name).(int) }
+
+// GetInt32 returns the value of the option named name as int32.
+func (c *Config) GetInt32(name string) int32 { return c.Must(name).(int32) }
+
+// GetInt64 returns the value of the option named name as int64.
+func (c *Config) GetInt64(name string) int64 { return c.Must(name).(int64) }
+
+// GetUint returns the value of the option named name as uint.
+func (c *Config) GetUint(name string) uint { return c.Must(name).(uint) }
+
+// GetUint32 returns the value of the option named name as uint32.
+func (c *Config) GetUint32(name string) uint32 { return c.Must(name).(uint32) }
+
+// GetUint64 returns the value of the option named name as uint64.
+func (c *Config) GetUint64(name string) uint64 { return c.Must(name).(uint64) }
+
+// GetFloat64 returns the value of the option named name as float64.
+func (c *Config) GetFloat64(name string) float64 { return c.Must(name).(float64) }
+
+// GetString returns the value of the option named name as string.
+func (c *Config) GetString(name string) string { return c.Must(name).(string) }
+
+// GetDuration returns the value of the option named name as time.Duration.
+func (c *Config) GetDuration(name string) time.Duration { return c.Must(name).(time.Duration) }
+
+// GetTime returns the value of the option named name as time.Time.
+func (c *Config) GetTime(name string) time.Time { return c.Must(name).(time.Time) }
+
+// GetIntSlice returns the value of the option named name as []int.
+func (c *Config) GetIntSlice(name string) []int { return c.Must(name).([]int) }
+
+// GetUintSlice returns the value of the option named name as []uint.
+func (c *Config) GetUintSlice(name string) []uint { return c.Must(name).([]uint) }
+
+// GetFloat64Slice returns the value of the option named name as []float64.
+func (c *Config) GetFloat64Slice(name string) []float64 { return c.Must(name).([]float64) }
+
+// GetStringSlice returns the value of the option named name as []string.
+func (c *Config) GetStringSlice(name string) []string { return c.Must(name).([]string) }
+
+// GetDurationSlice returns the value of the option named name as []time.Duration.
+func (c *Config) GetDurationSlice(name string) []time.Duration { return c.Must(name).([]time.Duration) }

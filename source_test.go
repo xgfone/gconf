@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2021 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,94 +15,54 @@
 package gconf
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"testing"
 	"time"
-
-	"github.com/urfave/cli/v2"
 )
 
-func ExampleNewCliSource() {
-	conf := New()
-	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
-	conf.NewGroup("cmd1").RegisterOpts(IntOpt("opt2", ""))
-	conf.NewGroup("cmd1").NewGroup("cmd2").RegisterOpts(IntOpt("opt3", ""))
-
-	app := cli.NewApp()
-	app.Flags = ConvertOptsToCliFlags(conf.OptGroup)
-	app.Commands = []*cli.Command{
-		{
-			Name:  "cmd1",
-			Flags: ConvertOptsToCliFlags(conf.Group("cmd1")),
-			Subcommands: []*cli.Command{
-				{
-					Name:  "cmd2",
-					Flags: ConvertOptsToCliFlags(conf.Group("cmd1.cmd2")),
-					Action: func(ctx *cli.Context) error {
-						ctxs := ctx.Lineage()
-						conf.LoadSource(NewCliSource(ctxs[0], "cmd1", "cmd2"))
-						conf.LoadSource(NewCliSource(ctxs[1], "cmd1"))
-						conf.LoadSource(NewCliSource(ctxs[2]))
-
-						fmt.Println(conf.GetString("opt1"))
-						fmt.Println(conf.Group("cmd1").GetInt("opt2"))
-						fmt.Println(conf.Group("cmd1.cmd2").GetInt("opt3"))
-
-						return nil
-					},
-				},
-			},
-		},
-	}
-
-	// For Test
-	app.Run([]string{"app", "--opt1=xyz", "cmd1", "--opt2=123", "cmd2", "--opt3=456"})
-
-	// Output:
-	// xyz
-	// 123
-	// 456
-}
+const testfileflag = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 
 func TestNewEnvSource(t *testing.T) {
-	os.Setenv("OPT1", "123")
-	os.Setenv("GROUP1_OPT2", "1")
-	os.Setenv("GROUP1_GROUP2_OPT3", "456")
-	os.Setenv("TEST_OPT1", "456")
-	os.Setenv("TEST_GROUP1_OPT2", "0")
-	os.Setenv("TEST_GROUP1_GROUP2_OPT3", "789")
 	os.Setenv("ABC", "xyz")
+	os.Setenv("OPT1", "111")
+	os.Setenv("GROUP1_OPT2", "abc")
+	os.Setenv("GROUP1_GROUP2_OPT3", "222")
+
+	os.Setenv("TEST_ABC", "xyz")
+	os.Setenv("TEST_OPT1", "333")
+	os.Setenv("TEST_GROUP1_OPT2", "efg")
+	os.Setenv("TEST_GROUP1_GROUP2_OPT3", "444")
 
 	conf := New()
 	conf.RegisterOpts(IntOpt("opt1", ""))
-	conf.NewGroup("group1").RegisterOpts(BoolOpt("opt2", ""))
-	conf.Group("group1").NewGroup("group2").RegisterOpts(Float64Opt("opt3", ""))
+	conf.Group("group1").RegisterOpts(StrOpt("opt2", ""))
+	conf.Group("group1").Group("group2").RegisterOpts(Float64Opt("opt3", ""))
 
-	conf.LoadSource(NewEnvSource())
-	if v := conf.GetInt("opt1"); v != 123 {
-		t.Error(v)
-	} else if v := conf.Group("group1").GetBool("opt2"); !v {
-		t.Fail()
-	} else if v := conf.Group("group1.group2").GetFloat64("opt3"); v != 456 {
-		t.Error(v)
+	conf.LoadSource(NewEnvSource(""), true)
+	if v := conf.GetInt("opt1"); v != 111 {
+		t.Errorf("expect '%d', but got '%d'", 111, v)
+	} else if v := conf.Group("group1").GetString("opt2"); v != "abc" {
+		t.Errorf("expect '%s', but got '%s'", "abc", v)
+	} else if v := conf.Group("group1.group2").GetFloat64("opt3"); v != 222 {
+		t.Errorf("expect '%d', but got '%f'", 222, v)
 	}
 
 	conf.LoadSource(NewEnvSource("test"), true)
-	if v := conf.GetInt("opt1"); v != 456 {
-		t.Error(v)
-	} else if v := conf.Group("group1").GetBool("opt2"); v {
-		t.Fail()
-	} else if v := conf.Group("group1.group2").GetFloat64("opt3"); v != 789 {
-		t.Error(v)
+	if v := conf.GetInt("opt1"); v != 333 {
+		t.Errorf("expect '%d', but got '%d'", 333, v)
+	} else if v := conf.Group("group1").GetString("opt2"); v != "efg" {
+		t.Errorf("expect '%s', but got '%s'", "efg", v)
+	} else if v := conf.Group("group1.group2").GetFloat64("opt3"); v != 444 {
+		t.Errorf("expect '%d', but got '%f'", 444, v)
 	}
 }
 
 func TestNewFileSource_INI(t *testing.T) {
 	// Prepare the ini file
-	filename := "_test_ini_file_source_.conf"
-	if file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm); err != nil {
+	filename := "_test_ini_file_source_.ini"
+	file, err := os.OpenFile(filename, testfileflag, os.ModePerm)
+	if err != nil {
 		t.Error(err)
 	} else {
 		file.Write([]byte(`
@@ -126,16 +86,16 @@ func TestNewFileSource_INI(t *testing.T) {
 	// Load the config
 	conf := New()
 	conf.RegisterOpts(IntOpt("opt1", ""))
-	conf.NewGroup("group1").RegisterOpts(BoolOpt("opt2", ""))
-	conf.Group("group1").NewGroup("group2").RegisterOpts(Float64Opt("opt3", ""))
+	conf.Group("group1").RegisterOpts(BoolOpt("opt2", ""))
+	conf.Group("group1.group2").RegisterOpts(Float64Opt("opt3", ""))
 	conf.LoadSource(NewFileSource(filename))
 
 	// Check the config
 	if v := conf.GetInt("opt1"); v != 1 {
 		t.Error(v)
-	} else if v := conf.Group("group1").GetBool("opt2"); !v {
+	} else if v := conf.GetBool("group1.opt2"); !v {
 		t.Fail()
-	} else if v := conf.Group("group1.group2").GetFloat64("opt3"); v != 3 {
+	} else if v := conf.GetFloat64("group1.group2.opt3"); v != 3 {
 		t.Error(v)
 	}
 }
@@ -143,7 +103,8 @@ func TestNewFileSource_INI(t *testing.T) {
 func TestNewFileSource_JSON(t *testing.T) {
 	// Prepare the json file
 	filename := "_test_json_file_source_.json"
-	if file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm); err != nil {
+	file, err := os.OpenFile(filename, testfileflag, os.ModePerm)
+	if err != nil {
 		t.Error(err)
 	} else {
 		file.Write([]byte(`{
@@ -167,9 +128,9 @@ func TestNewFileSource_JSON(t *testing.T) {
 
 	// Load the config
 	conf := New()
-	conf.registerOpts(IntOpt("opt1", ""))
-	conf.NewGroup("group1").RegisterOpts(BoolOpt("opt2", ""))
-	conf.Group("group1").NewGroup("group2").RegisterOpts(Float64Opt("opt3", ""))
+	conf.RegisterOpts(IntOpt("opt1", ""))
+	conf.Group("group1").RegisterOpts(BoolOpt("opt2", ""))
+	conf.Group("group1").Group("group2").RegisterOpts(Float64Opt("opt3", ""))
 	conf.LoadSource(NewFileSource(filename))
 
 	// Check the config
@@ -200,12 +161,13 @@ func TestNewURLSource(t *testing.T) {
 
 	conf := New()
 	conf.RegisterOpts(IntOpt("opt", ""))
-	conf.LoadSource(NewURLSource("http://127.0.0.1:12345/", time.Millisecond*100))
+	conf.LoadAndWatchSource(NewURLSource("http://127.0.0.1:12345/", time.Millisecond*100))
+	defer conf.Stop()
 
 	if v := conf.GetInt("opt"); v != 123 {
 		t.Error(v)
 	} else {
-		time.Sleep(time.Millisecond * 200)
+		time.Sleep(time.Millisecond * 400)
 		if v := conf.GetInt("opt"); v != 456 {
 			t.Error(v)
 		}

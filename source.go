@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2021 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,28 +15,12 @@
 package gconf
 
 import (
-	"fmt"
+	"errors"
 	"time"
 )
 
-var errNoDecoder = fmt.Errorf("no decoder")
-
-// SourceError represents an error about the data source.
-type SourceError struct {
-	Source string
-	Format string
-	Data   []byte
-	Err    error
-}
-
-func (se SourceError) Error() string {
-	return fmt.Sprintf("source(%s)[%s]: %s", se.Source, se.Format, se.Err.Error())
-}
-
-// NewSourceError returns a new source error.
-func NewSourceError(source, format string, data []byte, err error) SourceError {
-	return SourceError{Source: source, Format: format, Data: data, Err: err}
-}
+// ErrNoDecoder represents the error that there is no decoder.
+var ErrNoDecoder = errors.New("no decoder")
 
 // DataSet represents the information of the configuration data.
 type DataSet struct {
@@ -58,90 +42,98 @@ func (ds DataSet) Sha256() string {
 	return bytesToSha256(ds.Data)
 }
 
+// LoadDataSet is equal to Conf.LoadDataSet(source, force...).
+func LoadDataSet(ds DataSet, force ...bool) error {
+	return Conf.LoadDataSet(ds, force...)
+}
+
 // LoadDataSet loads the DataSet ds, which will parse the data by calling the
 // corresponding decoder and load it.
 //
-// If a certain option has been set, it will be ignored. But you can set force
-// to true to reset the value of this option.
+// If failing to parse the value of any option, it terminates to parse
+// and load it.
+//
+// If force is missing or false, ignore the assigned options.
 func (c *Config) LoadDataSet(ds DataSet, force ...bool) (err error) {
 	if len(ds.Data) == 0 {
 		return nil
 	}
 
-	decoder, ok := c.GetDecoder(ds.Format)
-	if !ok {
-		err = NewSourceError(ds.Source, ds.Format, ds.Data, errNoDecoder)
-		c.handleError(err)
-		return err
+	decoder := c.GetDecoder(ds.Format)
+	if decoder == nil {
+		return ErrNoDecoder
 	}
 
 	ms := make(map[string]interface{}, 32)
-	if err := decoder.Decode(ds.Data, ms); err != nil {
-		err = NewSourceError(ds.Source, ds.Format, ds.Data, err)
-		c.handleError(err)
+	if err = decoder(ds.Data, ms); err != nil {
 		return err
 	}
 
 	if err = c.LoadMap(ms, force...); err == nil && ds.Args != nil {
-		if c.Args() == nil || (len(force) > 0 && force[0]) {
-			c.SetArgs(ds.Args)
+		if c.Args == nil || (len(force) > 0 && force[0]) {
+			c.Args = ds.Args
 		}
 	}
-	return
-}
 
-func (c *Config) loadDataSetWithError(ds DataSet, err error, force ...bool) (ok bool) {
-	switch err.(type) {
-	case nil:
-		ok = c.LoadDataSet(ds, force...) == nil
-	case SourceError:
-		c.handleError(err)
-	default:
-		c.handleError(NewSourceError(ds.Source, ds.Format, ds.Data, err))
-	}
 	return
-}
-
-// LoadDataSetCallback is a callback used by the watcher.
-func (c *Config) LoadDataSetCallback(ds DataSet, err error) bool {
-	return c.loadDataSetWithError(ds, err, true)
 }
 
 // Source represents a data source where the data is.
 type Source interface {
+	// String is the description of the source, such as "env", "file:/path/to".
+	String() string
+
 	// Read reads the source data once, which should not block.
 	Read() (DataSet, error)
 
-	// Watch watches the change of the source, then send the changed data to ds.
+	// Watch watches the change of the source, then call the callback load.
 	//
-	// The source can check whether close is closed to determine whether the
-	// configuration is closed and to do any cleanup.
-	//
-	// Notice: load returns true only the DataSet is loaded successfully.
-	Watch(load func(DataSet, error) bool, close <-chan struct{})
+	// close is used to notice the underlying watcher to close and clean.
+	Watch(close <-chan struct{}, load func(DataSet, error) (success bool))
 }
 
-func (c *Config) loadSource(source Source, force ...bool) {
+// LoadSource is equal to Conf.LoadSource(source, force...).
+func LoadSource(source Source, force ...bool) error {
+	return Conf.LoadSource(source, force...)
+}
+
+// LoadSource loads the options from the given source.
+//
+// If force is missing or false, ignore the assigned options.
+func (c *Config) LoadSource(source Source, force ...bool) (err error) {
 	ds, err := source.Read()
-	c.loadDataSetWithError(ds, err, force...)
+	if err != nil {
+		c.errorf("fail to read the source '%s': %s", source.String(), err)
+		return
+	}
+
+	if err = c.LoadDataSet(ds, force...); err != nil {
+		c.errorf("fail to load the source '%s': %s", source.String(), err)
+		return
+	}
+
+	return
 }
 
-// LoadSource loads the sources, and call Watch to watch the source, which is
-// equal to
-//
-//   c.LoadSourceWithoutWatch(source, force...)
-//   source.Watch(c.LoadDataSetCallback, c.CloseNotice())
-//
-// When loading the source, if a certain option of a certain group has been set,
-// it will be ignored. But you can set force to true to reset the value of this
-// option.
-func (c *Config) LoadSource(source Source, force ...bool) {
-	c.loadSource(source, force...)
-	source.Watch(c.LoadDataSetCallback, c.exit)
+// LoadAndWatchSource is equal to Conf.LoadAndWatchSource(source, force...).
+func LoadAndWatchSource(source Source, force ...bool) error {
+	return Conf.LoadAndWatchSource(source, force...)
 }
 
-// LoadSourceWithoutWatch is the same as LoadSource, but does not call
-// the Watch method of the source to watch the source.
-func (c *Config) LoadSourceWithoutWatch(source Source, force ...bool) {
-	c.loadSource(source, force...)
+// LoadAndWatchSource is the same as LoadSource, but also watches the source
+// after loading the source successfully.
+func (c *Config) LoadAndWatchSource(source Source, force ...bool) (err error) {
+	if err = c.LoadSource(source, force...); err == nil {
+		go source.Watch(c.exit, func(ds DataSet, err error) bool {
+			if err != nil {
+				c.errorf("fail to watch the source '%s': %s", source, err)
+				return false
+			} else if err = c.LoadDataSet(ds, true); err != nil {
+				c.errorf("fail to load the source '%s': %s", source, err)
+				return false
+			}
+			return true
+		})
+	}
+	return
 }

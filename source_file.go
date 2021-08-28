@@ -28,13 +28,15 @@ import (
 // ConfigFileOpt is the default option for the configuration file.
 var ConfigFileOpt = StrOpt("config-file", "the config file path.")
 
+func init() { Conf.RegisterOpts(ConfigFileOpt) }
+
 // NewFileSource returns a new source that the data is read from the file
 // named filename.
 //
-// Notice: it will identify the format by the filename extension automatically.
+// The file source can watch the change of the given file.
+// And it will identify the format by the filename extension automatically.
 // If no filename extension, it will use defaulFormat, which is "ini" by default.
 func NewFileSource(filename string, defaultFormat ...string) Source {
-	id := fmt.Sprintf("file:%s", filename)
 	format := strings.Trim(filepath.Ext(filename), ".")
 	if format == "" {
 		if len(defaultFormat) > 0 && defaultFormat[0] != "" {
@@ -43,6 +45,8 @@ func NewFileSource(filename string, defaultFormat ...string) Source {
 			format = "ini"
 		}
 	}
+
+	id := fmt.Sprintf("file:%s", filename)
 	return fileSource{id: id, filepath: filename, format: format}
 }
 
@@ -51,6 +55,8 @@ type fileSource struct {
 	format   string
 	filepath string
 }
+
+func (f fileSource) String() string { return f.id }
 
 func (f fileSource) Read() (DataSet, error) {
 	file, err := os.Open(f.filepath)
@@ -83,11 +89,11 @@ func (f fileSource) Read() (DataSet, error) {
 	return ds, nil
 }
 
-func (f fileSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {
-	go f.watchfile(load, exit)
+func (f fileSource) Watch(exit <-chan struct{}, load func(DataSet, error) bool) {
+	f.watch(exit, load)
 }
 
-func (f fileSource) watchfile(load func(DataSet, error) bool, exit <-chan struct{}) {
+func (f fileSource) watch(exit <-chan struct{}, load func(DataSet, error) bool) {
 	fw, err := fsnotify.NewWatcher()
 	if err != nil {
 		load(DataSet{Source: f.id, Format: f.format}, err)
@@ -100,34 +106,40 @@ func (f fileSource) watchfile(load func(DataSet, error) bool, exit <-chan struct
 		add = true
 	}
 
-	interval := time.Second * 10
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
 	for {
-		time.Sleep(interval)
-		if _, err := os.Stat(f.filepath); err != nil {
-			if os.IsNotExist(err) {
-				if add {
-					fw.Remove(f.filepath)
-					add = false
-				}
-			} else {
-				load(DataSet{Source: f.id, Format: f.format}, err)
-			}
-			continue
-		}
-
-		if !add {
-			if err := fw.Add(f.filepath); err != nil {
-				load(DataSet{Source: f.id, Format: f.format}, err)
-			} else {
-				add = true
-				load(f.Read())
-			}
-			continue
-		}
-
 		select {
 		case <-exit:
 			return
+
+		case <-ticker.C:
+			if _, err := os.Stat(f.filepath); err != nil {
+				if os.IsNotExist(err) {
+					if add {
+						if err := fw.Remove(f.filepath); err != nil {
+							load(DataSet{Source: f.id, Format: f.format}, err)
+						} else {
+							add = false
+						}
+					}
+				} else {
+					load(DataSet{Source: f.id, Format: f.format}, err)
+				}
+				continue
+			}
+
+			if !add {
+				if err := fw.Add(f.filepath); err != nil {
+					load(DataSet{Source: f.id, Format: f.format}, err)
+				} else {
+					add = true
+					load(f.Read())
+				}
+				continue
+			}
+
 		case event, ok := <-fw.Events:
 			if !ok {
 				return
@@ -139,12 +151,13 @@ func (f fileSource) watchfile(load func(DataSet, error) bool, exit <-chan struct
 			} else if event.Op&fsnotify.Remove == fsnotify.Remove {
 				add = false
 			}
+
 		case err, ok := <-fw.Errors:
 			if !ok {
 				return
 			}
+
 			load(DataSet{Source: f.id, Format: f.format}, err)
 		}
 	}
-
 }

@@ -19,6 +19,7 @@ _cgo_export.*
 
 _testmain.go
 
+.*
 *.exe
 *.test
 *.prof
@@ -32,6 +33,3 @@ test_*
 
 # log
 *.log
-
-# VS Code
-.vscode/

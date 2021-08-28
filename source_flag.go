@@ -58,7 +58,7 @@ func PrintFlagUsage(flagSet *flag.FlagSet) {
 		}
 		s += strings.Replace(usage, "\n", "\n    \t", -1)
 		s += fmt.Sprintf(" (default: %q)", f.DefValue)
-		fmt.Fprint(flagSet.Output(), s, "\n")
+		fmt.Fprint(os.Stderr, s, "\n")
 	})
 }
 
@@ -92,49 +92,44 @@ func addAndParseOptFlag(parse bool, c *Config, flagSet ...*flag.FlagSet) error {
 	}
 
 	var vName, value string
-	if opt := c.GetVersion(); opt.Name != "" && opt.Default != nil {
-		flagset.Bool(opt.Name, false, opt.Help)
-		vName = opt.Name
-		value = opt.Default.(string)
+	if v := c.Version; v.Name != "" && v.Default != nil {
+		flagset.Bool(v.Name, false, v.Help)
+		vName = v.Name
+		value = v.Default.(string)
 	}
 
 	flagset.Usage = func() { PrintFlagUsage(flagset) }
-	for _, group := range c.AllGroups() {
-		for _, opt := range group.AllOpts() {
-			if !opt.Cli {
-				continue
-			}
+	for _, opt := range c.GetAllOpts() {
+		if !opt.IsCli {
+			continue
+		}
 
-			name := opt.Name
-			if gname := group.Name(); gname != "" {
-				name = fmt.Sprintf("%s.%s", gname, opt.Name)
-			}
-			name = strings.Replace(name, "_", "-", -1)
-
-			switch v := opt.Default.(type) {
-			case nil:
-				flagset.String(name, "", opt.Help)
-			case bool:
-				flagset.Bool(name, v, opt.Help)
-			case int, int8, int16, int32, int64:
-				flagset.Int64(name, reflect.ValueOf(v).Int(), opt.Help)
-			case uint, uint8, uint16, uint32, uint64:
-				flagset.Uint64(name, reflect.ValueOf(v).Uint(), opt.Help)
-			case float32, float64:
-				flagset.Float64(name, reflect.ValueOf(v).Float(), opt.Help)
-			case time.Duration:
-				flagset.Duration(name, v, opt.Help)
-			default:
-				switch vf := reflect.ValueOf(opt.Default); vf.Kind() {
-				case reflect.Slice, reflect.Array:
-					sv := &flagSliceValue{values: make([]string, vf.Len())}
-					for i, _len := 0, vf.Len(); i < _len; i++ {
-						sv.values[i] = fmt.Sprint(vf.Index(i).Interface())
-					}
-					flagset.Var(sv, name, opt.Help)
-				default:
-					flagset.String(name, fmt.Sprintf("%v", v), opt.Help)
+		name := strings.Replace(opt.Name, "_", "-", -1)
+		switch v := opt.Default.(type) {
+		case nil:
+			flagset.String(name, "", opt.Help)
+		case string:
+			flagset.String(name, v, opt.Help)
+		case bool:
+			flagset.Bool(name, v, opt.Help)
+		case int, int8, int16, int32, int64:
+			flagset.Int64(name, reflect.ValueOf(v).Int(), opt.Help)
+		case uint, uint8, uint16, uint32, uint64:
+			flagset.Uint64(name, reflect.ValueOf(v).Uint(), opt.Help)
+		case float32, float64:
+			flagset.Float64(name, reflect.ValueOf(v).Float(), opt.Help)
+		case time.Duration:
+			flagset.Duration(name, v, opt.Help)
+		default:
+			switch vf := reflect.ValueOf(opt.Default); vf.Kind() {
+			case reflect.Slice, reflect.Array:
+				sv := &flagSliceValue{values: make([]string, vf.Len())}
+				for i, _len := 0, vf.Len(); i < _len; i++ {
+					sv.values[i] = fmt.Sprint(vf.Index(i).Interface())
 				}
+				flagset.Var(sv, name, opt.Help)
+			default:
+				flagset.String(name, fmt.Sprintf("%v", v), opt.Help)
 			}
 		}
 	}
@@ -195,12 +190,14 @@ type flagSource struct {
 	flagSet *flag.FlagSet
 }
 
-func (f flagSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {}
+func (f flagSource) String() string { return "flag" }
+
+func (f flagSource) Watch(<-chan struct{}, func(DataSet, error) bool) {}
 
 func (f flagSource) Read() (DataSet, error) {
 	if !f.flagSet.Parsed() {
 		if err := f.flagSet.Parse(os.Args[1:]); err != nil {
-			return DataSet{Source: "flag", Format: "json"}, err
+			return DataSet{Source: f.String(), Format: "json"}, err
 		}
 	}
 
@@ -211,8 +208,9 @@ func (f flagSource) Read() (DataSet, error) {
 
 	data, err := json.Marshal(vs)
 	if err != nil {
-		return DataSet{Source: "flag", Format: "json"}, err
+		return DataSet{Source: f.String(), Format: "json"}, err
 	}
+
 	ds := DataSet{
 		Args:      f.flagSet.Args(),
 		Data:      data,
@@ -220,6 +218,6 @@ func (f flagSource) Read() (DataSet, error) {
 		Source:    "flag",
 		Timestamp: time.Now(),
 	}
-	ds.Checksum = fmt.Sprintf("md5:%s", ds.Md5())
+	ds.Checksum = "md5:" + ds.Md5()
 	return ds, nil
 }

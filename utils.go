@@ -156,3 +156,12 @@ func toDurationSlice(value interface{}) ([]time.Duration, error) {
 	}
 	return cast.ToDurationSlice(value)
 }
+
+func inString(s string, ss []string) bool {
+	for _, _s := range ss {
+		if _s == s {
+			return true
+		}
+	}
+	return false
+}

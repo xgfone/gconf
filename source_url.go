@@ -25,15 +25,15 @@ import (
 
 var errNoContentType = fmt.Errorf("http response has no the header Content-Type")
 
-// NewURLSource returns a url source to read the configuration data from the url
-// by the stdlib http.Get(url).
+// NewURLSource returns a url source to read the configuration data
+// from the url by the stdlib http.Get(url).
 //
 // The header "Content-Type" indicates the data format, that's, it will split
 // the value by "/" and use the last part, such as "application/json" represents
 // the format "json". But you can set format to override it.
 //
-// It supports the watcher, which checks whether the data is changed once
-// with interval time. If interval is 0, it is time.Minute by default.
+// The url source can watch the configuration data from the url each interval
+// period. If interval is equal to 0, it is defaulted to time.Minute.
 func NewURLSource(url string, interval time.Duration, format ...string) Source {
 	if url == "" {
 		panic("the url must not be nil")
@@ -45,10 +45,17 @@ func NewURLSource(url string, interval time.Duration, format ...string) Source {
 	if len(format) > 0 && format[0] != "" {
 		_format = format[0]
 	}
+
 	if interval <= 0 {
 		interval = time.Minute
 	}
-	return urlSource{id: fmt.Sprintf("url:%s", url), url: url, format: _format, period: interval}
+
+	return urlSource{
+		id:     fmt.Sprintf("url:%s", url),
+		url:    url,
+		format: _format,
+		period: interval,
+	}
 }
 
 type urlSource struct {
@@ -59,16 +66,21 @@ type urlSource struct {
 	period time.Duration
 }
 
+func (u urlSource) String() string { return u.id }
+
 func (u urlSource) Read() (DataSet, error) {
 	resp, err := http.Get(u.url)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
 	if err != nil {
 		return DataSet{Source: u.id, Format: u.format}, err
 	}
-	defer resp.Body.Close()
 
 	format := u.format
 	if format == "" {
-		// Get the Content-Type as the format.
+		// Get the format from the header "Content-Type".
 		ct := strings.TrimSpace(resp.Header.Get("Content-Type"))
 		if index := strings.IndexByte(ct, ';'); index > 0 {
 			ct = strings.TrimSpace(ct[:index])
@@ -98,31 +110,27 @@ func (u urlSource) Read() (DataSet, error) {
 	return ds, nil
 }
 
-func (u urlSource) Watch(load func(DataSet, error) bool, exit <-chan struct{}) {
-	go u.watchurl(load, exit)
+func (u urlSource) Watch(exit <-chan struct{}, load func(DataSet, error) bool) {
+	u.watch(exit, load)
 }
 
-func (u urlSource) watchurl(load func(DataSet, error) bool, exit <-chan struct{}) {
-	last := DataSet{}
-	first := true
-	for {
-		if first {
-			first = false
-		} else {
-			time.Sleep(u.period)
-		}
+func (u urlSource) watch(exit <-chan struct{}, load func(DataSet, error) bool) {
+	ticker := time.NewTicker(u.period)
+	defer ticker.Stop()
 
+	var last DataSet
+	for {
 		select {
 		case <-exit:
 			return
-		default:
-		}
 
-		if ds, err := u.Read(); err != nil {
-			load(ds, err)
-		} else if len(ds.Data) > 0 && ds.Checksum != last.Checksum {
-			if load(ds, nil) {
-				last = ds
+		case <-ticker.C:
+			if ds, err := u.Read(); err != nil {
+				load(ds, err)
+			} else if len(ds.Data) > 0 && ds.Checksum != last.Checksum {
+				if load(ds, nil) {
+					last = ds
+				}
 			}
 		}
 	}

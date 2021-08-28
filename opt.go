@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2021 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,67 +19,53 @@ import (
 	"time"
 )
 
-// VersionOpt reprensents a version option.
-var VersionOpt = StrOpt("version", "Print the version and exit.").S("v").D("1.0.0").V(NewStrNotEmptyValidator())
+// Parser is used to parse the option value intput.
+type Parser func(input interface{}) (output interface{}, err error)
 
 // Opt is used to represent a option vlaue.
 type Opt struct {
 	// Name is the long name of the option.
-	// It's necessary and must not be empty.
+	//
+	// Required!
 	Name string
 
-	// Short is the short name of the option, which is optional.
+	// Default is the default value of the option, which will be used to
+	// indicate the type of the option.
 	//
-	// It should be a single-character string, such as "v" for "version".
-	Short string
-
-	// Help is the help or usage information, which is optional.
-	Help string
-
-	// Cli indicates whether the option can be used for the CLI flag.
-	Cli bool
-
-	// Tags is the key-value metadata of the Opt.
-	Tags map[string]string
-
-	// The list of the aliases of the option, which will be registered to
-	// the group that the option is registered when it is being registered.
-	Aliases []string
-
-	// Default is the default value of the option, which is necessary
-	// and must not be nil. It will be used to indicate the type of the option.
+	// Required!
 	Default interface{}
 
-	// Parser is used to parse the input option value to a specific type,
-	// Which is necessary.
+	// Parser is used to parse the input option value to a specific type.
 	//
-	// Notice: it must not panic.
-	Parser func(input interface{}) (output interface{}, err error)
+	// Required!
+	Parser Parser
 
-	// Fix is used to fix the parsed value.
+	// Short is the short name of the option, which should be a single-
+	// character string, such as "v" for "version".
 	//
-	// The different between Parser and Fix:
-	//   1. Parser only parses the value from the arbitrary type to a specific.
-	//   2. Fix only changes the value, not the type, that's, input and output
-	//      should be the same type. For example, input is the NIC name,
-	//      and Fix can get the ip by the NIC name then return it as output.
-	//      So it ensures that input may be NIC or IP, and that the value
-	//      of the option is always a IP.
-	Fix func(input interface{}) (output interface{}, err error)
+	// Optional?
+	Short string
 
-	// Observers are called after the value of the option is updated.
-	Observers []func(newValue interface{})
+	// Help is the help or usage information.
+	//
+	// Optional?
+	Help string
 
-	// Validators is the validators of the option, which is optional.
+	// IsCli indicates whether the option can be used for the CLI flag.
 	//
-	// When updating the option value, the validators will validate it.
-	// If there is a validator returns an error, the updating fails and
-	// returns the error. That's, these validators are the AND relations.
+	// Optional?
+	IsCli bool
+
+	// The list of the aliases of the option.
 	//
-	// Notice: they must not panic.
+	// Optional?
+	Aliases []string
+
+	// Validators is used to validate whether the option value is valid
+	// after parsing it and before updating it.
+	//
+	// Optional?
 	Validators []Validator
-
-	fixDefault bool
 }
 
 func (o Opt) check() {
@@ -110,54 +96,9 @@ func (o Opt) As(aliases ...string) Opt {
 	return o
 }
 
-// C returns a new Opt with the cli flag based on the current option.
-func (o Opt) C(cli bool) Opt {
-	o.Cli = cli
-	return o
-}
-
-// D returns a new Opt with the given default value based on the current option.
-func (o Opt) D(_default interface{}) Opt {
-	if _default == nil {
-		panic("the default value of the option must not be nil")
-	}
-	if o.Parser == nil {
-		o.Default = _default
-	} else if value, err := o.Parser(_default); err != nil {
-		panic(NewOptError("", o.Name, err, _default))
-	} else {
-		o.Default = value
-	}
-	return o
-}
-
-func (o *Opt) fix() error {
-	if o.fixDefault && o.Fix != nil && o.Default != nil {
-		_default, err := o.Fix(o.Default)
-		if err != nil {
-			return err
-		}
-		o.Default = _default
-	}
-	return nil
-}
-
-// F returns a new Opt with the given fix function based on the current option.
-//
-// If fixDefault is true, it will fix the default value when registering
-// the option.
-func (o Opt) F(fix func(interface{}) (interface{}, error), fixDefault ...bool) Opt {
-	o.Fix = fix
-	if len(fixDefault) > 0 {
-		o.fixDefault = fixDefault[0]
-	}
-
-	return o
-}
-
-// H returns a new Opt with the given help based on the current option.
-func (o Opt) H(help string) Opt {
-	o.Help = help
+// Cli returns a new Opt with the cli flag based on the current option.
+func (o Opt) Cli(cli bool) Opt {
+	o.IsCli = cli
 	return o
 }
 
@@ -170,26 +111,9 @@ func (o Opt) N(name string) Opt {
 	return o
 }
 
-// O returns a new Opt with the given observer based on the current option,
-// which will append them.
-func (o Opt) O(observers ...func(interface{})) Opt {
-	o.Observers = append(o.Observers, observers...)
-	return o
-}
-
-// P returns a new Opt with the given parser based on the current option.
-func (o Opt) P(parser func(interface{}) (interface{}, error)) Opt {
-	if parser == nil {
-		panic("the parser of the option must not be nil")
-	}
-	o.Parser = parser
-	if o.Default != nil {
-		if value, err := o.Parser(o.Default); err != nil {
-			panic(NewOptError("", o.Name, err, o.Default))
-		} else {
-			o.Default = value
-		}
-	}
+// H returns a new Opt with the given help based on the current option.
+func (o Opt) H(help string) Opt {
+	o.Help = help
 	return o
 }
 
@@ -202,24 +126,6 @@ func (o Opt) S(shortName string) Opt {
 	return o
 }
 
-// T returns a new Opt with the key-value tag based on the current option,
-// which will clone the tags from the current option to the new.
-//
-// Notice: the key must not be empty, but value may be.
-func (o Opt) T(key, value string) Opt {
-	if key == "" {
-		panic("the tag key must not be empty")
-	}
-
-	tags := make(map[string]string, len(o.Tags)*2)
-	for k, v := range o.Tags {
-		tags[k] = v
-	}
-	tags[key] = value
-	o.Tags = tags
-	return o
-}
-
 // V returns a new Opt with the given validators based on the current option,
 // which will append them.
 func (o Opt) V(validators ...Validator) Opt {
@@ -227,105 +133,172 @@ func (o Opt) V(validators ...Validator) Opt {
 	return o
 }
 
-// NewOpt returns a new Opt.
-//
-// Notice: Cli is true by default.
-func NewOpt(name string, _default interface{}, parser func(interface{}) (interface{}, error)) Opt {
-	return Opt{Cli: true}.N(name).D(_default).P(parser)
+// D returns a new Opt with the given default value based on the current option.
+func (o Opt) D(_default interface{}) Opt {
+	if _default == nil {
+		panic("the default value of the option must not be nil")
+	}
+
+	if o.Parser == nil {
+		o.Default = _default
+	} else if value, err := o.Parser(_default); err != nil {
+		panic(fmt.Errorf("fail to parse '%v' for the option named '%s': %s",
+			_default, o.Name, err))
+	} else {
+		o.Default = value
+	}
+	return o
 }
 
-// BoolOpt returns a bool Opt, which is equal to
-//   NewOpt(name, false, ToBool).H(help)
+// P returns a new Opt with the given parser based on the current option.
+func (o Opt) P(parser Parser) Opt {
+	if parser == nil {
+		panic("the parser of the option must not be nil")
+	}
+	o.Parser = parser
+	if o.Default != nil {
+		if value, err := o.Parser(o.Default); err != nil {
+			panic(fmt.Errorf("fail to parse '%v' for the option named '%s': %s",
+				o.Default, o.Name, err))
+		} else {
+			o.Default = value
+		}
+	}
+	return o
+}
+
+// NewOpt returns a new Opt that IsCli is true.
+func NewOpt(name, help string, _default interface{}, parser Parser) Opt {
+	return Opt{IsCli: true, Name: name, Help: help}.D(_default).P(parser)
+}
+
+// BoolOpt is the same NewOpt, but uses ToBool to parse the value as bool.
 func BoolOpt(name string, help string) Opt {
-	return NewOpt(name, false, func(v interface{}) (interface{}, error) { return ToBool(v) }).H(help)
+	return NewOpt(name, help, false, func(v interface{}) (interface{}, error) {
+		return ToBool(v)
+	})
 }
 
-// IntOpt returns a int Opt, which is equal to
-//   NewOpt(name, 0, ToInt).H(help)
+// IntOpt is the same NewOpt, but uses ToInt to parse the value as int.
 func IntOpt(name string, help string) Opt {
-	return NewOpt(name, 0, func(v interface{}) (interface{}, error) { return ToInt(v) }).H(help)
+	return NewOpt(name, help, 0, func(v interface{}) (interface{}, error) {
+		return ToInt(v)
+	})
 }
 
-// Int32Opt returns a int32 Opt, which is equal to
-//   NewOpt(name, int32(0), ToInt32).H(help)
+// Int32Opt is the same NewOpt, but uses ToInt32 to parse the value as int32.
 func Int32Opt(name string, help string) Opt {
-	return NewOpt(name, int32(0), func(v interface{}) (interface{}, error) { return ToInt32(v) }).H(help)
+	return NewOpt(name, help, int32(0),
+		func(v interface{}) (interface{}, error) {
+			return ToInt32(v)
+		})
 }
 
-// Int64Opt returns a int64 Opt, which is equal to
-//   NewOpt(name, int64(0), ToInt64).H(help)
+// Int64Opt is the same NewOpt, but uses ToInt64 to parse the value as int64.
 func Int64Opt(name string, help string) Opt {
-	return NewOpt(name, int64(0), func(v interface{}) (interface{}, error) { return ToInt64(v) }).H(help)
+	return NewOpt(name, help, int64(0),
+		func(v interface{}) (interface{}, error) {
+			return ToInt64(v)
+		})
 }
 
-// UintOpt returns a uint Opt, which is equal to
-//   NewOpt(name, uint(0), ToUint).H(help)
+// UintOpt is the same NewOpt, but uses ToUint to parse the value as uint.
 func UintOpt(name string, help string) Opt {
-	return NewOpt(name, uint(0), func(v interface{}) (interface{}, error) { return ToUint(v) }).H(help)
+	return NewOpt(name, help, uint(0),
+		func(v interface{}) (interface{}, error) {
+			return ToUint(v)
+		})
 }
 
-// Uint32Opt returns a uint32 Opt, which is equal to
-//   NewOpt(name, uint32(0), ToUint32).H(help)
+// Uint32Opt is the same NewOpt, but uses ToUint32 to parse the value as uint32.
 func Uint32Opt(name string, help string) Opt {
-	return NewOpt(name, uint32(0), func(v interface{}) (interface{}, error) { return ToUint32(v) }).H(help)
+	return NewOpt(name, help, uint32(0),
+		func(v interface{}) (interface{}, error) {
+			return ToUint32(v)
+		})
 }
 
-// Uint64Opt returns a uint64 Opt, which is equal to
-//   NewOpt(name, uint64(0), ToUint64).H(help)
+// Uint64Opt is the same NewOpt, but uses ToUint64 to parse the value as uint64.
 func Uint64Opt(name string, help string) Opt {
-	return NewOpt(name, uint64(0), func(v interface{}) (interface{}, error) { return ToUint64(v) }).H(help)
+	return NewOpt(name, help, uint64(0),
+		func(v interface{}) (interface{}, error) {
+			return ToUint64(v)
+		})
 }
 
-// Float64Opt returns a float64 Opt, which is equal to
-//   NewOpt(name, 0.0, ToFloat64).H(help)
+// Float64Opt is the same NewOpt, but uses ToFloat64
+// to parse the value as float64.
 func Float64Opt(name string, help string) Opt {
-	return NewOpt(name, 0.0, func(v interface{}) (interface{}, error) { return ToFloat64(v) }).H(help)
+	return NewOpt(name, help, 0.0, func(v interface{}) (interface{}, error) {
+		return ToFloat64(v)
+	})
 }
 
-// StrOpt returns a string Opt, which is equal to
-//   NewOpt(name, "", ToString).H(help)
+// StrOpt is the same NewOpt, but uses ToString to parse the value as string.
 func StrOpt(name string, help string) Opt {
-	return NewOpt(name, "", func(v interface{}) (interface{}, error) { return ToString(v) }).H(help)
+	return NewOpt(name, help, "", func(v interface{}) (interface{}, error) {
+		return ToString(v)
+	})
 }
 
-// DurationOpt returns a time.Duration Opt, which is equal to
-//   NewOpt(name, time.Duration(0), ToDuration).H(help)
+// DurationOpt is the same NewOpt, but uses ToDuration
+// to parse the value as time.Duration.
 func DurationOpt(name string, help string) Opt {
-	return NewOpt(name, time.Duration(0), func(v interface{}) (interface{}, error) { return ToDuration(v) }).H(help)
+	return NewOpt(name, help, time.Duration(0),
+		func(v interface{}) (interface{}, error) {
+			return ToDuration(v)
+		})
 }
 
-// TimeOpt returns a time.Time Opt, which is equal to
-//   NewOpt(name, time.Time{}, ToTime).H(help)
+// TimeOpt is the same NewOpt, but uses ToTime to parse the value as time.Time.
 func TimeOpt(name string, help string) Opt {
-	return NewOpt(name, time.Time{}, func(v interface{}) (interface{}, error) { return ToTime(v) }).H(help)
+	return NewOpt(name, help, time.Time{},
+		func(v interface{}) (interface{}, error) {
+			return ToTime(v)
+		})
 }
 
-// StrSliceOpt returns a []string Opt, which is equal to
-//   NewOpt(name, []string{}, ToStringSlice).H(help)
+// StrSliceOpt is the same NewOpt, but uses ToStringSlice
+// to parse the value as []string.
 func StrSliceOpt(name string, help string) Opt {
-	return NewOpt(name, []string{}, func(v interface{}) (interface{}, error) { return ToStringSlice(v) }).H(help)
+	return NewOpt(name, help, []string{},
+		func(v interface{}) (interface{}, error) {
+			return ToStringSlice(v)
+		})
 }
 
-// IntSliceOpt returns a []int Opt, which is equal to
-//   NewOpt(name, []int{}, ToIntSlice).H(help)
+// IntSliceOpt is the same NewOpt, but uses ToIntSlice
+// to parse the value as []int.
 func IntSliceOpt(name string, help string) Opt {
-	return NewOpt(name, []int{}, func(v interface{}) (interface{}, error) { return ToIntSlice(v) }).H(help)
+	return NewOpt(name, help, []int{},
+		func(v interface{}) (interface{}, error) {
+			return ToIntSlice(v)
+		})
 }
 
-// UintSliceOpt returns a []uint Opt, which is equal to
-//   NewOpt(name, []uint{}, ToUintSlice).H(help)
+// UintSliceOpt is the same NewOpt, but uses ToUintSlice
+// to parse the value as []uint.
 func UintSliceOpt(name string, help string) Opt {
-	return NewOpt(name, []uint{}, func(v interface{}) (interface{}, error) { return ToUintSlice(v) }).H(help)
+	return NewOpt(name, help, []uint{},
+		func(v interface{}) (interface{}, error) {
+			return ToUintSlice(v)
+		})
 }
 
-// Float64SliceOpt returns a []float64 Opt, which is equal to
-//   NewOpt(name, []float64{}, ToFloat64Slice).H(help)
+// Float64SliceOpt is the same NewOpt, but uses ToFloat64Slice
+// to parse the value as []float64.
 func Float64SliceOpt(name string, help string) Opt {
-	return NewOpt(name, []float64{}, func(v interface{}) (interface{}, error) { return ToFloat64Slice(v) }).H(help)
+	return NewOpt(name, help, []float64{},
+		func(v interface{}) (interface{}, error) {
+			return ToFloat64Slice(v)
+		})
 }
 
-// DurationSliceOpt returns a []time.Duration Opt, which is equal to
-//   NewOpt(name, []time.Duration{}, ToDurationSlice).H(help)
+// DurationSliceOpt is the same NewOpt, but uses ToDurationSlice
+// to parse the value as []time.Duration.
 func DurationSliceOpt(name string, help string) Opt {
-	return NewOpt(name, []time.Duration{}, func(v interface{}) (interface{}, error) { return ToDurationSlice(v) }).H(help)
+	return NewOpt(name, help, []time.Duration{},
+		func(v interface{}) (interface{}, error) {
+			return ToDurationSlice(v)
+		})
 }

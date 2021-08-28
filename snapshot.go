@@ -1,4 +1,4 @@
-// Copyright 2019 xgfone
+// Copyright 2021 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,42 +16,46 @@ package gconf
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
-	"reflect"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
 // LoadBackupFile loads configuration data from the backup file if exists,
 // then watches the change of the options and write them into the file.
-//
 // So you can use it as the local cache.
-func (c *Config) LoadBackupFile(filename string) error {
-	var data []byte
-	var ms map[string]interface{}
-
-	if _, err := os.Stat(filename); err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-	} else if data, err = ioutil.ReadFile(filename); err != nil {
-		return err
-	} else if err = json.Unmarshal(data, &ms); err != nil {
-		return err
+func (c *Config) LoadBackupFile(filename string) (err error) {
+	if filename == "" {
+		panic("the backup filename must not be empty")
 	}
 
-	c.snap.InitMap(ms)
-	c.LoadMap(ms, false)
-	go c.writeSnapshotIntoFile(filename)
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			c.errorf("fail to read the backup file '%s': %s", filename, err)
+			return
+		}
+	}
 
-	return nil
+	if len(data) > 0 {
+		ms := make(map[string]interface{}, 32)
+		if err = json.Unmarshal(data, &ms); err != nil {
+			c.errorf("the backup file '%s' format is error: %s", filename, err)
+			return
+		} else if err = c.LoadMap(ms); err != nil {
+			return
+		}
+	}
+
+	go c.writeSnapshotIntoFile(filename)
+	return
 }
 
 func (c *Config) writeSnapshotIntoFile(filename string) {
 	var lastgen uint64
 	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
 	for {
 		select {
 		case _, ok := <-c.exit:
@@ -59,27 +63,34 @@ func (c *Config) writeSnapshotIntoFile(filename string) {
 				return
 			}
 		case <-ticker.C:
-			gen, data, err := c.snap.getData()
-			if err != nil {
-				c.handleError(fmt.Errorf("[Config] snapshot marshal json: %s", err.Error()))
-			} else if gen == lastgen {
+			if gen := atomic.LoadUint64(&c.gen); gen <= lastgen {
 				continue
 			}
 
-			if err = ioutil.WriteFile(filename, data, os.ModePerm); err != nil {
-				c.handleError(fmt.Errorf("[Config] snapshot write file[%s]: %s", filename, err.Error()))
+			gen, snaps := c.Snapshot()
+			if gen <= lastgen || len(snaps) == 0 {
+				continue
+			}
+
+			data, err := json.Marshal(snaps)
+			if err != nil {
+				c.errorf("fail to marshal snapshot as json: %s", err)
+				continue
+			}
+
+			if err := ioutil.WriteFile(filename, data, os.ModePerm); err != nil {
+				c.errorf("cannot write snapshot into file '%s': %s", filename, err)
 			} else {
 				lastgen = gen
-				debugf("[Config] Write snapshot into file '%s'", filename)
 			}
 		}
 	}
 }
 
-// Snapshot returns the snapshot of the whole configuration options
-// excpet for the their default values.
+// Snapshot returns the snapshot of all the options and its generation
+// which will increase with 1 each time any option value is changed.
 //
-// Notice: the key includes the group name and the option name, for instance,
+// For example,
 //
 //   map[string]interface{} {
 //       "opt1": "value1",
@@ -88,59 +99,14 @@ func (c *Config) writeSnapshotIntoFile(filename string) {
 //       "group1.group2.opt4": "value4",
 //       // ...
 //   }
-func (c *Config) Snapshot() map[string]interface{} {
-	return c.snap.ToMap()
-}
-
-func newSnapshot(c *Config) *snapshot {
-	snap := &snapshot{conf: c, maps: make(map[string]interface{}, 64)}
-	c.Observe(snap.ChangeObserver)
-	return snap
-}
-
-type snapshot struct {
-	conf *Config
-	lock sync.RWMutex
-	maps map[string]interface{}
-	gen  uint64
-}
-
-func (s *snapshot) InitMap(ms map[string]interface{}) {
-	s.lock.Lock()
-	for k, v := range ms {
-		s.maps[k] = v
+//
+func (c *Config) Snapshot() (generation uint64, snap map[string]interface{}) {
+	generation = atomic.LoadUint64(&c.gen)
+	snap = make(map[string]interface{}, len(c.options))
+	for name, opt := range c.options {
+		if v := opt.GetValue(); v != nil {
+			snap[name] = v
+		}
 	}
-	s.lock.Unlock()
-}
-
-func (s *snapshot) ToMap() map[string]interface{} {
-	s.lock.RLock()
-	dst := make(map[string]interface{}, len(s.maps)*2)
-	for key, value := range s.maps {
-		dst[key] = value
-	}
-	s.lock.RUnlock()
-	return dst
-}
-
-func (s *snapshot) ChangeObserver(group, opt string, old, new interface{}) {
-	key := opt
-	if group != "" {
-		key = fmt.Sprintf("%s%s%s", group, s.conf.gsep, opt)
-	}
-
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	if value, ok := s.maps[key]; !ok || !reflect.DeepEqual(value, new) {
-		s.gen++
-		s.maps[key] = new
-	}
-}
-
-func (s *snapshot) getData() (uint64, []byte, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-	data, err := json.Marshal(s.maps)
-	return s.gen, data, err
+	return
 }

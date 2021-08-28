@@ -24,10 +24,9 @@ import (
 )
 
 var (
-	errStrEmtpy    = fmt.Errorf("the string is empty")
-	errNotString   = fmt.Errorf("the value is not string")
-	errStrNotEmtpy = fmt.Errorf("the string is not empty")
-
+	errStrEmtpy       = fmt.Errorf("the string is empty")
+	errNotString      = fmt.Errorf("the value is not string")
+	errStrNotEmtpy    = fmt.Errorf("the string is not empty")
 	errNotStringSlice = fmt.Errorf("the value is not []string")
 )
 
@@ -53,8 +52,7 @@ var (
 	URLValidator              = NewURLValidator()
 )
 
-// Validator is used to validate whether the value of the option in the group
-// is valid.
+// Validator is used to validate whether the option value is valid.
 type Validator func(value interface{}) error
 
 // Or returns a union validator, which returns nil only if a certain validator
