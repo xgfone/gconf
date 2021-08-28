@@ -25,6 +25,9 @@ func RegisterOpts(opts ...Opt) { Conf.RegisterOpts(opts...) }
 // UnregisterOpts is equal to Conf.UnregisterOpts(optNames...).
 func UnregisterOpts(optNames ...string) { Conf.UnregisterOpts(optNames...) }
 
+// SetVersion is equal to Conf.SetVersion(version).
+func SetVersion(version string) { Conf.SetVersion(version) }
+
 // LoadBackupFile is equal to Conf.LoadBackupFile().
 func LoadBackupFile(filename string) error {
 	return Conf.LoadBackupFile(filename)

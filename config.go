@@ -28,6 +28,9 @@ import (
 // ErrNoOpt represents an error that the option does not exist.
 var ErrNoOpt = errors.New("no option")
 
+// VersionOpt reprensents a version option.
+var VersionOpt = StrOpt("version", "Print the version and exit.").S("v").D("1.0.0")
+
 // Conf is the default global Config.
 var Conf = New()
 
@@ -100,6 +103,7 @@ func New() *Config {
 		exit:     make(chan struct{}),
 	}
 
+	c.Version = VersionOpt
 	c.AddDecoder("ini", NewIniDecoder())
 	c.AddDecoder("yaml", NewYamlDecoder())
 	c.AddDecoder("json", NewJSONDecoder())
@@ -122,6 +126,11 @@ func (c *Config) Stop() {
 	}
 }
 
+// SetVersion sets the version information.
+func (c *Config) SetVersion(version string) {
+	c.Version.Default = version
+}
+
 func (c *Config) fixOptionName(name string) string {
 	return strings.Replace(name, "-", "_", -1)
 }
@@ -135,7 +144,7 @@ func (c *Config) errorf(format string, args ...interface{}) {
 }
 
 // IgnoreNoOptError sets whether to ignore the error when updating the value
-// of the
+// of the option.
 func (c *Config) IgnoreNoOptError(ignore bool) { c.ignore = ignore }
 
 // Observe appends the observers to watch the change of all the option values.
