@@ -50,6 +50,11 @@ func (o *OptProxy) Set(value interface{}) (err error) {
 	return o.config.Set(o.option.opt.Name, value)
 }
 
+// OnUpdate resets the update callback function of the option.
+func (o *OptProxy) OnUpdate(callback func(old, new interface{})) {
+	o.option.opt.OnUpdate = callback
+}
+
 // IsCli resets the cli flag of the option.
 func (o *OptProxy) IsCli(cli bool) {
 	o.option.opt.IsCli = cli
@@ -199,6 +204,12 @@ func (o *OptProxyBool) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
 }
 
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyBool) OnUpdate(f func(old, new interface{})) *OptProxyBool {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
 // IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxyBool) IsCli(cli bool) *OptProxyBool {
 	o.OptProxy.IsCli(cli)
@@ -264,6 +275,12 @@ func (o *OptProxyInt) Get() int { return o.OptProxy.Get().(int) }
 // Set sets the value of the option to value.
 func (o *OptProxyInt) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyInt) OnUpdate(f func(old, new interface{})) *OptProxyInt {
+	o.OptProxy.OnUpdate(f)
+	return o
 }
 
 // IsCli resets the cli flag of the option and returns itself.
@@ -333,6 +350,12 @@ func (o *OptProxyInt32) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
 }
 
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyInt32) OnUpdate(f func(old, new interface{})) *OptProxyInt32 {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
 // IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxyInt32) IsCli(cli bool) *OptProxyInt32 {
 	o.OptProxy.IsCli(cli)
@@ -398,6 +421,12 @@ func (o *OptProxyInt64) Get() int64 { return o.OptProxy.Get().(int64) }
 // Set sets the value of the option to value.
 func (o *OptProxyInt64) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyInt64) OnUpdate(f func(old, new interface{})) *OptProxyInt64 {
+	o.OptProxy.OnUpdate(f)
+	return o
 }
 
 // IsCli resets the cli flag of the option and returns itself.
@@ -467,6 +496,12 @@ func (o *OptProxyUint) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
 }
 
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyUint) OnUpdate(f func(old, new interface{})) *OptProxyUint {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
 // IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxyUint) IsCli(cli bool) *OptProxyUint {
 	o.OptProxy.IsCli(cli)
@@ -532,6 +567,12 @@ func (o *OptProxyUint32) Get() uint32 { return o.OptProxy.Get().(uint32) }
 // Set sets the value of the option to value.
 func (o *OptProxyUint32) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyUint32) OnUpdate(f func(old, new interface{})) *OptProxyUint32 {
+	o.OptProxy.OnUpdate(f)
+	return o
 }
 
 // IsCli resets the cli flag of the option and returns itself.
@@ -601,6 +642,12 @@ func (o *OptProxyUint64) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
 }
 
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyUint64) OnUpdate(f func(old, new interface{})) *OptProxyUint64 {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
 // IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxyUint64) IsCli(cli bool) *OptProxyUint64 {
 	o.OptProxy.IsCli(cli)
@@ -666,6 +713,12 @@ func (o *OptProxyFloat64) Get() float64 { return o.OptProxy.Get().(float64) }
 // Set sets the value of the option to value.
 func (o *OptProxyFloat64) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyFloat64) OnUpdate(f func(old, new interface{})) *OptProxyFloat64 {
+	o.OptProxy.OnUpdate(f)
+	return o
 }
 
 // IsCli resets the cli flag of the option and returns itself.
@@ -735,6 +788,12 @@ func (o *OptProxyString) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
 }
 
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyString) OnUpdate(f func(old, new interface{})) *OptProxyString {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
 // IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxyString) IsCli(cli bool) *OptProxyString {
 	o.OptProxy.IsCli(cli)
@@ -800,6 +859,12 @@ func (o *OptProxyDuration) Get() time.Duration { return o.OptProxy.Get().(time.D
 // Set sets the value of the option to value.
 func (o *OptProxyDuration) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyDuration) OnUpdate(f func(old, new interface{})) *OptProxyDuration {
+	o.OptProxy.OnUpdate(f)
+	return o
 }
 
 // IsCli resets the cli flag of the option and returns itself.
@@ -869,6 +934,12 @@ func (o *OptProxyTime) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
 }
 
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyTime) OnUpdate(f func(old, new interface{})) *OptProxyTime {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
 // IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxyTime) IsCli(cli bool) *OptProxyTime {
 	o.OptProxy.IsCli(cli)
@@ -934,6 +1005,12 @@ func (o *OptProxyStringSlice) Get() []string { return o.OptProxy.Get().([]string
 // Set sets the value of the option to value.
 func (o *OptProxyStringSlice) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyStringSlice) OnUpdate(f func(old, new interface{})) *OptProxyStringSlice {
+	o.OptProxy.OnUpdate(f)
+	return o
 }
 
 // IsCli resets the cli flag of the option and returns itself.
@@ -1003,6 +1080,12 @@ func (o *OptProxyIntSlice) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
 }
 
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyIntSlice) OnUpdate(f func(old, new interface{})) *OptProxyIntSlice {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
 // IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxyIntSlice) IsCli(cli bool) *OptProxyIntSlice {
 	o.OptProxy.IsCli(cli)
@@ -1068,6 +1151,12 @@ func (o *OptProxyUintSlice) Get() []uint { return o.OptProxy.Get().([]uint) }
 // Set sets the value of the option to value.
 func (o *OptProxyUintSlice) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyUintSlice) OnUpdate(f func(old, new interface{})) *OptProxyUintSlice {
+	o.OptProxy.OnUpdate(f)
+	return o
 }
 
 // IsCli resets the cli flag of the option and returns itself.
@@ -1137,6 +1226,12 @@ func (o *OptProxyFloat64Slice) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
 }
 
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyFloat64Slice) OnUpdate(f func(old, new interface{})) *OptProxyFloat64Slice {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
 // IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxyFloat64Slice) IsCli(cli bool) *OptProxyFloat64Slice {
 	o.OptProxy.IsCli(cli)
@@ -1202,6 +1297,12 @@ func (o *OptProxyDurationSlice) Get() []time.Duration { return o.OptProxy.Get().
 // Set sets the value of the option to value.
 func (o *OptProxyDurationSlice) Set(value interface{}) (err error) {
 	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyDurationSlice) OnUpdate(f func(old, new interface{})) *OptProxyDurationSlice {
+	o.OptProxy.OnUpdate(f)
+	return o
 }
 
 // IsCli resets the cli flag of the option and returns itself.

@@ -15,6 +15,8 @@
 package gconf
 
 import (
+	"bytes"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -269,5 +271,21 @@ func TestOptGroupProxy(t *testing.T) {
 		default:
 			t.Errorf("unexpected option '%s'", opt.Name)
 		}
+	}
+}
+
+func TestOptProxyOnUpdate(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+
+	config := New()
+	opt := config.NewString("opt", "abc", "help")
+	opt.OnUpdate(func(old, new interface{}) {
+		fmt.Fprintf(buf, "%s: %v -> %v", opt.Name(), old, new)
+	})
+
+	opt.Set("xyz")
+	expect := `opt: abc -> xyz`
+	if s := buf.String(); s != expect {
+		t.Errorf("expect '%s', but got '%s'", expect, s)
 	}
 }

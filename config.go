@@ -59,7 +59,7 @@ func (o *option) Set(c *Config, newvalue interface{}) {
 	if oldvalue == nil {
 		oldvalue = o.opt.Default
 	}
-	c.observe(o.opt.Name, oldvalue, newvalue)
+	c.observe(o, oldvalue, newvalue)
 }
 
 // Observer is used to observe the change of the option value.
@@ -152,11 +152,14 @@ func (c *Config) Observe(observers ...Observer) {
 	c.observers = append(c.observers, observers...)
 }
 
-func (c *Config) observe(name string, old, new interface{}) {
+func (c *Config) observe(o *option, old, new interface{}) {
 	if !reflect.DeepEqual(old, new) {
 		atomic.AddUint64(&c.gen, 1)
 		for _, observe := range c.observers {
-			observe(name, old, new)
+			observe(o.opt.Name, old, new)
+		}
+		if o.opt.OnUpdate != nil {
+			o.opt.OnUpdate(old, new)
 		}
 	}
 }

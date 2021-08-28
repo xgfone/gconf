@@ -66,6 +66,9 @@ type Opt struct {
 	//
 	// Optional?
 	Validators []Validator
+
+	// OnUpdate is called when the option value is updated.
+	OnUpdate func(oldValue, newValue interface{})
 }
 
 func (o Opt) check() {
@@ -164,6 +167,12 @@ func (o Opt) P(parser Parser) Opt {
 			o.Default = value
 		}
 	}
+	return o
+}
+
+// U returns a new Opt with the update callback function on the current option.
+func (o Opt) U(callback func(oldValue, newValue interface{})) Opt {
+	o.OnUpdate = callback
 	return o
 }
 
