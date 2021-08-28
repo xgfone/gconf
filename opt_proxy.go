@@ -24,6 +24,11 @@ type OptProxy struct {
 	option *option
 }
 
+// NewOptProxy registers the option into c and returns a proxy of opt.
+func NewOptProxy(c *Config, opt Opt) OptProxy {
+	return OptProxy{option: c.registerOpt(opt), config: c}
+}
+
 // NewOptProxy registers the option and returns a new proxy of the option.
 func (c *Config) NewOptProxy(opt Opt) OptProxy {
 	return OptProxy{option: c.registerOpt(opt), config: c}
