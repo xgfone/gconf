@@ -77,6 +77,9 @@ func (g *OptGroup) RegisterOpts(opts ...Opt) {
 	_opts := make([]Opt, len(opts))
 	for i, opt := range opts {
 		opt.Name = g.prefix + opt.Name
+		for i, alias := range opt.Aliases {
+			opt.Aliases[i] = g.prefix + alias
+		}
 		_opts[i] = opt
 	}
 	g.config.RegisterOpts(_opts...)
