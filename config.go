@@ -483,6 +483,10 @@ func (c *Config) Get(name string) (value interface{}) {
 	name = c.fixOptionName(name)
 	if opt, ok := c.options[name]; ok {
 		value = opt.Get()
+	} else if alias, ok := c.aliases[name]; ok {
+		if opt, ok = c.options[alias]; ok {
+			value = opt.Get()
+		}
 	}
 	return
 }
