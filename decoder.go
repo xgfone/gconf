@@ -27,6 +27,11 @@ import (
 // Decoder is used to decode the configuration data.
 type Decoder func(src []byte, dst map[string]interface{}) error
 
+// AddDecoder is equal to Conf.AddDecoder(_type, decoder).
+func AddDecoder(_type string, decoder Decoder) {
+	Conf.AddDecoder(_type, decoder)
+}
+
 // AddDecoder adds a decoder, which will override it if it has been added.s
 func (c *Config) AddDecoder(_type string, decoder Decoder) {
 	c.decoders[strings.ToLower(_type)] = decoder
