@@ -38,8 +38,10 @@ func Snapshot() (generation uint64, snap map[string]interface{}) {
 	return Conf.Snapshot()
 }
 
-// LoadMap is equal to Conf.LoadMap(options).
-func LoadMap(options map[string]interface{}) error { return Conf.LoadMap(options) }
+// LoadMap is equal to Conf.LoadMap(options, force...).
+func LoadMap(options map[string]interface{}, force ...bool) error {
+	return Conf.LoadMap(options)
+}
 
 // Set is equal to Conf.Set(name, value).
 func Set(name string, value interface{}) error { return Conf.Set(name, value) }

@@ -143,8 +143,8 @@ func (c *Config) errorf(format string, args ...interface{}) {
 	}
 }
 
-// IgnoreNoOptError sets whether to ignore the error when updating the value
-// of the option.
+// IgnoreNoOptError sets whether to ignore the error NoOptError
+// when updating the value of the option.
 func (c *Config) IgnoreNoOptError(ignore bool) { c.ignore = ignore }
 
 // Observe appends the observers to watch the change of all the option values.
