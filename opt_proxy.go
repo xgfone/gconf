@@ -50,43 +50,43 @@ func (o *OptProxy) Set(value interface{}) (err error) {
 	return o.config.Set(o.option.opt.Name, value)
 }
 
-// OnUpdate resets the update callback function of the option and returns self.
+// OnUpdate resets the update callback function of the option and returns itself.
 func (o *OptProxy) OnUpdate(callback func(old, new interface{})) *OptProxy {
 	o.option.opt.OnUpdate = callback
 	return o
 }
 
-// IsCli resets the cli flag of the option and returns self.
+// IsCli resets the cli flag of the option and returns itself.
 func (o *OptProxy) IsCli(cli bool) *OptProxy {
 	o.option.opt.IsCli = cli
 	return o
 }
 
-// Aliases appends the aliases of the option and returns self.
+// Aliases appends the aliases of the option and returns itself.
 func (o *OptProxy) Aliases(aliases ...string) *OptProxy {
 	o.option.opt = o.option.opt.As(aliases...)
 	return o
 }
 
-// Short resets the short name of the option and returns self.
+// Short resets the short name of the option and returns itself.
 func (o *OptProxy) Short(short string) *OptProxy {
 	o.option.opt = o.option.opt.S(short)
 	return o
 }
 
-// Validators appends the validators of the option and returns self.
+// Validators appends the validators of the option and returns itself.
 func (o *OptProxy) Validators(validators ...Validator) *OptProxy {
 	o.option.opt = o.option.opt.V(validators...)
 	return o
 }
 
-// Default resets the default value of the option and returns self.
+// Default resets the default value of the option and returns itself.
 func (o *OptProxy) Default(_default interface{}) *OptProxy {
 	o.option.opt = o.option.opt.D(_default)
 	return o
 }
 
-// Parser resets the parser of the option and returns self.
+// Parser resets the parser of the option and returns itself.
 func (o *OptProxy) Parser(parser Parser) *OptProxy {
 	o.option.opt = o.option.opt.P(parser)
 	return o
