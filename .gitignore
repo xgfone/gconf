@@ -33,3 +33,6 @@ test_*
 
 # log
 *.log
+
+# Unix hidden files
+.*
