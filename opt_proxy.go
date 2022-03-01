@@ -64,7 +64,9 @@ func (o *OptProxy) IsCli(cli bool) *OptProxy {
 
 // Aliases appends the aliases of the option and returns itself.
 func (o *OptProxy) Aliases(aliases ...string) *OptProxy {
-	o.option.opt = o.option.opt.As(aliases...)
+	for _, alias := range aliases {
+		o.config.setOptAlias(alias, o.option.opt.Name)
+	}
 	return o
 }
 

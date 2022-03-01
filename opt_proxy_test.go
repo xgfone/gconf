@@ -289,3 +289,19 @@ func TestOptProxyOnUpdate(t *testing.T) {
 		t.Errorf("expect '%s', but got '%s'", expect, s)
 	}
 }
+
+func TestOptProxyAliases(t *testing.T) {
+	config := New()
+	opt := config.NewString("newopt", "abc", "help").Aliases("oldopt")
+
+	if v := opt.Get(); v != "abc" {
+		t.Errorf("expect '%s', but got '%s'", "abc", v)
+	}
+
+	err := config.Set("oldopt", "xyz")
+	if err != nil {
+		t.Error(err)
+	} else if v := opt.Get(); v != "xyz" {
+		t.Errorf("expect '%s', but got '%s'", "xyz", v)
+	}
+}
