@@ -505,6 +505,9 @@ func (c *Config) GetBool(name string) bool { return c.Must(name).(bool) }
 // GetInt returns the value of the option named name as int.
 func (c *Config) GetInt(name string) int { return c.Must(name).(int) }
 
+// GetInt16 returns the value of the option named name as int16.
+func (c *Config) GetInt16(name string) int16 { return c.Must(name).(int16) }
+
 // GetInt32 returns the value of the option named name as int32.
 func (c *Config) GetInt32(name string) int32 { return c.Must(name).(int32) }
 
@@ -513,6 +516,9 @@ func (c *Config) GetInt64(name string) int64 { return c.Must(name).(int64) }
 
 // GetUint returns the value of the option named name as uint.
 func (c *Config) GetUint(name string) uint { return c.Must(name).(uint) }
+
+// GetUint16 returns the value of the option named name as uint16.
+func (c *Config) GetUint16(name string) uint16 { return c.Must(name).(uint16) }
 
 // GetUint32 returns the value of the option named name as uint32.
 func (c *Config) GetUint32(name string) uint32 { return c.Must(name).(uint32) }

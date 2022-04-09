@@ -64,6 +64,9 @@ func GetBool(name string) bool { return Conf.GetBool(name) }
 // GetInt is equal to Conf.GetInt(name).
 func GetInt(name string) int { return Conf.GetInt(name) }
 
+// GetInt16 is equal to Conf.GetInt16(name).
+func GetInt16(name string) int16 { return Conf.GetInt16(name) }
+
 // GetInt32 is equal to Conf.GetInt32(name).
 func GetInt32(name string) int32 { return Conf.GetInt32(name) }
 
@@ -72,6 +75,9 @@ func GetInt64(name string) int64 { return Conf.GetInt64(name) }
 
 // GetUint is equal to Conf.GetUint(name).
 func GetUint(name string) uint { return Conf.GetUint(name) }
+
+// GetUint16 is equal to Conf.GetUint16(name).
+func GetUint16(name string) uint16 { return Conf.GetUint16(name) }
 
 // GetUint32 is equal to Conf.GetUint32(name).
 func GetUint32(name string) uint32 { return Conf.GetUint32(name) }

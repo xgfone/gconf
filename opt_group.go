@@ -117,6 +117,9 @@ func (g *OptGroup) GetBool(name string) bool { return g.Must(name).(bool) }
 // GetInt returns the value of the option named name as int.
 func (g *OptGroup) GetInt(name string) int { return g.Must(name).(int) }
 
+// GetInt16 returns the value of the option named name as int16.
+func (g *OptGroup) GetInt16(name string) int16 { return g.Must(name).(int16) }
+
 // GetInt32 returns the value of the option named name as int32.
 func (g *OptGroup) GetInt32(name string) int32 { return g.Must(name).(int32) }
 
@@ -125,6 +128,9 @@ func (g *OptGroup) GetInt64(name string) int64 { return g.Must(name).(int64) }
 
 // GetUint returns the value of the option named name as uint.
 func (g *OptGroup) GetUint(name string) uint { return g.Must(name).(uint) }
+
+// GetUint16 returns the value of the option named name as uint16.
+func (g *OptGroup) GetUint16(name string) uint16 { return g.Must(name).(uint16) }
 
 // GetUint32 returns the value of the option named name as uint32.
 func (g *OptGroup) GetUint32(name string) uint32 { return g.Must(name).(uint32) }

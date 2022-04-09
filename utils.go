@@ -29,9 +29,11 @@ import (
 var (
 	ToBool     = cast.ToBool     // func(interface{}) (bool, error)
 	ToInt      = cast.ToInt      // func(interface{}) (int, error)
+	ToInt16    = cast.ToInt16    // func(interface{}) (int16, error)
 	ToInt32    = cast.ToInt32    // func(interface{}) (int32, error)
 	ToInt64    = cast.ToInt64    // func(interface{}) (int64, error)
 	ToUint     = cast.ToUint     // func(interface{}) (uint, error)
+	ToUint16   = cast.ToUint16   // func(interface{}) (uint16, error)
 	ToUint32   = cast.ToUint32   // func(interface{}) (uint32, error)
 	ToUint64   = cast.ToUint64   // func(interface{}) (uint64, error)
 	ToFloat64  = cast.ToFloat64  // func(interface{}) (float64, error)

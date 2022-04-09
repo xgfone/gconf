@@ -100,6 +100,9 @@ func (o OptProxy) ToBool() *OptProxyBool { return &OptProxyBool{o} }
 // ToInt converts option from OptProxy to OptProxyInt.
 func (o OptProxy) ToInt() *OptProxyInt { return &OptProxyInt{o} }
 
+// ToInt16 converts option from OptProxy to OptProxyInt16.
+func (o OptProxy) ToInt16() *OptProxyInt16 { return &OptProxyInt16{o} }
+
 // ToInt32 converts option from OptProxy to OptProxyInt32.
 func (o OptProxy) ToInt32() *OptProxyInt32 { return &OptProxyInt32{o} }
 
@@ -108,6 +111,9 @@ func (o OptProxy) ToInt64() *OptProxyInt64 { return &OptProxyInt64{o} }
 
 // ToUint converts option from OptProxy to OptProxyUint.
 func (o OptProxy) ToUint() *OptProxyUint { return &OptProxyUint{o} }
+
+// ToUint16 converts option from OptProxy to OptProxyUint16.
+func (o OptProxy) ToUint16() *OptProxyUint16 { return &OptProxyUint16{o} }
 
 // ToUint32 converts option from OptProxy to OptProxyUint32.
 func (o OptProxy) ToUint32() *OptProxyUint32 { return &OptProxyUint32{o} }
@@ -160,6 +166,11 @@ func (g *OptGroup) NewInt(name string, _default int, help string) *OptProxyInt {
 	return g.config.NewInt(g.prefix+name, _default, help)
 }
 
+// NewInt16 creates and registers a int16 option, then returns its proxy.
+func (g *OptGroup) NewInt16(name string, _default int16, help string) *OptProxyInt16 {
+	return g.config.NewInt16(g.prefix+name, _default, help)
+}
+
 // NewInt32 creates and registers a int32 option, then returns its proxy.
 func (g *OptGroup) NewInt32(name string, _default int32, help string) *OptProxyInt32 {
 	return g.config.NewInt32(g.prefix+name, _default, help)
@@ -173,6 +184,11 @@ func (g *OptGroup) NewInt64(name string, _default int64, help string) *OptProxyI
 // NewUint is equal to Conf.NewUint(name, _default, help).
 func (g *OptGroup) NewUint(name string, _default uint, help string) *OptProxyUint {
 	return g.config.NewUint(g.prefix+name, _default, help)
+}
+
+// NewUint16 creates and registers a uint16 option, then returns its proxy.
+func (g *OptGroup) NewUint16(name string, _default uint16, help string) *OptProxyUint16 {
+	return g.config.NewUint16(g.prefix+name, _default, help)
 }
 
 // NewUint32 creates and registers a uint32 option, then returns its proxy.
@@ -372,6 +388,79 @@ func (o *OptProxyInt) Default(_default interface{}) *OptProxyInt {
 
 // Parser resets the parser of the option and returns itself.
 func (o *OptProxyInt) Parser(parser Parser) *OptProxyInt {
+	o.OptProxy.Parser(parser)
+	return o
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+// OptProxyInt16 is a proxy for the int16 option registered into Config,
+// which can be used to modify the attributions of the option and
+// update its value directly.
+type OptProxyInt16 struct{ OptProxy }
+
+// NewInt16 is equal to Conf.NewInt16(name, _default, help).
+func NewInt16(name string, _default int16, help string) *OptProxyInt16 {
+	return Conf.NewInt16(name, _default, help)
+}
+
+// NewInt16 creates and registers a int16 option, then returns its proxy.
+func (c *Config) NewInt16(name string, _default int16, help string) *OptProxyInt16 {
+	return &OptProxyInt16{c.NewOptProxy(Int16Opt(name, help).D(_default))}
+}
+
+// Name returns the name of the option.
+func (o *OptProxyInt16) Name() string { return o.OptProxy.Name() }
+
+// Opt returns the registered and proxied option.
+func (o *OptProxyInt16) Opt() Opt { return o.option.opt }
+
+// Get returns the value of the option.
+func (o *OptProxyInt16) Get() int16 { return o.OptProxy.Get().(int16) }
+
+// Set sets the value of the option to value.
+func (o *OptProxyInt16) Set(value interface{}) (err error) {
+	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyInt16) OnUpdate(f func(old, new interface{})) *OptProxyInt16 {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
+// IsCli resets the cli flag of the option and returns itself.
+func (o *OptProxyInt16) IsCli(cli bool) *OptProxyInt16 {
+	o.OptProxy.IsCli(cli)
+	return o
+}
+
+// Aliases appends the aliases of the option and returns itself.
+func (o *OptProxyInt16) Aliases(aliases ...string) *OptProxyInt16 {
+	o.OptProxy.Aliases(aliases...)
+	return o
+}
+
+// Short resets the short name of the option and returns itself.
+func (o *OptProxyInt16) Short(short string) *OptProxyInt16 {
+	o.OptProxy.Short(short)
+	return o
+}
+
+// Validators appends the validators of the option and returns itself.
+func (o *OptProxyInt16) Validators(validators ...Validator) *OptProxyInt16 {
+	o.OptProxy.Validators(validators...)
+	return o
+}
+
+// Default resets the default value of the option and returns itself.
+func (o *OptProxyInt16) Default(_default interface{}) *OptProxyInt16 {
+	o.OptProxy.Default(_default)
+	return o
+}
+
+// Parser resets the parser of the option and returns itself.
+func (o *OptProxyInt16) Parser(parser Parser) *OptProxyInt16 {
 	o.OptProxy.Parser(parser)
 	return o
 }
@@ -591,6 +680,79 @@ func (o *OptProxyUint) Default(_default interface{}) *OptProxyUint {
 
 // Parser resets the parser of the option and returns itself.
 func (o *OptProxyUint) Parser(parser Parser) *OptProxyUint {
+	o.OptProxy.Parser(parser)
+	return o
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+// OptProxyUint16 is a proxy for the uint16 option registered into Config,
+// which can be used to modify the attributions of the option and
+// update its value directly.
+type OptProxyUint16 struct{ OptProxy }
+
+// NewUint16 is equal to Conf.NewUint16(name, _default, help).
+func NewUint16(name string, _default uint16, help string) *OptProxyUint16 {
+	return Conf.NewUint16(name, _default, help)
+}
+
+// NewUint16 creates and registers a uint16 option, then returns its proxy.
+func (c *Config) NewUint16(name string, _default uint16, help string) *OptProxyUint16 {
+	return &OptProxyUint16{c.NewOptProxy(Uint16Opt(name, help).D(_default))}
+}
+
+// Name returns the name of the option.
+func (o *OptProxyUint16) Name() string { return o.OptProxy.Name() }
+
+// Opt returns the registered and proxied option.
+func (o *OptProxyUint16) Opt() Opt { return o.option.opt }
+
+// Get returns the value of the option.
+func (o *OptProxyUint16) Get() uint16 { return o.OptProxy.Get().(uint16) }
+
+// Set sets the value of the option to value.
+func (o *OptProxyUint16) Set(value interface{}) (err error) {
+	return o.OptProxy.Set(value)
+}
+
+// OnUpdate resets the update callback of the option and returns itself.
+func (o *OptProxyUint16) OnUpdate(f func(old, new interface{})) *OptProxyUint16 {
+	o.OptProxy.OnUpdate(f)
+	return o
+}
+
+// IsCli resets the cli flag of the option and returns itself.
+func (o *OptProxyUint16) IsCli(cli bool) *OptProxyUint16 {
+	o.OptProxy.IsCli(cli)
+	return o
+}
+
+// Aliases appends the aliases of the option and returns itself.
+func (o *OptProxyUint16) Aliases(aliases ...string) *OptProxyUint16 {
+	o.OptProxy.Aliases(aliases...)
+	return o
+}
+
+// Short resets the short name of the option and returns itself.
+func (o *OptProxyUint16) Short(short string) *OptProxyUint16 {
+	o.OptProxy.Short(short)
+	return o
+}
+
+// Validators appends the validators of the option and returns itself.
+func (o *OptProxyUint16) Validators(validators ...Validator) *OptProxyUint16 {
+	o.OptProxy.Validators(validators...)
+	return o
+}
+
+// Default resets the default value of the option and returns itself.
+func (o *OptProxyUint16) Default(_default interface{}) *OptProxyUint16 {
+	o.OptProxy.Default(_default)
+	return o
+}
+
+// Parser resets the parser of the option and returns itself.
+func (o *OptProxyUint16) Parser(parser Parser) *OptProxyUint16 {
 	o.OptProxy.Parser(parser)
 	return o
 }

@@ -195,6 +195,14 @@ func IntOpt(name string, help string) Opt {
 	})
 }
 
+// Int16Opt is the same NewOpt, but uses ToInt16 to parse the value as int16.
+func Int16Opt(name string, help string) Opt {
+	return NewOpt(name, help, int16(0),
+		func(v interface{}) (interface{}, error) {
+			return ToInt16(v)
+		})
+}
+
 // Int32Opt is the same NewOpt, but uses ToInt32 to parse the value as int32.
 func Int32Opt(name string, help string) Opt {
 	return NewOpt(name, help, int32(0),
@@ -216,6 +224,14 @@ func UintOpt(name string, help string) Opt {
 	return NewOpt(name, help, uint(0),
 		func(v interface{}) (interface{}, error) {
 			return ToUint(v)
+		})
+}
+
+// Uint16Opt is the same NewOpt, but uses ToUint16 to parse the value as uint16.
+func Uint16Opt(name string, help string) Opt {
+	return NewOpt(name, help, uint16(0),
+		func(v interface{}) (interface{}, error) {
+			return ToUint16(v)
 		})
 }
 
