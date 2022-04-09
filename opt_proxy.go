@@ -94,6 +94,54 @@ func (o *OptProxy) Parser(parser Parser) *OptProxy {
 	return o
 }
 
+// ToBool converts option from OptProxy to OptProxyBool.
+func (o OptProxy) ToBool() *OptProxyBool { return &OptProxyBool{o} }
+
+// ToInt converts option from OptProxy to OptProxyInt.
+func (o OptProxy) ToInt() *OptProxyInt { return &OptProxyInt{o} }
+
+// ToInt32 converts option from OptProxy to OptProxyInt32.
+func (o OptProxy) ToInt32() *OptProxyInt32 { return &OptProxyInt32{o} }
+
+// ToInt64 converts option from OptProxy to OptProxyInt64.
+func (o OptProxy) ToInt64() *OptProxyInt64 { return &OptProxyInt64{o} }
+
+// ToUint converts option from OptProxy to OptProxyUint.
+func (o OptProxy) ToUint() *OptProxyUint { return &OptProxyUint{o} }
+
+// ToUint32 converts option from OptProxy to OptProxyUint32.
+func (o OptProxy) ToUint32() *OptProxyUint32 { return &OptProxyUint32{o} }
+
+// ToUint64 converts option from OptProxy to OptProxyUint64.
+func (o OptProxy) ToUint64() *OptProxyUint64 { return &OptProxyUint64{o} }
+
+// ToFloat64 converts option from OptProxy to OptProxyFloat64.
+func (o OptProxy) ToFloat64() *OptProxyFloat64 { return &OptProxyFloat64{o} }
+
+// ToString converts option from OptProxy to OptProxyString.
+func (o OptProxy) ToString() *OptProxyString { return &OptProxyString{o} }
+
+// ToDuration converts option from OptProxy to OptProxyDuration.
+func (o OptProxy) ToDuration() *OptProxyDuration { return &OptProxyDuration{o} }
+
+// ToTime converts option from OptProxy to OptProxyTime.
+func (o OptProxy) ToTime() *OptProxyTime { return &OptProxyTime{o} }
+
+// ToIntSlice converts option from OptProxy to OptProxyIntSlice.
+func (o OptProxy) ToIntSlice() *OptProxyIntSlice { return &OptProxyIntSlice{o} }
+
+// ToUintSlice converts option from OptProxy to OptProxyUintSlice.
+func (o OptProxy) ToUintSlice() *OptProxyUintSlice { return &OptProxyUintSlice{o} }
+
+// ToFloat64Slice converts option from OptProxy to OptProxyFloat64Slice.
+func (o OptProxy) ToFloat64Slice() *OptProxyFloat64Slice { return &OptProxyFloat64Slice{o} }
+
+// ToStringSlice converts option from OptProxy to OptProxyStringSlice.
+func (o OptProxy) ToStringSlice() *OptProxyStringSlice { return &OptProxyStringSlice{o} }
+
+// ToDurationSlice converts option from OptProxy to OptProxyDurationSlice.
+func (o OptProxy) ToDurationSlice() *OptProxyDurationSlice { return &OptProxyDurationSlice{o} }
+
 ////////////////////////////////////////////////////////////////////////////
 
 // NewOptProxy registers the option and returns a new proxy of the option.
