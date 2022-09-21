@@ -1,4 +1,4 @@
-// Copyright 2021 xgfone
+// Copyright 2021~2022 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,6 +47,12 @@ func TestOptGroup(t *testing.T) {
 
 	g2 := g1.Group("group2")
 	g2.RegisterOpts(StrOpt("string", "string"))
+
+	if opts := g2.GetAllOpts(); len(opts) != 1 {
+		t.Errorf("expect 1 opt, but got %d", len(opts))
+	} else if opts[0].Name != "group1.group2.string" {
+		t.Errorf("expect '%s', but got '%s'", "group1.group2.string", opts[0].Name)
+	}
 
 	registeredOpts := GetAllOpts()
 	if expect := len(opts) + 1; expect != len(registeredOpts) {

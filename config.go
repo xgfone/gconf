@@ -1,4 +1,4 @@
-// Copyright 2021 xgfone
+// Copyright 2021~2022 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -290,12 +290,13 @@ func (c *Config) GetOpt(name string) (opt Opt, ok bool) {
 }
 
 // GetAllOpts returns all the registered options.
-func (c *Config) GetAllOpts() []Opt {
-	opts := make([]Opt, len(c.options))
-	var index int
+func (c *Config) GetAllOpts() []Opt { return c.getOpts(func(Opt) bool { return true }) }
+func (c *Config) getOpts(filter func(Opt) bool) []Opt {
+	opts := make([]Opt, 0, len(c.options))
 	for _, opt := range c.options {
-		opts[index] = opt.opt
-		index++
+		if filter(opt.opt) {
+			opts = append(opts, opt.opt)
+		}
 	}
 	sort.Slice(opts, func(i, j int) bool { return opts[i].Name < opts[j].Name })
 	return opts

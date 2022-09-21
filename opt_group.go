@@ -1,4 +1,4 @@
-// Copyright 2021 xgfone
+// Copyright 2021~2022 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,6 +68,30 @@ func (g *OptGroup) SelfBool(help string) *OptProxyBool {
 		panic("the group name is empty")
 	}
 	return g.config.NewBool(strings.TrimSuffix(g.prefix, g.config.gsep), false, help)
+}
+
+// GetOpt returns the registered option by the name from the current group.
+func (g *OptGroup) GetOpt(name string) (opt Opt, ok bool) {
+	return g.config.GetOpt(g.prefix + name)
+}
+
+// HasOpt reports whether the option named name has been registered into the group.
+func (g *OptGroup) HasOpt(name string) (yes bool) {
+	return g.config.HasOpt(g.prefix + name)
+}
+
+// OptIsSet reports whether the option named name in the group is set.
+//
+// Return false if the option does not exist.
+func (g *OptGroup) OptIsSet(name string) (yes bool) {
+	return g.config.OptIsSet(g.prefix + name)
+}
+
+// GetAllOpts returns all the registered options in the group.
+func (g *OptGroup) GetAllOpts() []Opt {
+	return g.config.getOpts(func(o Opt) bool {
+		return strings.HasPrefix(o.Name, g.prefix)
+	})
 }
 
 // RegisterOpts registers a set of options.
