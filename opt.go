@@ -19,6 +19,12 @@ import (
 	"time"
 )
 
+type optsT []Opt
+
+func (a optsT) Len() int           { return len(a) }
+func (a optsT) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a optsT) Less(i, j int) bool { return a[i].Name < a[j].Name }
+
 // Parser is used to parse the option value intput.
 type Parser func(input interface{}) (output interface{}, err error)
 

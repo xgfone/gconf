@@ -298,7 +298,7 @@ func (c *Config) getOpts(filter func(Opt) bool) []Opt {
 			opts = append(opts, opt.opt)
 		}
 	}
-	sort.Slice(opts, func(i, j int) bool { return opts[i].Name < opts[j].Name })
+	sort.Sort(optsT(opts))
 	return opts
 }
 
