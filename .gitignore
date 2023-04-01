@@ -19,7 +19,6 @@ _cgo_export.*
 
 _testmain.go
 
-.*
 *.exe
 *.test
 *.prof
@@ -34,5 +33,16 @@ test_*
 # log
 *.log
 
-# Unix hidden files
+vendor/
+
+# VS Code
+.vscode/
+debug
+debug_test
+
+# Mac
+.DS_Store
+
+# hidden files
 .*
+_*

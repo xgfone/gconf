@@ -1,6 +1,6 @@
 # Go Config [![Build Status](https://github.com/xgfone/gconf/actions/workflows/go.yml/badge.svg)](https://github.com/xgfone/gconf/actions/workflows/go.yml) [![GoDoc](https://pkg.go.dev/badge/github.com/xgfone/gconf)](https://pkg.go.dev/github.com/xgfone/gconf/v6) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/gconf/master/LICENSE)
 
-An extensible and powerful go configuration manager supporting `Go1.13+`, which is inspired by [oslo.config](https://github.com/openstack/oslo.config), [viper](https://github.com/spf13/viper) and [github.com/micro/go-micro/config](https://github.com/micro/go-micro/tree/master/config).
+An extensible and powerful go configuration manager supporting `Go1.18+`, which is inspired by [oslo.config](https://github.com/openstack/oslo.config), [viper](https://github.com/spf13/viper) and [github.com/micro/go-micro/config](https://github.com/micro/go-micro/tree/master/config).
 
 
 ## Install

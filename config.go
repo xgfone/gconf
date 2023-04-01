@@ -1,4 +1,4 @@
-// Copyright 2021~2022 xgfone
+// Copyright 2021~2023 xgfone
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,12 +34,8 @@ var VersionOpt = StrOpt("version", "Print the version and exit.").S("v").D("1.0.
 // Conf is the default global Config.
 var Conf = New()
 
-type atomicValue atomic.Value
-
-func (v *atomicValue) Load() interface{} { return (*atomic.Value)(v).Load() }
-
 type option struct {
-	value atomicValue
+	value atomic.Value
 	opt   Opt
 }
 
