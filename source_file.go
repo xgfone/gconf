@@ -16,7 +16,7 @@ package gconf
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -68,7 +68,7 @@ func (f fileSource) Read() (DataSet, error) {
 	}
 	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return DataSet{Source: f.id, Format: f.format}, err
 	}
