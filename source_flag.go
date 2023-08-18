@@ -68,9 +68,7 @@ func PrintFlagUsage(flagSet *flag.FlagSet) {
 // Notice: for the slice option, it maybe occur many times, and they are
 // combined with the comma as the string representation of slice. For example,
 //
-//   $APP --slice-opt v1  --slice-opt v2  --slice-opt v3
-//   $APP --slice-opt v1,v2  --slice-opt v3
-//   $APP --slice-opt v1,v2,v3
+//	$APP --slice-opt v1  --slice-opt v2  --slice-opt v3
 //
 // They are equivalent.
 func AddOptFlag(c *Config, flagSet ...*flag.FlagSet) {
@@ -201,9 +199,16 @@ func (f flagSource) Read() (DataSet, error) {
 		}
 	}
 
-	vs := make(map[string]string, 32)
+	vs := make(map[string]interface{}, 32)
 	f.flagSet.Visit(func(f *flag.Flag) {
-		vs[strings.Replace(f.Name, "-", "_", -1)] = f.Value.String()
+		var value interface{}
+		switch v := f.Value.(type) {
+		case *flagSliceValue:
+			value = v.values
+		default:
+			value = v.String()
+		}
+		vs[strings.Replace(f.Name, "-", "_", -1)] = value
 	})
 
 	data, err := json.Marshal(vs)
