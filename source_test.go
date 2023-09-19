@@ -39,7 +39,7 @@ func TestNewEnvSource(t *testing.T) {
 	conf.Group("group1").RegisterOpts(StrOpt("opt2", ""))
 	conf.Group("group1").Group("group2").RegisterOpts(Float64Opt("opt3", ""))
 
-	conf.LoadSource(NewEnvSource(""), true)
+	_ = conf.LoadSource(NewEnvSource(""), true)
 	if v := conf.GetInt("opt1"); v != 111 {
 		t.Errorf("expect '%d', but got '%d'", 111, v)
 	} else if v := conf.Group("group1").GetString("opt2"); v != "abc" {
@@ -48,7 +48,7 @@ func TestNewEnvSource(t *testing.T) {
 		t.Errorf("expect '%d', but got '%f'", 222, v)
 	}
 
-	conf.LoadSource(NewEnvSource("test"), true)
+	_ = conf.LoadSource(NewEnvSource("test"), true)
 	if v := conf.GetInt("opt1"); v != 333 {
 		t.Errorf("expect '%d', but got '%d'", 333, v)
 	} else if v := conf.Group("group1").GetString("opt2"); v != "efg" {
@@ -65,7 +65,7 @@ func TestNewFileSource_INI(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		file.Write([]byte(`
+		_, _ = file.Write([]byte(`
 		[DEFAULT]
 		opt1 = 1
 		opt2 = 0
@@ -88,7 +88,7 @@ func TestNewFileSource_INI(t *testing.T) {
 	conf.RegisterOpts(IntOpt("opt1", ""))
 	conf.Group("group1").RegisterOpts(BoolOpt("opt2", ""))
 	conf.Group("group1.group2").RegisterOpts(Float64Opt("opt3", ""))
-	conf.LoadSource(NewFileSource(filename))
+	_ = conf.LoadSource(NewFileSource(filename))
 
 	// Check the config
 	if v := conf.GetInt("opt1"); v != 1 {
@@ -107,7 +107,7 @@ func TestNewFileSource_JSON(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		file.Write([]byte(`{
+		_, _ = file.Write([]byte(`{
 			"opt1": 1,
 			"opt2": false,
 			"opt3": 1,
@@ -131,7 +131,7 @@ func TestNewFileSource_JSON(t *testing.T) {
 	conf.RegisterOpts(IntOpt("opt1", ""))
 	conf.Group("group1").RegisterOpts(BoolOpt("opt2", ""))
 	conf.Group("group1").Group("group2").RegisterOpts(Float64Opt("opt3", ""))
-	conf.LoadSource(NewFileSource(filename))
+	_ = conf.LoadSource(NewFileSource(filename))
 
 	// Check the config
 	if v := conf.GetInt("opt1"); v != 1 {
@@ -147,21 +147,24 @@ func TestNewURLSource(t *testing.T) {
 	first := true
 
 	// Start the http server
-	go http.ListenAndServe("127.0.0.1:12345", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if first {
-			first = false
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.Write([]byte(`{"opt": 123}`))
-		} else {
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.Write([]byte(`{"opt": 456}`))
-		}
-	}))
+	go func() {
+		_ = http.ListenAndServe("127.0.0.1:12345", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if first {
+				first = false
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				_, _ = w.Write([]byte(`{"opt": 123}`))
+			} else {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				_, _ = w.Write([]byte(`{"opt": 456}`))
+			}
+		}))
+	}()
+
 	time.Sleep(time.Millisecond * 50) // Wait that the http server finishes to start.
 
 	conf := New()
 	conf.RegisterOpts(IntOpt("opt", ""))
-	conf.LoadAndWatchSource(NewURLSource("http://127.0.0.1:12345/", time.Millisecond*100))
+	_ = conf.LoadAndWatchSource(NewURLSource("http://127.0.0.1:12345/", time.Millisecond*100))
 	defer conf.Stop()
 
 	if v := conf.GetInt("opt"); v != 123 {

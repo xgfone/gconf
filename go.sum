@@ -2,8 +2,8 @@ github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
 github.com/xgfone/go-cast v0.8.1 h1:x80Qu+XCUyQoFvCo2j+CFRiKiJydF11jeAJRzRtGY9U=
 github.com/xgfone/go-cast v0.8.1/go.mod h1:aHO9rXhmN4IZ4d1UG35+6WEVbg5yyISynFQJCVltrsk=
-github.com/xgfone/go-defaults v0.7.0 h1:SzpA+1/Z8RxWsLBbwvRhJ/rkkH0GtDAiZHsEVDLnk2M=
-github.com/xgfone/go-defaults v0.7.0/go.mod h1:zwcnD8escc6E5QrCNKRLQddb4/hcUnUOM20kUeki18Y=
+github.com/xgfone/go-defaults v0.13.0 h1:aJX/RJSI8yN6Xxn1b1NlFQyClwION2DM5X1NDz3KQ0U=
+github.com/xgfone/go-defaults v0.13.0/go.mod h1:4qxXP2vvK8n2csVwYmFbhbQAISq5s/2zYZE9CKYj/bw=
 golang.org/x/sys v0.0.0-20220908164124-27713097b956 h1:XeJjHH1KiLpKGb6lvMiksZ9l0fVUh+AmGcm0nOMEBOY=
 golang.org/x/sys v0.0.0-20220908164124-27713097b956/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=

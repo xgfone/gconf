@@ -394,8 +394,6 @@ func (c *Config) flatmap(prefix string, results, maps map[string]interface{}) {
 			results[prefix+key] = value
 		}
 	}
-
-	return
 }
 
 func (c *Config) flatMap(maps map[string]interface{}) map[string]interface{} {

@@ -109,7 +109,7 @@ func TestConfig(t *testing.T) {
 		t.Errorf("durations option value expects '%v', but got '%v'", []time.Duration{}, v)
 	}
 
-	LoadMap(map[string]interface{}{
+	_ = LoadMap(map[string]interface{}{
 		"bool":      true,
 		"string":    "abc",
 		"int":       111,

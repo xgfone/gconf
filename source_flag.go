@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/xgfone/go-defaults"
 )
 
 // PrintFlagUsage prints the flag usage instead of the default.
@@ -72,7 +74,7 @@ func PrintFlagUsage(flagSet *flag.FlagSet) {
 //
 // They are equivalent.
 func AddOptFlag(c *Config, flagSet ...*flag.FlagSet) {
-	addAndParseOptFlag(false, c, flagSet...)
+	_ = addAndParseOptFlag(false, c, flagSet...)
 }
 
 // AddAndParseOptFlag is the same as AddOptFlag, but parses the CLI arguments.
@@ -141,7 +143,7 @@ func addAndParseOptFlag(parse bool, c *Config, flagSet ...*flag.FlagSet) error {
 			if flag := flagset.Lookup(vName); flag != nil {
 				if yes, _ := strconv.ParseBool(flag.Value.String()); yes {
 					fmt.Println(value)
-					os.Exit(0)
+					defaults.Exit(0)
 				}
 			}
 		}

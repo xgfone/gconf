@@ -23,8 +23,8 @@ func TestConfig_Snapshot(t *testing.T) {
 		IntOpt("opt2", ""),
 	)
 
-	config.Set("opt1", "a")
-	config.Set("opt2", 1)
+	_ = config.Set("opt1", "a")
+	_ = config.Set("opt2", 1)
 	gen, snaps := config.Snapshot()
 	if gen != 2 {
 		t.Errorf("expect %d generation, but got %d", 2, gen)
@@ -46,8 +46,9 @@ func TestConfig_Snapshot(t *testing.T) {
 			}
 		}
 	}
-	config.Set("opt1", "b")
-	config.Set("opt2", 2)
+
+	_ = config.Set("opt1", "b")
+	_ = config.Set("opt2", 2)
 	gen, snaps = config.Snapshot()
 	if gen != 4 {
 		t.Errorf("expect %d generation, but got %d", 4, gen)
