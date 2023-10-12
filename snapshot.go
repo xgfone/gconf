@@ -16,7 +16,6 @@ package gconf
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"sync/atomic"
 	"time"
@@ -30,7 +29,7 @@ func (c *Config) LoadBackupFile(filename string) (err error) {
 		panic("the backup filename must not be empty")
 	}
 
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			c.errorf("fail to read the backup file '%s': %s", filename, err)
@@ -78,7 +77,7 @@ func (c *Config) writeSnapshotIntoFile(filename string) {
 				continue
 			}
 
-			if err := ioutil.WriteFile(filename, data, os.ModePerm); err != nil {
+			if err := os.WriteFile(filename, data, os.ModePerm); err != nil {
 				c.errorf("cannot write snapshot into file '%s': %s", filename, err)
 			} else {
 				lastgen = gen
@@ -92,14 +91,13 @@ func (c *Config) writeSnapshotIntoFile(filename string) {
 //
 // For example,
 //
-//   map[string]interface{} {
-//       "opt1": "value1",
-//       "opt2": "value2",
-//       "group1.opt3": "value3",
-//       "group1.group2.opt4": "value4",
-//       // ...
-//   }
-//
+//	map[string]interface{} {
+//	    "opt1": "value1",
+//	    "opt2": "value2",
+//	    "group1.opt3": "value3",
+//	    "group1.group2.opt4": "value4",
+//	    // ...
+//	}
 func (c *Config) Snapshot() (generation uint64, snap map[string]interface{}) {
 	generation = atomic.LoadUint64(&c.gen)
 	snap = make(map[string]interface{}, len(c.options))

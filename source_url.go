@@ -16,7 +16,7 @@ package gconf
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	neturl "net/url"
 	"strings"
@@ -95,7 +95,7 @@ func (u urlSource) Read() (DataSet, error) {
 	}
 
 	// Read the body of the response.
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return DataSet{Source: u.id, Format: format}, err
 	}
