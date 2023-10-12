@@ -101,7 +101,6 @@ func New() *Config {
 
 	c.Version = VersionOpt
 	c.AddDecoder("ini", NewIniDecoder())
-	c.AddDecoder("yaml", NewYamlDecoder())
 	c.AddDecoder("json", NewJSONDecoder())
 	c.AddDecoderTypeAliases("yaml", "yml")
 	return c

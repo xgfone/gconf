@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
-
-	"gopkg.in/yaml.v2"
 )
 
 // Decoder is used to decode the configuration data.
@@ -55,7 +53,7 @@ func (c *Config) GetDecoder(_type string) (decoder Decoder) {
 //
 // For example,
 //
-//   c.AddDecoderTypeAliases("yaml", "yml")
+//	c.AddDecoderTypeAliases("yaml", "yml")
 //
 // When acquiring the "yml" decoder and it does not exist, it will try to
 // return the "yaml" decoder.
@@ -93,26 +91,18 @@ func NewJSONDecoder() Decoder {
 	}
 }
 
-// NewYamlDecoder returns a yaml decoder to decode the yaml data.
-func NewYamlDecoder() Decoder {
-	return func(src []byte, dst map[string]interface{}) (err error) {
-		return yaml.Unmarshal([]byte(src), &dst)
-	}
-}
-
 // NewIniDecoder returns a INI decoder to decode the INI data.
 //
 // Notice:
-//   1. The empty line will be ignored.
-//   2. The spacewhite on the beginning and end of line or value will be trimmed.
-//   3. The comment line starts with the character '#' or ';', which is ignored.
-//   4. The name of the default group is "DEFAULT", but it is optional.
-//   5. The group can nest other groups by ".", such as "group1.group2.group3".
-//   6. The key must only contain the printable non-spacewhite characters.
-//   7. The line can continue to the next line with the last character "\",
-//      and the spacewhite on the beginning and end of the each line will be
-//      trimmed, then combines them with a space.
-//
+//  1. The empty line will be ignored.
+//  2. The spacewhite on the beginning and end of line or value will be trimmed.
+//  3. The comment line starts with the character '#' or ';', which is ignored.
+//  4. The name of the default group is "DEFAULT", but it is optional.
+//  5. The group can nest other groups by ".", such as "group1.group2.group3".
+//  6. The key must only contain the printable non-spacewhite characters.
+//  7. The line can continue to the next line with the last character "\",
+//     and the spacewhite on the beginning and end of the each line will be
+//     trimmed, then combines them with a space.
 func NewIniDecoder(defaultGroupName ...string) Decoder {
 	defaultGroup := "DEFAULT"
 	if len(defaultGroupName) > 0 && defaultGroupName[0] != "" {

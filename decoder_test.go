@@ -14,10 +14,7 @@
 
 package gconf
 
-import (
-	"fmt"
-	"testing"
-)
+import "fmt"
 
 func ExampleNewJSONDecoder() {
 	data := []byte(`{
@@ -47,34 +44,4 @@ func ExampleNewJSONDecoder() {
 	// Aaron
 	// 123
 	// map[home:http://www.example.com]
-}
-
-var yamlData = `
-opt1: xyz
-group1:
-    opt2: 456
-    group2:
-        opt3: 789
-`
-
-func TestNewYamlDecoder(t *testing.T) {
-	conf := New()
-	conf.RegisterOpts(StrOpt("opt1", "").D("abc"))
-	conf.Group("group1").RegisterOpts(IntOpt("opt2", "").D(123))
-	conf.Group("group1.group2").RegisterOpts(IntOpt("opt3", ""))
-
-	ms := make(map[string]interface{})
-	if err := NewYamlDecoder()([]byte(yamlData), ms); err != nil {
-		t.Error(err)
-	} else if err = conf.LoadMap(ms); err != nil {
-		t.Error(err)
-	} else {
-		if v := conf.GetString("opt1"); v != "xyz" {
-			t.Error(v)
-		} else if v := conf.Group("group1").GetInt("opt2"); v != 456 {
-			t.Error(v)
-		} else if v := conf.GetInt("group1.group2.opt3"); v != 789 {
-			t.Error(v)
-		}
-	}
 }
