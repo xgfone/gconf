@@ -143,6 +143,51 @@ func TestNewFileSource_JSON(t *testing.T) {
 	}
 }
 
+func TestFileSourceWatch(t *testing.T) {
+	// Prepare the json file
+	filename := "_test_file_source_watch_.json"
+	defer os.Remove(filename)
+
+	source := NewFileSource(filename).(fileSource)
+	source.timeout = time.Second * 2
+
+	exit := make(chan struct{})
+	go func() {
+		time.Sleep(time.Second)
+		file, err := os.OpenFile(filename, testfileflag, os.ModePerm)
+		if err != nil {
+			t.Error(err)
+		} else {
+			_, _ = file.Write([]byte(`{"opt": 1}`))
+			file.Close()
+		}
+		time.Sleep(time.Second * 2)
+		close(exit)
+	}()
+
+	var data string
+	start := time.Now()
+	source.Watch(exit, func(ds DataSet, err error) bool {
+		if err != nil {
+			t.Error(err)
+		} else if data == "" {
+			data = string(ds.Data)
+		} else {
+			t.Fail()
+		}
+		return true
+	})
+
+	if cost := time.Since(start); cost < time.Second*3 || cost > time.Second*4 {
+		t.Errorf("not wait for 3~4s")
+	}
+
+	expect := `{"opt": 1}`
+	if data != expect {
+		t.Errorf("expect '%s', but got '%s'", expect, data)
+	}
+}
+
 func TestNewURLSource(t *testing.T) {
 	first := true
 

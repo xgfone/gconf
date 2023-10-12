@@ -21,8 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
 )
 
 // ConfigFileOpt is the default option for the configuration file.
@@ -47,13 +45,14 @@ func NewFileSource(filename string, defaultFormat ...string) Source {
 	}
 
 	id := fmt.Sprintf("file:%s", filename)
-	return fileSource{id: id, filepath: filename, format: format}
+	return fileSource{id: id, filepath: filename, format: format, timeout: time.Second * 10}
 }
 
 type fileSource struct {
 	id       string
 	format   string
 	filepath string
+	timeout  time.Duration
 }
 
 func (f fileSource) String() string { return f.id }
@@ -94,19 +93,9 @@ func (f fileSource) Watch(exit <-chan struct{}, load func(DataSet, error) bool) 
 }
 
 func (f fileSource) watch(exit <-chan struct{}, load func(DataSet, error) bool) {
-	fw, err := fsnotify.NewWatcher()
-	if err != nil {
-		load(DataSet{Source: f.id, Format: f.format}, err)
-		return
-	}
-	defer fw.Close()
+	lastsize, lasttime, _ := getfileinfo(f.filepath)
 
-	var add bool
-	if fw.Add(f.filepath) == nil {
-		add = true
-	}
-
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(f.timeout)
 	defer ticker.Stop()
 
 	for {
@@ -115,49 +104,24 @@ func (f fileSource) watch(exit <-chan struct{}, load func(DataSet, error) bool) 
 			return
 
 		case <-ticker.C:
-			if _, err := os.Stat(f.filepath); err != nil {
-				if os.IsNotExist(err) {
-					if add {
-						if err := fw.Remove(f.filepath); err != nil {
-							load(DataSet{Source: f.id, Format: f.format}, err)
-						} else {
-							add = false
-						}
-					}
-				} else {
+			if size, time, err := getfileinfo(f.filepath); err != nil {
+				if !os.IsNotExist(err) {
 					load(DataSet{Source: f.id, Format: f.format}, err)
 				}
-				continue
-			}
-
-			if !add {
-				if err := fw.Add(f.filepath); err != nil {
-					load(DataSet{Source: f.id, Format: f.format}, err)
-				} else {
-					add = true
-					load(f.Read())
-				}
-				continue
-			}
-
-		case event, ok := <-fw.Events:
-			if !ok {
-				return
-			}
-
-			// BUG: it will be triggered twice continuously by fsnotify on Windows.
-			if event.Op&fsnotify.Write == fsnotify.Write {
+			} else if size != lastsize || time != lasttime {
 				load(f.Read())
-			} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-				add = false
+				lastsize = size
+				lasttime = time
 			}
-
-		case err, ok := <-fw.Errors:
-			if !ok {
-				return
-			}
-
-			load(DataSet{Source: f.id, Format: f.format}, err)
 		}
 	}
+}
+
+func getfileinfo(filepath string) (size, time int64, err error) {
+	fi, err := os.Stat(filepath)
+	if err == nil {
+		time = fi.ModTime().Unix()
+		size = fi.Size()
+	}
+	return
 }
