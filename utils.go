@@ -22,27 +22,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xgfone/go-cast"
+	"github.com/xgfone/go-defaults"
 )
 
 // Some type converters, all of which have a default implementation,
 // but you can reset them to yourself implementations.
 var (
-	ToBool     = cast.ToBool     // func(interface{}) (bool, error)
-	ToInt64    = cast.ToInt64    // func(interface{}) (int64, error)
-	ToUint64   = cast.ToUint64   // func(interface{}) (uint64, error)
-	ToFloat64  = cast.ToFloat64  // func(interface{}) (float64, error)
-	ToString   = cast.ToString   // func(interface{}) (string, error)
-	ToDuration = cast.ToDuration // func(interface{}) (time.Duration, error)
-	ToTime     = cast.ToTime     // func(interface{}) (time.Time, error)
-	ToInt      = toInt           // func(interface{}) (int, error)
-	ToInt16    = toInt16         // func(interface{}) (int16, error)
-	ToInt32    = toInt32         // func(interface{}) (int32, error)
-	ToUint     = toUint          // func(interface{}) (uint, error)
-	ToUint16   = toUint16        // func(interface{}) (uint16, error)
-	ToUint32   = toUint32        // func(interface{}) (uint32, error)
+	ToBool     = defaults.ToBool     // func(interface{}) (bool, error)
+	ToInt64    = defaults.ToInt64    // func(interface{}) (int64, error)
+	ToUint64   = defaults.ToUint64   // func(interface{}) (uint64, error)
+	ToFloat64  = defaults.ToFloat64  // func(interface{}) (float64, error)
+	ToString   = defaults.ToString   // func(interface{}) (string, error)
+	ToDuration = defaults.ToDuration // func(interface{}) (time.Duration, error)
+	ToTime     = defaults.ToTime     // func(interface{}) (time.Time, error)
+	ToInt      = toInt               // func(interface{}) (int, error)
+	ToInt16    = toInt16             // func(interface{}) (int16, error)
+	ToInt32    = toInt32             // func(interface{}) (int32, error)
+	ToUint     = toUint              // func(interface{}) (uint, error)
+	ToUint16   = toUint16            // func(interface{}) (uint16, error)
+	ToUint32   = toUint32            // func(interface{}) (uint32, error)
 
-	// For string type, it will be split by using cast.ToStringSlice.
+	// For string type, it will be split by the separator " " or ",".
 	ToIntSlice      = toIntSlice      // func(interface{}) ([]int, error)
 	ToUintSlice     = toUintSlice     // func(interface{}) ([]uint, error)
 	ToFloat64Slice  = toFloat64Slice  // func(interface{}) ([]float64, error)
@@ -51,22 +51,22 @@ var (
 )
 
 func toInt(v interface{}) (int, error) {
-	return to(v, cast.ToInt64, func(v int64) int { return int(v) })
+	return to(v, ToInt64, func(v int64) int { return int(v) })
 }
 func toInt16(v interface{}) (int16, error) {
-	return to(v, cast.ToInt64, func(v int64) int16 { return int16(v) })
+	return to(v, ToInt64, func(v int64) int16 { return int16(v) })
 }
 func toInt32(v interface{}) (int32, error) {
-	return to(v, cast.ToInt64, func(v int64) int32 { return int32(v) })
+	return to(v, ToInt64, func(v int64) int32 { return int32(v) })
 }
 func toUint(v interface{}) (uint, error) {
-	return to(v, cast.ToInt64, func(v int64) uint { return uint(v) })
+	return to(v, ToInt64, func(v int64) uint { return uint(v) })
 }
 func toUint16(v interface{}) (uint16, error) {
-	return to(v, cast.ToInt64, func(v int64) uint16 { return uint16(v) })
+	return to(v, ToInt64, func(v int64) uint16 { return uint16(v) })
 }
 func toUint32(v interface{}) (uint32, error) {
-	return to(v, cast.ToInt64, func(v int64) uint32 { return uint32(v) })
+	return to(v, ToInt64, func(v int64) uint32 { return uint32(v) })
 }
 
 func to[T1, T2 any](i interface{}, f func(interface{}) (T1, error), m func(T1) T2) (v T2, err error) {
