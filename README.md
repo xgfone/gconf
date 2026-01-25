@@ -1,13 +1,18 @@
-# Go Config [![Build Status](https://github.com/xgfone/gconf/actions/workflows/go.yml/badge.svg)](https://github.com/xgfone/gconf/actions/workflows/go.yml) [![GoDoc](https://pkg.go.dev/badge/github.com/xgfone/gconf)](https://pkg.go.dev/github.com/xgfone/gconf/v6) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/gconf/master/LICENSE)
+# Go Config
 
-An extensible and powerful go configuration manager supporting `Go1.21+`, which is inspired by [oslo.config](https://github.com/openstack/oslo.config), [viper](https://github.com/spf13/viper) and [github.com/micro/go-micro/config](https://github.com/micro/go-micro/tree/master/config).
+[![Build Status](https://github.com/xgfone/gconf/actions/workflows/go.yml/badge.svg)](https://github.com/xgfone/gconf/actions/workflows/go.yml)
+[![GoDoc](https://pkg.go.dev/badge/github.com/xgfone/gconf)](https://pkg.go.dev/github.com/xgfone/gconf/v6)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/xgfone/gconf/master/LICENSE)
+![Minimum Go Version](https://img.shields.io/github/go-mod/go-version/xgfone/gconf?label=Go%2B)
+![Latest SemVer](https://img.shields.io/github/v/tag/xgfone/gconf?sort=semver)
 
+An extensible and powerful go configuration manager, which is inspired by [oslo.config](https://github.com/openstack/oslo.config), [viper](https://github.com/spf13/viper) and [github.com/micro/go-micro/config](https://github.com/micro/go-micro/tree/master/config).
 
 ## Install
+
 ```shell
 $ go get -u github.com/xgfone/gconf/v6
 ```
-
 
 ## Features
 
@@ -16,7 +21,6 @@ $ go get -u github.com/xgfone/gconf/v6
 - Support to get the configuration data from many data sources.
 - Support to change of the configuration option thread-safely during running.
 - Support to observe the change of the configration options.
-
 
 ## Basic
 
@@ -93,7 +97,6 @@ func main() {
 }
 ```
 
-
 ## Option Proxy
 
 ```go
@@ -126,7 +129,6 @@ func main() {
 	// 1m0s
 }
 ```
-
 
 ## Option Group
 
@@ -221,14 +223,14 @@ func main() {
 }
 ```
 
-
 ## Data Decoder
+
 The data decoder is a function like `func(src []byte, dst map[string]interface{}) error`, which is used to decode the configration data from the data source.
 
 `Config` supports three kinds of decoders by default, such as `ini`, `json`, `yaml`, and `yml` is the alias of `yaml`. You can customize yourself decoder, then add it into `Config`, such as `Config.AddDecoder("type", NewCustomizedDecoder())`.
 
-
 ## Data Source
+
 A source is used to read the configuration from somewhere the data is. And it can also watch the change the data.
 
 ```go
@@ -318,7 +320,6 @@ func main() {
 	// group.opt2: 444 -> 666
 }
 ```
-
 
 ## Snapshot & Backup
 
