@@ -38,7 +38,7 @@ func (c *Config) LoadBackupFile(filename string) (err error) {
 	}
 
 	if len(data) > 0 {
-		ms := make(map[string]interface{}, 32)
+		ms := make(map[string]any, 32)
 		if err = json.Unmarshal(data, &ms); err != nil {
 			c.errorf("the backup file '%s' format is error: %s", filename, err)
 			return
@@ -91,16 +91,16 @@ func (c *Config) writeSnapshotIntoFile(filename string) {
 //
 // For example,
 //
-//	map[string]interface{} {
+//	map[string]any {
 //	    "opt1": "value1",
 //	    "opt2": "value2",
 //	    "group1.opt3": "value3",
 //	    "group1.group2.opt4": "value4",
 //	    // ...
 //	}
-func (c *Config) Snapshot() (generation uint64, snap map[string]interface{}) {
+func (c *Config) Snapshot() (generation uint64, snap map[string]any) {
 	generation = atomic.LoadUint64(&c.gen)
-	snap = make(map[string]interface{}, len(c.options))
+	snap = make(map[string]any, len(c.options))
 	for name, opt := range c.options {
 		if v := opt.GetValue(); v != nil {
 			snap[name] = v

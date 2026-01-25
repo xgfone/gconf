@@ -26,7 +26,7 @@ func (a optsT) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a optsT) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 // Parser is used to parse the option value intput.
-type Parser func(input interface{}) (output interface{}, err error)
+type Parser func(input any) (output any, err error)
 
 // Opt is used to represent a option vlaue.
 type Opt struct {
@@ -39,7 +39,7 @@ type Opt struct {
 	// indicate the type of the option.
 	//
 	// Required!
-	Default interface{}
+	Default any
 
 	// Parser is used to parse the input option value to a specific type.
 	//
@@ -74,7 +74,7 @@ type Opt struct {
 	Validators []Validator
 
 	// OnUpdate is called when the option value is updated.
-	OnUpdate func(oldValue, newValue interface{})
+	OnUpdate func(oldValue, newValue any)
 }
 
 func (o Opt) check() {
@@ -89,7 +89,7 @@ func (o Opt) check() {
 	}
 }
 
-func (o Opt) validate(value interface{}) (err error) {
+func (o Opt) validate(value any) (err error) {
 	for _, validator := range o.Validators {
 		if err = validator(value); err != nil {
 			return err
@@ -143,7 +143,7 @@ func (o Opt) V(validators ...Validator) Opt {
 }
 
 // D returns a new Opt with the given default value based on the current option.
-func (o Opt) D(_default interface{}) Opt {
+func (o Opt) D(_default any) Opt {
 	if _default == nil {
 		panic("the default value of the option must not be nil")
 	}
@@ -177,26 +177,26 @@ func (o Opt) P(parser Parser) Opt {
 }
 
 // U returns a new Opt with the update callback function on the current option.
-func (o Opt) U(callback func(oldValue, newValue interface{})) Opt {
+func (o Opt) U(callback func(oldValue, newValue any)) Opt {
 	o.OnUpdate = callback
 	return o
 }
 
 // NewOpt returns a new Opt that IsCli is true.
-func NewOpt(name, help string, _default interface{}, parser Parser) Opt {
+func NewOpt(name, help string, _default any, parser Parser) Opt {
 	return Opt{IsCli: true, Name: name, Help: help}.D(_default).P(parser)
 }
 
 // BoolOpt is the same NewOpt, but uses ToBool to parse the value as bool.
 func BoolOpt(name string, help string) Opt {
-	return NewOpt(name, help, false, func(v interface{}) (interface{}, error) {
+	return NewOpt(name, help, false, func(v any) (any, error) {
 		return ToBool(v)
 	})
 }
 
 // IntOpt is the same NewOpt, but uses ToInt to parse the value as int.
 func IntOpt(name string, help string) Opt {
-	return NewOpt(name, help, 0, func(v interface{}) (interface{}, error) {
+	return NewOpt(name, help, 0, func(v any) (any, error) {
 		return ToInt(v)
 	})
 }
@@ -204,7 +204,7 @@ func IntOpt(name string, help string) Opt {
 // Int16Opt is the same NewOpt, but uses ToInt16 to parse the value as int16.
 func Int16Opt(name string, help string) Opt {
 	return NewOpt(name, help, int16(0),
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToInt16(v)
 		})
 }
@@ -212,7 +212,7 @@ func Int16Opt(name string, help string) Opt {
 // Int32Opt is the same NewOpt, but uses ToInt32 to parse the value as int32.
 func Int32Opt(name string, help string) Opt {
 	return NewOpt(name, help, int32(0),
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToInt32(v)
 		})
 }
@@ -220,7 +220,7 @@ func Int32Opt(name string, help string) Opt {
 // Int64Opt is the same NewOpt, but uses ToInt64 to parse the value as int64.
 func Int64Opt(name string, help string) Opt {
 	return NewOpt(name, help, int64(0),
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToInt64(v)
 		})
 }
@@ -228,7 +228,7 @@ func Int64Opt(name string, help string) Opt {
 // UintOpt is the same NewOpt, but uses ToUint to parse the value as uint.
 func UintOpt(name string, help string) Opt {
 	return NewOpt(name, help, uint(0),
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToUint(v)
 		})
 }
@@ -236,7 +236,7 @@ func UintOpt(name string, help string) Opt {
 // Uint16Opt is the same NewOpt, but uses ToUint16 to parse the value as uint16.
 func Uint16Opt(name string, help string) Opt {
 	return NewOpt(name, help, uint16(0),
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToUint16(v)
 		})
 }
@@ -244,7 +244,7 @@ func Uint16Opt(name string, help string) Opt {
 // Uint32Opt is the same NewOpt, but uses ToUint32 to parse the value as uint32.
 func Uint32Opt(name string, help string) Opt {
 	return NewOpt(name, help, uint32(0),
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToUint32(v)
 		})
 }
@@ -252,7 +252,7 @@ func Uint32Opt(name string, help string) Opt {
 // Uint64Opt is the same NewOpt, but uses ToUint64 to parse the value as uint64.
 func Uint64Opt(name string, help string) Opt {
 	return NewOpt(name, help, uint64(0),
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToUint64(v)
 		})
 }
@@ -260,14 +260,14 @@ func Uint64Opt(name string, help string) Opt {
 // Float64Opt is the same NewOpt, but uses ToFloat64
 // to parse the value as float64.
 func Float64Opt(name string, help string) Opt {
-	return NewOpt(name, help, 0.0, func(v interface{}) (interface{}, error) {
+	return NewOpt(name, help, 0.0, func(v any) (any, error) {
 		return ToFloat64(v)
 	})
 }
 
 // StrOpt is the same NewOpt, but uses ToString to parse the value as string.
 func StrOpt(name string, help string) Opt {
-	return NewOpt(name, help, "", func(v interface{}) (interface{}, error) {
+	return NewOpt(name, help, "", func(v any) (any, error) {
 		return ToString(v)
 	})
 }
@@ -276,7 +276,7 @@ func StrOpt(name string, help string) Opt {
 // to parse the value as time.Duration.
 func DurationOpt(name string, help string) Opt {
 	return NewOpt(name, help, time.Duration(0),
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToDuration(v)
 		})
 }
@@ -284,7 +284,7 @@ func DurationOpt(name string, help string) Opt {
 // TimeOpt is the same NewOpt, but uses ToTime to parse the value as time.Time.
 func TimeOpt(name string, help string) Opt {
 	return NewOpt(name, help, time.Time{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToTime(v)
 		})
 }
@@ -293,7 +293,7 @@ func TimeOpt(name string, help string) Opt {
 // to parse the value as []string.
 func StrSliceOpt(name string, help string) Opt {
 	return NewOpt(name, help, []string{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToStringSlice(v)
 		})
 }
@@ -302,7 +302,7 @@ func StrSliceOpt(name string, help string) Opt {
 // to parse the value as []int.
 func IntSliceOpt(name string, help string) Opt {
 	return NewOpt(name, help, []int{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToIntSlice(v)
 		})
 }
@@ -311,7 +311,7 @@ func IntSliceOpt(name string, help string) Opt {
 // to parse the value as []uint.
 func UintSliceOpt(name string, help string) Opt {
 	return NewOpt(name, help, []uint{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToUintSlice(v)
 		})
 }
@@ -320,7 +320,7 @@ func UintSliceOpt(name string, help string) Opt {
 // to parse the value as []float64.
 func Float64SliceOpt(name string, help string) Opt {
 	return NewOpt(name, help, []float64{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToFloat64Slice(v)
 		})
 }
@@ -329,7 +329,7 @@ func Float64SliceOpt(name string, help string) Opt {
 // to parse the value as []time.Duration.
 func DurationSliceOpt(name string, help string) Opt {
 	return NewOpt(name, help, []time.Duration{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			return ToDurationSlice(v)
 		})
 }

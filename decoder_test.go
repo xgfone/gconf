@@ -29,7 +29,7 @@ func ExampleNewJSONDecoder() {
 		}
 	}`)
 
-	ms := make(map[string]interface{})
+	ms := make(map[string]any)
 	err := NewJSONDecoder()(data, ms)
 
 	fmt.Println(err)

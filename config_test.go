@@ -109,7 +109,7 @@ func TestConfig(t *testing.T) {
 		t.Errorf("durations option value expects '%v', but got '%v'", []time.Duration{}, v)
 	}
 
-	_ = LoadMap(map[string]interface{}{
+	_ = LoadMap(map[string]any{
 		"bool":      true,
 		"string":    "abc",
 		"int":       111,
@@ -195,12 +195,12 @@ func TestConfig_Observe(t *testing.T) {
 	Conf.reset()
 	type option struct {
 		name string
-		old  interface{}
-		new  interface{}
+		old  any
+		new  any
 	}
 
 	var options []option
-	Observe(func(name string, old, new interface{}) {
+	Observe(func(name string, old, new any) {
 		options = append(options, option{name: name, old: old, new: new})
 	})
 

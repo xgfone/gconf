@@ -199,9 +199,9 @@ func (f flagSource) Read() (DataSet, error) {
 		}
 	}
 
-	vs := make(map[string]interface{}, 32)
+	vs := make(map[string]any, 32)
 	f.flagSet.Visit(func(f *flag.Flag) {
-		var value interface{}
+		var value any
 		switch v := f.Value.(type) {
 		case *flagSliceValue:
 			value = v.values

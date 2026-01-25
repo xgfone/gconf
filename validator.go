@@ -53,12 +53,12 @@ var (
 )
 
 // Validator is used to validate whether the option value is valid.
-type Validator func(value interface{}) error
+type Validator func(value any) error
 
 // Or returns a union validator, which returns nil only if a certain validator
 // returns nil or the error that the last validator returns.
 func Or(validators ...Validator) Validator {
-	return func(value interface{}) (err error) {
+	return func(value any) (err error) {
 		for _, v := range validators {
 			if err = v(value); err == nil {
 				return nil
@@ -71,7 +71,7 @@ func Or(validators ...Validator) Validator {
 // NewStrLenValidator returns a validator to validate that the length of the
 // string must be between min and max.
 func NewStrLenValidator(min, max int) Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -89,7 +89,7 @@ func NewStrLenValidator(min, max int) Validator {
 // NewEmptyStrValidator returns a validator to validate that the value must be
 // an empty string.
 func NewEmptyStrValidator() Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -105,7 +105,7 @@ func NewEmptyStrValidator() Validator {
 // NewStrNotEmptyValidator returns a validator to validate that the value must
 // not be an empty string.
 func NewStrNotEmptyValidator() Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -121,7 +121,7 @@ func NewStrNotEmptyValidator() Validator {
 // NewStrArrayValidator returns a validator to validate that the value is in
 // the array.
 func NewStrArrayValidator(array []string) Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -139,7 +139,7 @@ func NewStrArrayValidator(array []string) Validator {
 // NewStrSliceValidator returns a validator to validate whether the string element
 // of the []string value satisfies all the given validators.
 func NewStrSliceValidator(strValidators ...Validator) Validator {
-	return func(value interface{}) (err error) {
+	return func(value any) (err error) {
 		ss, ok := value.([]string)
 		if !ok {
 			return errNotStringSlice
@@ -163,7 +163,7 @@ func NewStrSliceValidator(strValidators ...Validator) Validator {
 // This validator uses regexp.MatchString(pattern, s) to validate it.
 func NewRegexpValidator(pattern string) Validator {
 	re := regexp.MustCompile(pattern)
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -178,7 +178,7 @@ func NewRegexpValidator(pattern string) Validator {
 
 // NewURLValidator returns a validator to validate whether a url is valid.
 func NewURLValidator() Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -205,7 +205,7 @@ func NewURLSliceValidator() Validator {
 
 // NewIPValidator returns a validator to validate whether an ip is valid.
 func NewIPValidator() Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -232,7 +232,7 @@ func NewIPSliceValidator() Validator {
 
 // NewEmailValidator returns a validator to validate whether an email is valid.
 func NewEmailValidator() Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -262,7 +262,7 @@ func NewEmailSliceValidator() Validator {
 //
 // This validator uses net.SplitHostPort() to validate it.
 func NewAddressValidator() Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		s, ok := value.(string)
 		if !ok {
 			return errNotString
@@ -318,7 +318,7 @@ func NewAddressOrIPSliceValidator() Validator {
 // This validator can be used to validate the value of the type int, int8,
 // int16, int32, int64, uint, uint8, uint16, uint32, uint64.
 func NewIntegerRangeValidator(min, max int64) Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		v, err := ToInt64(value)
 		if err != nil {
 			return err
@@ -336,7 +336,7 @@ func NewIntegerRangeValidator(min, max int64) Validator {
 // This validator can be used to validate the value of the type float32 and
 // float64.
 func NewFloatRangeValidator(min, max float64) Validator {
-	return func(value interface{}) error {
+	return func(value any) error {
 		f, err := ToFloat64(value)
 		if err != nil {
 			return err

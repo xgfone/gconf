@@ -41,17 +41,17 @@ func (o *OptProxy) Name() string { return o.option.opt.Name }
 func (o *OptProxy) Opt() Opt { return o.option.opt }
 
 // Get returns the value of the option.
-func (o *OptProxy) Get() interface{} {
+func (o *OptProxy) Get() any {
 	return o.config.Get(o.option.opt.Name)
 }
 
 // Set sets the value of the option to value.
-func (o *OptProxy) Set(value interface{}) (err error) {
+func (o *OptProxy) Set(value any) (err error) {
 	return o.config.Set(o.option.opt.Name, value)
 }
 
 // OnUpdate resets the update callback function of the option and returns itself.
-func (o *OptProxy) OnUpdate(callback func(old, new interface{})) *OptProxy {
+func (o *OptProxy) OnUpdate(callback func(old, new any)) *OptProxy {
 	o.option.opt.OnUpdate = callback
 	return o
 }
@@ -83,7 +83,7 @@ func (o *OptProxy) Validators(validators ...Validator) *OptProxy {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxy) Default(_default interface{}) *OptProxy {
+func (o *OptProxy) Default(_default any) *OptProxy {
 	o.option.opt = o.option.opt.D(_default)
 	return o
 }
@@ -273,12 +273,12 @@ func (o *OptProxyBool) Opt() Opt { return o.option.opt }
 func (o *OptProxyBool) Get() bool { return o.OptProxy.Get().(bool) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyBool) Set(value interface{}) (err error) {
+func (o *OptProxyBool) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyBool) OnUpdate(f func(old, new interface{})) *OptProxyBool {
+func (o *OptProxyBool) OnUpdate(f func(old, new any)) *OptProxyBool {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -308,7 +308,7 @@ func (o *OptProxyBool) Validators(validators ...Validator) *OptProxyBool {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyBool) Default(_default interface{}) *OptProxyBool {
+func (o *OptProxyBool) Default(_default any) *OptProxyBool {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -346,12 +346,12 @@ func (o *OptProxyInt) Opt() Opt { return o.option.opt }
 func (o *OptProxyInt) Get() int { return o.OptProxy.Get().(int) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyInt) Set(value interface{}) (err error) {
+func (o *OptProxyInt) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyInt) OnUpdate(f func(old, new interface{})) *OptProxyInt {
+func (o *OptProxyInt) OnUpdate(f func(old, new any)) *OptProxyInt {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -381,7 +381,7 @@ func (o *OptProxyInt) Validators(validators ...Validator) *OptProxyInt {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyInt) Default(_default interface{}) *OptProxyInt {
+func (o *OptProxyInt) Default(_default any) *OptProxyInt {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -419,12 +419,12 @@ func (o *OptProxyInt16) Opt() Opt { return o.option.opt }
 func (o *OptProxyInt16) Get() int16 { return o.OptProxy.Get().(int16) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyInt16) Set(value interface{}) (err error) {
+func (o *OptProxyInt16) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyInt16) OnUpdate(f func(old, new interface{})) *OptProxyInt16 {
+func (o *OptProxyInt16) OnUpdate(f func(old, new any)) *OptProxyInt16 {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -454,7 +454,7 @@ func (o *OptProxyInt16) Validators(validators ...Validator) *OptProxyInt16 {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyInt16) Default(_default interface{}) *OptProxyInt16 {
+func (o *OptProxyInt16) Default(_default any) *OptProxyInt16 {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -492,12 +492,12 @@ func (o *OptProxyInt32) Opt() Opt { return o.option.opt }
 func (o *OptProxyInt32) Get() int32 { return o.OptProxy.Get().(int32) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyInt32) Set(value interface{}) (err error) {
+func (o *OptProxyInt32) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyInt32) OnUpdate(f func(old, new interface{})) *OptProxyInt32 {
+func (o *OptProxyInt32) OnUpdate(f func(old, new any)) *OptProxyInt32 {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -527,7 +527,7 @@ func (o *OptProxyInt32) Validators(validators ...Validator) *OptProxyInt32 {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyInt32) Default(_default interface{}) *OptProxyInt32 {
+func (o *OptProxyInt32) Default(_default any) *OptProxyInt32 {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -565,12 +565,12 @@ func (o *OptProxyInt64) Opt() Opt { return o.option.opt }
 func (o *OptProxyInt64) Get() int64 { return o.OptProxy.Get().(int64) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyInt64) Set(value interface{}) (err error) {
+func (o *OptProxyInt64) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyInt64) OnUpdate(f func(old, new interface{})) *OptProxyInt64 {
+func (o *OptProxyInt64) OnUpdate(f func(old, new any)) *OptProxyInt64 {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -600,7 +600,7 @@ func (o *OptProxyInt64) Validators(validators ...Validator) *OptProxyInt64 {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyInt64) Default(_default interface{}) *OptProxyInt64 {
+func (o *OptProxyInt64) Default(_default any) *OptProxyInt64 {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -638,12 +638,12 @@ func (o *OptProxyUint) Opt() Opt { return o.option.opt }
 func (o *OptProxyUint) Get() uint { return o.OptProxy.Get().(uint) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyUint) Set(value interface{}) (err error) {
+func (o *OptProxyUint) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyUint) OnUpdate(f func(old, new interface{})) *OptProxyUint {
+func (o *OptProxyUint) OnUpdate(f func(old, new any)) *OptProxyUint {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -673,7 +673,7 @@ func (o *OptProxyUint) Validators(validators ...Validator) *OptProxyUint {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyUint) Default(_default interface{}) *OptProxyUint {
+func (o *OptProxyUint) Default(_default any) *OptProxyUint {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -711,12 +711,12 @@ func (o *OptProxyUint16) Opt() Opt { return o.option.opt }
 func (o *OptProxyUint16) Get() uint16 { return o.OptProxy.Get().(uint16) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyUint16) Set(value interface{}) (err error) {
+func (o *OptProxyUint16) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyUint16) OnUpdate(f func(old, new interface{})) *OptProxyUint16 {
+func (o *OptProxyUint16) OnUpdate(f func(old, new any)) *OptProxyUint16 {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -746,7 +746,7 @@ func (o *OptProxyUint16) Validators(validators ...Validator) *OptProxyUint16 {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyUint16) Default(_default interface{}) *OptProxyUint16 {
+func (o *OptProxyUint16) Default(_default any) *OptProxyUint16 {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -784,12 +784,12 @@ func (o *OptProxyUint32) Opt() Opt { return o.option.opt }
 func (o *OptProxyUint32) Get() uint32 { return o.OptProxy.Get().(uint32) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyUint32) Set(value interface{}) (err error) {
+func (o *OptProxyUint32) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyUint32) OnUpdate(f func(old, new interface{})) *OptProxyUint32 {
+func (o *OptProxyUint32) OnUpdate(f func(old, new any)) *OptProxyUint32 {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -819,7 +819,7 @@ func (o *OptProxyUint32) Validators(validators ...Validator) *OptProxyUint32 {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyUint32) Default(_default interface{}) *OptProxyUint32 {
+func (o *OptProxyUint32) Default(_default any) *OptProxyUint32 {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -857,12 +857,12 @@ func (o *OptProxyUint64) Opt() Opt { return o.option.opt }
 func (o *OptProxyUint64) Get() uint64 { return o.OptProxy.Get().(uint64) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyUint64) Set(value interface{}) (err error) {
+func (o *OptProxyUint64) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyUint64) OnUpdate(f func(old, new interface{})) *OptProxyUint64 {
+func (o *OptProxyUint64) OnUpdate(f func(old, new any)) *OptProxyUint64 {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -892,7 +892,7 @@ func (o *OptProxyUint64) Validators(validators ...Validator) *OptProxyUint64 {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyUint64) Default(_default interface{}) *OptProxyUint64 {
+func (o *OptProxyUint64) Default(_default any) *OptProxyUint64 {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -930,12 +930,12 @@ func (o *OptProxyFloat64) Opt() Opt { return o.option.opt }
 func (o *OptProxyFloat64) Get() float64 { return o.OptProxy.Get().(float64) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyFloat64) Set(value interface{}) (err error) {
+func (o *OptProxyFloat64) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyFloat64) OnUpdate(f func(old, new interface{})) *OptProxyFloat64 {
+func (o *OptProxyFloat64) OnUpdate(f func(old, new any)) *OptProxyFloat64 {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -965,7 +965,7 @@ func (o *OptProxyFloat64) Validators(validators ...Validator) *OptProxyFloat64 {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyFloat64) Default(_default interface{}) *OptProxyFloat64 {
+func (o *OptProxyFloat64) Default(_default any) *OptProxyFloat64 {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -1003,12 +1003,12 @@ func (o *OptProxyString) Opt() Opt { return o.option.opt }
 func (o *OptProxyString) Get() string { return o.OptProxy.Get().(string) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyString) Set(value interface{}) (err error) {
+func (o *OptProxyString) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyString) OnUpdate(f func(old, new interface{})) *OptProxyString {
+func (o *OptProxyString) OnUpdate(f func(old, new any)) *OptProxyString {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -1038,7 +1038,7 @@ func (o *OptProxyString) Validators(validators ...Validator) *OptProxyString {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyString) Default(_default interface{}) *OptProxyString {
+func (o *OptProxyString) Default(_default any) *OptProxyString {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -1076,12 +1076,12 @@ func (o *OptProxyDuration) Opt() Opt { return o.option.opt }
 func (o *OptProxyDuration) Get() time.Duration { return o.OptProxy.Get().(time.Duration) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyDuration) Set(value interface{}) (err error) {
+func (o *OptProxyDuration) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyDuration) OnUpdate(f func(old, new interface{})) *OptProxyDuration {
+func (o *OptProxyDuration) OnUpdate(f func(old, new any)) *OptProxyDuration {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -1111,7 +1111,7 @@ func (o *OptProxyDuration) Validators(validators ...Validator) *OptProxyDuration
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyDuration) Default(_default interface{}) *OptProxyDuration {
+func (o *OptProxyDuration) Default(_default any) *OptProxyDuration {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -1149,12 +1149,12 @@ func (o *OptProxyTime) Opt() Opt { return o.option.opt }
 func (o *OptProxyTime) Get() time.Time { return o.OptProxy.Get().(time.Time) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyTime) Set(value interface{}) (err error) {
+func (o *OptProxyTime) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyTime) OnUpdate(f func(old, new interface{})) *OptProxyTime {
+func (o *OptProxyTime) OnUpdate(f func(old, new any)) *OptProxyTime {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -1184,7 +1184,7 @@ func (o *OptProxyTime) Validators(validators ...Validator) *OptProxyTime {
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyTime) Default(_default interface{}) *OptProxyTime {
+func (o *OptProxyTime) Default(_default any) *OptProxyTime {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -1222,12 +1222,12 @@ func (o *OptProxyStringSlice) Opt() Opt { return o.option.opt }
 func (o *OptProxyStringSlice) Get() []string { return o.OptProxy.Get().([]string) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyStringSlice) Set(value interface{}) (err error) {
+func (o *OptProxyStringSlice) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyStringSlice) OnUpdate(f func(old, new interface{})) *OptProxyStringSlice {
+func (o *OptProxyStringSlice) OnUpdate(f func(old, new any)) *OptProxyStringSlice {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -1257,7 +1257,7 @@ func (o *OptProxyStringSlice) Validators(validators ...Validator) *OptProxyStrin
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyStringSlice) Default(_default interface{}) *OptProxyStringSlice {
+func (o *OptProxyStringSlice) Default(_default any) *OptProxyStringSlice {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -1295,12 +1295,12 @@ func (o *OptProxyIntSlice) Opt() Opt { return o.option.opt }
 func (o *OptProxyIntSlice) Get() []int { return o.OptProxy.Get().([]int) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyIntSlice) Set(value interface{}) (err error) {
+func (o *OptProxyIntSlice) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyIntSlice) OnUpdate(f func(old, new interface{})) *OptProxyIntSlice {
+func (o *OptProxyIntSlice) OnUpdate(f func(old, new any)) *OptProxyIntSlice {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -1330,7 +1330,7 @@ func (o *OptProxyIntSlice) Validators(validators ...Validator) *OptProxyIntSlice
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyIntSlice) Default(_default interface{}) *OptProxyIntSlice {
+func (o *OptProxyIntSlice) Default(_default any) *OptProxyIntSlice {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -1368,12 +1368,12 @@ func (o *OptProxyUintSlice) Opt() Opt { return o.option.opt }
 func (o *OptProxyUintSlice) Get() []uint { return o.OptProxy.Get().([]uint) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyUintSlice) Set(value interface{}) (err error) {
+func (o *OptProxyUintSlice) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyUintSlice) OnUpdate(f func(old, new interface{})) *OptProxyUintSlice {
+func (o *OptProxyUintSlice) OnUpdate(f func(old, new any)) *OptProxyUintSlice {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -1403,7 +1403,7 @@ func (o *OptProxyUintSlice) Validators(validators ...Validator) *OptProxyUintSli
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyUintSlice) Default(_default interface{}) *OptProxyUintSlice {
+func (o *OptProxyUintSlice) Default(_default any) *OptProxyUintSlice {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -1441,12 +1441,12 @@ func (o *OptProxyFloat64Slice) Opt() Opt { return o.option.opt }
 func (o *OptProxyFloat64Slice) Get() []float64 { return o.OptProxy.Get().([]float64) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyFloat64Slice) Set(value interface{}) (err error) {
+func (o *OptProxyFloat64Slice) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyFloat64Slice) OnUpdate(f func(old, new interface{})) *OptProxyFloat64Slice {
+func (o *OptProxyFloat64Slice) OnUpdate(f func(old, new any)) *OptProxyFloat64Slice {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -1476,7 +1476,7 @@ func (o *OptProxyFloat64Slice) Validators(validators ...Validator) *OptProxyFloa
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyFloat64Slice) Default(_default interface{}) *OptProxyFloat64Slice {
+func (o *OptProxyFloat64Slice) Default(_default any) *OptProxyFloat64Slice {
 	o.OptProxy.Default(_default)
 	return o
 }
@@ -1514,12 +1514,12 @@ func (o *OptProxyDurationSlice) Opt() Opt { return o.option.opt }
 func (o *OptProxyDurationSlice) Get() []time.Duration { return o.OptProxy.Get().([]time.Duration) }
 
 // Set sets the value of the option to value.
-func (o *OptProxyDurationSlice) Set(value interface{}) (err error) {
+func (o *OptProxyDurationSlice) Set(value any) (err error) {
 	return o.OptProxy.Set(value)
 }
 
 // OnUpdate resets the update callback of the option and returns itself.
-func (o *OptProxyDurationSlice) OnUpdate(f func(old, new interface{})) *OptProxyDurationSlice {
+func (o *OptProxyDurationSlice) OnUpdate(f func(old, new any)) *OptProxyDurationSlice {
 	o.OptProxy.OnUpdate(f)
 	return o
 }
@@ -1549,7 +1549,7 @@ func (o *OptProxyDurationSlice) Validators(validators ...Validator) *OptProxyDur
 }
 
 // Default resets the default value of the option and returns itself.
-func (o *OptProxyDurationSlice) Default(_default interface{}) *OptProxyDurationSlice {
+func (o *OptProxyDurationSlice) Default(_default any) *OptProxyDurationSlice {
 	o.OptProxy.Default(_default)
 	return o
 }

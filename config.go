@@ -39,18 +39,18 @@ type option struct {
 	opt   Opt
 }
 
-func (o *option) GetValue() interface{} {
+func (o *option) GetValue() any {
 	return o.value.Load()
 }
 
-func (o *option) Get() (value interface{}) {
+func (o *option) Get() (value any) {
 	if value = o.value.Load(); value == nil {
 		value = o.opt.Default
 	}
 	return
 }
 
-func (o *option) Set(c *Config, newvalue interface{}) {
+func (o *option) Set(c *Config, newvalue any) {
 	oldvalue := o.value.Swap(newvalue)
 	if oldvalue == nil {
 		oldvalue = o.opt.Default
@@ -59,7 +59,7 @@ func (o *option) Set(c *Config, newvalue interface{}) {
 }
 
 // Observer is used to observe the change of the option value.
-type Observer func(optName string, oldValue, newValue interface{})
+type Observer func(optName string, oldValue, newValue any)
 
 // Config is used to manage the configuration options.
 type Config struct {
@@ -74,7 +74,7 @@ type Config struct {
 	// Errorf is used to log the error.
 	//
 	// Default: log.Printf
-	Errorf func(format string, args ...interface{})
+	Errorf func(format string, args ...any)
 
 	gen       uint64
 	gsep      string
@@ -127,10 +127,10 @@ func (c *Config) SetVersion(version string) {
 }
 
 func (c *Config) fixOptionName(name string) string {
-	return strings.Replace(name, "-", "_", -1)
+	return strings.ReplaceAll(name, "-", "_")
 }
 
-func (c *Config) errorf(format string, args ...interface{}) {
+func (c *Config) errorf(format string, args ...any) {
 	if c.Errorf == nil {
 		log.Printf(format, args...)
 	} else {
@@ -147,7 +147,7 @@ func (c *Config) Observe(observers ...Observer) {
 	c.observers = append(c.observers, observers...)
 }
 
-func (c *Config) observe(o *option, old, new interface{}) {
+func (c *Config) observe(o *option, old, new any) {
 	if !reflect.DeepEqual(old, new) {
 		atomic.AddUint64(&c.gen, 1)
 		for _, observe := range c.observers {
@@ -297,8 +297,8 @@ func (c *Config) getOpts(filter func(Opt) bool) []Opt {
 	return opts
 }
 
-func (c *Config) updateOpt(name string, value interface{}, set bool) (
-	*option, interface{}, error) {
+func (c *Config) updateOpt(name string, value any, set bool) (
+	*option, any, error) {
 	if value == nil {
 		return nil, nil, nil
 	}
@@ -333,20 +333,19 @@ func (c *Config) updateOpt(name string, value interface{}, set bool) (
 	return opt, newvalue, nil
 }
 
-func (c *Config) checkMultilayerMap(ms map[string]interface{}) (yes bool) {
+func (c *Config) checkMultilayerMap(ms map[string]any) (yes bool) {
 	for _, value := range ms {
 		switch value.(type) {
 		case map[string]string,
-			map[string]interface{},
-			map[interface{}]interface{}:
+			map[string]any,
+			map[any]any:
 			return true
 		}
 	}
 	return false
 }
 
-func (c *Config) flatmap2(prefix string, results map[string]interface{},
-	maps map[interface{}]interface{}) {
+func (c *Config) flatmap2(prefix string, results map[string]any, maps map[any]any) {
 	if prefix != "" {
 		prefix += c.gsep
 	}
@@ -364,9 +363,9 @@ func (c *Config) flatmap2(prefix string, results map[string]interface{},
 			for _k, _v := range vs {
 				results[prefix+k+c.gsep+_k] = _v
 			}
-		case map[string]interface{}:
+		case map[string]any:
 			c.flatmap(prefix+k, results, vs)
-		case map[interface{}]interface{}:
+		case map[any]any:
 			c.flatmap2(prefix+k, results, vs)
 		default:
 			results[prefix+k] = value
@@ -374,7 +373,7 @@ func (c *Config) flatmap2(prefix string, results map[string]interface{},
 	}
 }
 
-func (c *Config) flatmap(prefix string, results, maps map[string]interface{}) {
+func (c *Config) flatmap(prefix string, results, maps map[string]any) {
 	if prefix != "" {
 		prefix += c.gsep
 	}
@@ -385,9 +384,9 @@ func (c *Config) flatmap(prefix string, results, maps map[string]interface{}) {
 			for k, v := range vs {
 				results[prefix+key+c.gsep+k] = v
 			}
-		case map[string]interface{}:
+		case map[string]any:
 			c.flatmap(prefix+key, results, vs)
-		case map[interface{}]interface{}:
+		case map[any]any:
 			c.flatmap2(prefix+key, results, vs)
 		default:
 			results[prefix+key] = value
@@ -395,9 +394,9 @@ func (c *Config) flatmap(prefix string, results, maps map[string]interface{}) {
 	}
 }
 
-func (c *Config) flatMap(maps map[string]interface{}) map[string]interface{} {
+func (c *Config) flatMap(maps map[string]any) map[string]any {
 	if c.checkMultilayerMap(maps) {
-		tmp := make(map[string]interface{}, len(maps)*2)
+		tmp := make(map[string]any, len(maps)*2)
 		c.flatmap("", tmp, maps)
 		return tmp
 	}
@@ -408,7 +407,7 @@ func (c *Config) flatMap(maps map[string]interface{}) map[string]interface{} {
 // and load all if failing to parse the value of any option.
 //
 // If force is missing or false, ignore the assigned options.
-func (c *Config) LoadMap(options map[string]interface{}, force ...bool) error {
+func (c *Config) LoadMap(options map[string]any, force ...bool) error {
 	if len(options) == 0 {
 		return nil
 	}
@@ -420,7 +419,7 @@ func (c *Config) LoadMap(options map[string]interface{}, force ...bool) error {
 
 	type opt struct {
 		name   string
-		value  interface{}
+		value  any
 		option *option
 	}
 
@@ -454,14 +453,14 @@ func (c *Config) LoadMap(options map[string]interface{}, force ...bool) error {
 }
 
 // Parse parses the option value named name, and returns it.
-func (c *Config) Parse(name string, value interface{}) (interface{}, error) {
+func (c *Config) Parse(name string, value any) (any, error) {
 	name = c.fixOptionName(name)
 	_, value, err := c.updateOpt(name, value, false)
 	return value, err
 }
 
 // Set is used to reset the option named name to value.
-func (c *Config) Set(name string, value interface{}) (err error) {
+func (c *Config) Set(name string, value any) (err error) {
 	name = c.fixOptionName(name)
 	_, _, err = c.updateOpt(name, value, true)
 	if err == ErrNoOpt && c.ignore {
@@ -473,7 +472,7 @@ func (c *Config) Set(name string, value interface{}) (err error) {
 // Get returns the value of the option named name.
 //
 // Return nil if this option does not exist.
-func (c *Config) Get(name string) (value interface{}) {
+func (c *Config) Get(name string) (value any) {
 	name = c.fixOptionName(name)
 	if opt, ok := c.options[name]; ok {
 		value = opt.Get()
@@ -486,7 +485,7 @@ func (c *Config) Get(name string) (value interface{}) {
 }
 
 // Must is the same as Get, but panic if the returned value is nil.
-func (c *Config) Must(name string) (value interface{}) {
+func (c *Config) Must(name string) (value any) {
 	if value = c.Get(name); value == nil {
 		panic(fmt.Errorf("no option named name '%s'", name))
 	}

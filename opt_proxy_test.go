@@ -283,7 +283,7 @@ func TestOptProxyOnUpdate(t *testing.T) {
 
 	config := New()
 	opt := config.NewString("opt", "abc", "help")
-	opt.OnUpdate(func(old, new interface{}) {
+	opt.OnUpdate(func(old, new any) {
 		fmt.Fprintf(buf, "%s: %v -> %v", opt.Name(), old, new)
 	})
 

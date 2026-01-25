@@ -119,19 +119,19 @@ func (g *OptGroup) UnregisterOpts(optNames ...string) {
 }
 
 // Set resets the option named name to value.
-func (g *OptGroup) Set(name string, value interface{}) error {
+func (g *OptGroup) Set(name string, value any) error {
 	return g.config.Set(g.prefix+name, value)
 }
 
 // Get returns the value of the option named name.
 //
 // Return nil if this option does not exist.
-func (g *OptGroup) Get(name string) interface{} {
+func (g *OptGroup) Get(name string) any {
 	return g.config.Get(g.prefix + name)
 }
 
 // Must is the same as Get, but panic if the returned value is nil.
-func (g *OptGroup) Must(name string) interface{} {
+func (g *OptGroup) Must(name string) any {
 	return g.config.Must(g.prefix + name)
 }
 

@@ -53,7 +53,7 @@ func main() {
 	}
 
 	// Add the observer to observe the change of the options.
-	gconf.Observe(func(optName string, oldValue, newValue interface{}) {
+	gconf.Observe(func(optName string, oldValue, newValue any) {
 		fmt.Printf("option=%s: %v -> %v\n", optName, oldValue, newValue)
 	})
 
@@ -225,7 +225,7 @@ func main() {
 
 ## Data Decoder
 
-The data decoder is a function like `func(src []byte, dst map[string]interface{}) error`, which is used to decode the configration data from the data source.
+The data decoder is a function like `func(src []byte, dst map[string]any) error`, which is used to decode the configration data from the data source.
 
 `Config` supports three kinds of decoders by default, such as `ini`, `json`, `yaml`, and `yml` is the alias of `yaml`. You can customize yourself decoder, then add it into `Config`, such as `Config.AddDecoder("type", NewCustomizedDecoder())`.
 
@@ -287,7 +287,7 @@ func main() {
 		fmt.Printf("%s: %v\n", opt.Name, gconf.Get(opt.Name))
 	}
 
-	gconf.Observe(func(optName string, oldValue, newValue interface{}) {
+	gconf.Observe(func(optName string, oldValue, newValue any) {
 		fmt.Printf("%s: %v -> %v\n", optName, oldValue, newValue)
 	})
 

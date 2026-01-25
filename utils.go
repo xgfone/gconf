@@ -28,48 +28,48 @@ import (
 // Some type converters, all of which have a default implementation,
 // but you can reset them to yourself implementations.
 var (
-	ToBool     = defaults.ToBool     // func(interface{}) (bool, error)
-	ToInt64    = defaults.ToInt64    // func(interface{}) (int64, error)
-	ToUint64   = defaults.ToUint64   // func(interface{}) (uint64, error)
-	ToFloat64  = defaults.ToFloat64  // func(interface{}) (float64, error)
-	ToString   = defaults.ToString   // func(interface{}) (string, error)
-	ToDuration = defaults.ToDuration // func(interface{}) (time.Duration, error)
-	ToTime     = defaults.ToTime     // func(interface{}) (time.Time, error)
-	ToInt      = toInt               // func(interface{}) (int, error)
-	ToInt16    = toInt16             // func(interface{}) (int16, error)
-	ToInt32    = toInt32             // func(interface{}) (int32, error)
-	ToUint     = toUint              // func(interface{}) (uint, error)
-	ToUint16   = toUint16            // func(interface{}) (uint16, error)
-	ToUint32   = toUint32            // func(interface{}) (uint32, error)
+	ToBool     = defaults.ToBool     // func(any) (bool, error)
+	ToInt64    = defaults.ToInt64    // func(any) (int64, error)
+	ToUint64   = defaults.ToUint64   // func(any) (uint64, error)
+	ToFloat64  = defaults.ToFloat64  // func(any) (float64, error)
+	ToString   = defaults.ToString   // func(any) (string, error)
+	ToDuration = defaults.ToDuration // func(any) (time.Duration, error)
+	ToTime     = defaults.ToTime     // func(any) (time.Time, error)
+	ToInt      = toInt               // func(any) (int, error)
+	ToInt16    = toInt16             // func(any) (int16, error)
+	ToInt32    = toInt32             // func(any) (int32, error)
+	ToUint     = toUint              // func(any) (uint, error)
+	ToUint16   = toUint16            // func(any) (uint16, error)
+	ToUint32   = toUint32            // func(any) (uint32, error)
 
 	// For string type, it will be split by the separator " " or ",".
-	ToIntSlice      = toIntSlice      // func(interface{}) ([]int, error)
-	ToUintSlice     = toUintSlice     // func(interface{}) ([]uint, error)
-	ToFloat64Slice  = toFloat64Slice  // func(interface{}) ([]float64, error)
-	ToStringSlice   = toStringSlice   // func(interface{}) ([]string, error)
-	ToDurationSlice = toDurationSlice // func(interface{}) ([]time.Duration, error)
+	ToIntSlice      = toIntSlice      // func(any) ([]int, error)
+	ToUintSlice     = toUintSlice     // func(any) ([]uint, error)
+	ToFloat64Slice  = toFloat64Slice  // func(any) ([]float64, error)
+	ToStringSlice   = toStringSlice   // func(any) ([]string, error)
+	ToDurationSlice = toDurationSlice // func(any) ([]time.Duration, error)
 )
 
-func toInt(v interface{}) (int, error) {
+func toInt(v any) (int, error) {
 	return to(v, ToInt64, func(v int64) int { return int(v) })
 }
-func toInt16(v interface{}) (int16, error) {
+func toInt16(v any) (int16, error) {
 	return to(v, ToInt64, func(v int64) int16 { return int16(v) })
 }
-func toInt32(v interface{}) (int32, error) {
+func toInt32(v any) (int32, error) {
 	return to(v, ToInt64, func(v int64) int32 { return int32(v) })
 }
-func toUint(v interface{}) (uint, error) {
+func toUint(v any) (uint, error) {
 	return to(v, ToInt64, func(v int64) uint { return uint(v) })
 }
-func toUint16(v interface{}) (uint16, error) {
+func toUint16(v any) (uint16, error) {
 	return to(v, ToInt64, func(v int64) uint16 { return uint16(v) })
 }
-func toUint32(v interface{}) (uint32, error) {
+func toUint32(v any) (uint32, error) {
 	return to(v, ToInt64, func(v int64) uint32 { return uint32(v) })
 }
 
-func to[T1, T2 any](i interface{}, f func(interface{}) (T1, error), m func(T1) T2) (v T2, err error) {
+func to[T1, T2 any](i any, f func(any) (T1, error), m func(T1) T2) (v T2, err error) {
 	_v, err := f(i)
 	if err == nil {
 		v = m(_v)
@@ -98,7 +98,7 @@ func isStringSeparator(r rune) bool {
 	}
 }
 
-func getStringSlice(value interface{}) []string {
+func getStringSlice(value any) []string {
 	var s string
 	switch v := value.(type) {
 	case []string:
@@ -123,7 +123,7 @@ func getStringSlice(value interface{}) []string {
 	return ss
 }
 
-func toSlice[E any](value interface{}, to func(interface{}) (E, error)) ([]E, error) {
+func toSlice[E any](value any, to func(any) (E, error)) ([]E, error) {
 	switch v := value.(type) {
 	case nil:
 		return []E{}, nil
@@ -147,7 +147,7 @@ func toSlice[E any](value interface{}, to func(interface{}) (E, error)) ([]E, er
 	}
 }
 
-func toIntSlice(value interface{}) ([]int, error) {
+func toIntSlice(value any) ([]int, error) {
 	if ss := getStringSlice(value); ss != nil {
 		var err error
 		vs := make([]int, len(ss))
@@ -161,7 +161,7 @@ func toIntSlice(value interface{}) ([]int, error) {
 	return toSlice(value, ToInt)
 }
 
-func toUintSlice(value interface{}) (v []uint, err error) {
+func toUintSlice(value any) (v []uint, err error) {
 	if ss := getStringSlice(value); ss != nil {
 		var err error
 		vs := make([]uint, len(ss))
@@ -175,7 +175,7 @@ func toUintSlice(value interface{}) (v []uint, err error) {
 	return toSlice(value, ToUint)
 }
 
-func toFloat64Slice(value interface{}) ([]float64, error) {
+func toFloat64Slice(value any) ([]float64, error) {
 	if ss := getStringSlice(value); ss != nil {
 		var err error
 		vs := make([]float64, len(ss))
@@ -189,14 +189,14 @@ func toFloat64Slice(value interface{}) ([]float64, error) {
 	return toSlice(value, ToFloat64)
 }
 
-func toStringSlice(value interface{}) ([]string, error) {
+func toStringSlice(value any) ([]string, error) {
 	if ss := getStringSlice(value); ss != nil {
 		return ss, nil
 	}
 	return toSlice(value, ToString)
 }
 
-func toDurationSlice(value interface{}) ([]time.Duration, error) {
+func toDurationSlice(value any) ([]time.Duration, error) {
 	if ss := getStringSlice(value); ss != nil {
 		var err error
 		vs := make([]time.Duration, len(ss))

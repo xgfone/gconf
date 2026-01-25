@@ -23,7 +23,7 @@ import (
 )
 
 // Decoder is used to decode the configuration data.
-type Decoder func(src []byte, dst map[string]interface{}) error
+type Decoder func(src []byte, dst map[string]any) error
 
 // AddDecoder is equal to Conf.AddDecoder(_type, decoder).
 func AddDecoder(_type string, decoder Decoder) {
@@ -71,7 +71,7 @@ func (c *Config) AddDecoderTypeAliases(_type string, aliases ...string) {
 func NewJSONDecoder() Decoder {
 	comment := []byte("//")
 	newline := []byte("\n")
-	return func(src []byte, dst map[string]interface{}) (err error) {
+	return func(src []byte, dst map[string]any) (err error) {
 		if bytes.Contains(src, comment) {
 			buf := bytes.NewBuffer(nil)
 			buf.Grow(len(src))
@@ -109,7 +109,7 @@ func NewIniDecoder(defaultGroupName ...string) Decoder {
 		defaultGroup = defaultGroupName[0]
 	}
 
-	return func(src []byte, dst map[string]interface{}) (err error) {
+	return func(src []byte, dst map[string]any) (err error) {
 		var gname string
 		lines := strings.Split(string(src), "\n")
 		for index, maxIndex := 0, len(lines); index < maxIndex; {

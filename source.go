@@ -64,7 +64,7 @@ func (c *Config) LoadDataSet(ds DataSet, force ...bool) (err error) {
 		return ErrNoDecoder
 	}
 
-	ms := make(map[string]interface{}, 32)
+	ms := make(map[string]any, 32)
 	if err = decoder(ds.Data, ms); err != nil {
 		return err
 	}
