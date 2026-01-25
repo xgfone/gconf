@@ -9,12 +9,14 @@ jobs:
     strategy:
       matrix:
         go:
-        - '1.21'
-        - '1.22'
+          - "1.22"
+          - "1.23"
+          - "1.24"
+          - "1.25"
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ matrix.go }}
-    - run: go test -race -cover
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - run: go test -race -cover
