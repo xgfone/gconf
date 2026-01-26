@@ -22,25 +22,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xgfone/go-defaults"
+	"github.com/xgfone/go-cast"
 )
 
 // Some type converters, all of which have a default implementation,
 // but you can reset them to yourself implementations.
 var (
-	ToBool     = defaults.ToBool     // func(any) (bool, error)
-	ToInt64    = defaults.ToInt64    // func(any) (int64, error)
-	ToUint64   = defaults.ToUint64   // func(any) (uint64, error)
-	ToFloat64  = defaults.ToFloat64  // func(any) (float64, error)
-	ToString   = defaults.ToString   // func(any) (string, error)
-	ToDuration = defaults.ToDuration // func(any) (time.Duration, error)
-	ToTime     = defaults.ToTime     // func(any) (time.Time, error)
-	ToInt      = toInt               // func(any) (int, error)
-	ToInt16    = toInt16             // func(any) (int16, error)
-	ToInt32    = toInt32             // func(any) (int32, error)
-	ToUint     = toUint              // func(any) (uint, error)
-	ToUint16   = toUint16            // func(any) (uint16, error)
-	ToUint32   = toUint32            // func(any) (uint32, error)
+	ToBool     = cast.ToBool     // func(any) (bool, error)
+	ToInt64    = cast.ToInt64    // func(any) (int64, error)
+	ToUint64   = cast.ToUint64   // func(any) (uint64, error)
+	ToFloat64  = cast.ToFloat64  // func(any) (float64, error)
+	ToString   = cast.ToString   // func(any) (string, error)
+	ToDuration = cast.ToDuration // func(any) (time.Duration, error)
+	ToTime     = cast.ToTime     // func(any) (time.Time, error)
+	ToInt      = toInt           // func(any) (int, error)
+	ToInt16    = toInt16         // func(any) (int16, error)
+	ToInt32    = toInt32         // func(any) (int32, error)
+	ToUint     = toUint          // func(any) (uint, error)
+	ToUint16   = toUint16        // func(any) (uint16, error)
+	ToUint32   = toUint32        // func(any) (uint32, error)
 
 	// For string type, it will be split by the separator " " or ",".
 	ToIntSlice      = toIntSlice      // func(any) ([]int, error)
