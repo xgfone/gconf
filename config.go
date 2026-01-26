@@ -17,7 +17,6 @@ package gconf
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"sort"
 	"strings"
@@ -73,7 +72,7 @@ type Config struct {
 
 	// Errorf is used to log the error.
 	//
-	// Default: log.Printf
+	// Deprecated. Never use it.
 	Errorf func(format string, args ...any)
 
 	gen       uint64
@@ -128,14 +127,6 @@ func (c *Config) SetVersion(version string) {
 
 func (c *Config) fixOptionName(name string) string {
 	return strings.ReplaceAll(name, "-", "_")
-}
-
-func (c *Config) errorf(format string, args ...any) {
-	if c.Errorf == nil {
-		log.Printf(format, args...)
-	} else {
-		c.Errorf(format, args...)
-	}
 }
 
 // IgnoreNoOptError sets whether to ignore the error NoOptError

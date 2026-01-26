@@ -16,6 +16,7 @@ package gconf
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"sync/atomic"
 	"time"
@@ -32,7 +33,7 @@ func (c *Config) LoadBackupFile(filename string) (err error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			c.errorf("fail to read the backup file '%s': %s", filename, err)
+			slog.Error("fail to read the backup file", "file", filename, "err", err)
 			return
 		}
 	}
@@ -40,7 +41,7 @@ func (c *Config) LoadBackupFile(filename string) (err error) {
 	if len(data) > 0 {
 		ms := make(map[string]any, 32)
 		if err = json.Unmarshal(data, &ms); err != nil {
-			c.errorf("the backup file '%s' format is error: %s", filename, err)
+			slog.Error("invalid backup file", "file", filename, "err", err)
 			return
 		} else if err = c.LoadMap(ms); err != nil {
 			return
@@ -73,12 +74,12 @@ func (c *Config) writeSnapshotIntoFile(filename string) {
 
 			data, err := json.Marshal(snaps)
 			if err != nil {
-				c.errorf("fail to marshal snapshot as json: %s", err)
+				slog.Error("fail to marshal snapshot as json", "err", err)
 				continue
 			}
 
 			if err := os.WriteFile(filename, data, os.ModePerm); err != nil {
-				c.errorf("cannot write snapshot into file '%s': %s", filename, err)
+				slog.Error("cannot write snapshot into file", "file", filename, "err", err)
 			} else {
 				lastgen = gen
 			}

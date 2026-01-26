@@ -16,6 +16,7 @@ package gconf
 
 import (
 	"errors"
+	"log/slog"
 	"time"
 )
 
@@ -103,12 +104,12 @@ func LoadSource(source Source, force ...bool) error {
 func (c *Config) LoadSource(source Source, force ...bool) (err error) {
 	ds, err := source.Read()
 	if err != nil {
-		c.errorf("fail to read the source '%s': %s", source.String(), err)
+		slog.Error("fail to read the source", "source", source.String(), "err", err)
 		return
 	}
 
 	if err = c.LoadDataSet(ds, force...); err != nil {
-		c.errorf("fail to load the source '%s': %s", source.String(), err)
+		slog.Error("fail to load the source", "source", source.String(), "err", err)
 		return
 	}
 
@@ -126,10 +127,10 @@ func (c *Config) LoadAndWatchSource(source Source, force ...bool) (err error) {
 	if err = c.LoadSource(source, force...); err == nil {
 		go source.Watch(c.exit, func(ds DataSet, err error) bool {
 			if err != nil {
-				c.errorf("fail to watch the source '%s': %s", source, err)
+				slog.Error("fail to watch the source", "source", source.String(), "err", err)
 				return false
 			} else if err = c.LoadDataSet(ds, true); err != nil {
-				c.errorf("fail to load the source '%s': %s", source, err)
+				slog.Error("fail to load the source", "source", source.String(), "err", err)
 				return false
 			}
 			return true
