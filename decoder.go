@@ -130,14 +130,13 @@ func NewIniDecoder(defaultGroupName ...string) Decoder {
 				continue
 			}
 
-			n := strings.IndexByte(line, '=')
-			if n < 0 {
+			key, value, found := strings.Cut(line, "=")
+			if !found {
 				return fmt.Errorf("the %dth line misses the separator '='", index)
 			}
 
-			// Get the key
-			key := strings.TrimSpace(line[:n])
-			if len(key) == 0 {
+			// Check the key
+			if key = strings.TrimSpace(key); len(key) == 0 {
 				return fmt.Errorf("empty identifier key")
 			}
 			for _, r := range key {
@@ -146,9 +145,8 @@ func NewIniDecoder(defaultGroupName ...string) Decoder {
 				}
 			}
 
-			// Get the value
-			value := strings.TrimSpace(line[n+1:])
-			if value == "" { // Ignore the empty value
+			// Check the value
+			if value = strings.TrimSpace(value); value == "" { // Ignore the empty value
 				continue
 			} else if _len := len(value) - 1; value[_len] == '\\' { // The continuation line
 				vs := []string{strings.TrimSpace(strings.TrimRight(value, "\\"))}

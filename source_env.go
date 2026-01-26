@@ -47,17 +47,19 @@ func (e envSource) Watch(<-chan struct{}, func(DataSet, error) bool) {}
 func (e envSource) Read() (DataSet, error) {
 	vs := make(map[string]string, 32)
 	for _, env := range os.Environ() {
-		index := strings.IndexByte(env, '=')
-		if index == -1 {
+		key, value, found := strings.Cut(env, "=")
+		if !found {
 			continue
 		}
 
-		value := strings.TrimSpace(env[index+1:])
-		if value == "" {
+		if value = strings.TrimSpace(value); value == "" {
 			continue
 		}
 
-		key := strings.ToLower(strings.TrimSpace(env[:index]))
+		if key = strings.ToLower(strings.TrimSpace(key)); key == "" {
+			continue
+		}
+
 		if e.prefix != "" {
 			if !strings.HasPrefix(key, e.prefix) {
 				continue
@@ -65,7 +67,7 @@ func (e envSource) Read() (DataSet, error) {
 			key = strings.TrimPrefix(key, e.prefix)
 		}
 
-		key = strings.Replace(strings.Trim(key, "_"), "_", ".", -1)
+		key = strings.ReplaceAll(strings.Trim(key, "_"), "_", ".")
 		if key != "" {
 			vs[key] = value
 		}

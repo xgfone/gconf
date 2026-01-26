@@ -180,7 +180,7 @@ func TestConfig(t *testing.T) {
 	}
 
 	names := make([]string, len(opts))
-	for i := 0; i < len(opts); i++ {
+	for i := range len(opts) {
 		names[i] = opts[i].Name
 	}
 	UnregisterOpts(names...)

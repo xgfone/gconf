@@ -40,7 +40,7 @@ func PrintFlagUsage(flagSet *flag.FlagSet) {
 			s += " " + name
 		} else {
 			vf := reflect.ValueOf(f.Value)
-			if vf.Kind() == reflect.Ptr {
+			if vf.Kind() == reflect.Pointer {
 				vf = vf.Elem()
 			}
 			if vf.Kind() == reflect.Bool {
@@ -56,7 +56,7 @@ func PrintFlagUsage(flagSet *flag.FlagSet) {
 			// for both 4- and 8-space tab stops.
 			s += "\n    \t"
 		}
-		s += strings.Replace(usage, "\n", "\n    \t", -1)
+		s += strings.ReplaceAll(usage, "\n", "\n    \t")
 		s += fmt.Sprintf(" (default: %q)", f.DefValue)
 		fmt.Fprint(os.Stderr, s, "\n")
 	})
@@ -102,7 +102,7 @@ func addAndParseOptFlag(parse bool, c *Config, flagSet ...*flag.FlagSet) error {
 			continue
 		}
 
-		name := strings.Replace(opt.Name, "_", "-", -1)
+		name := strings.ReplaceAll(opt.Name, "_", "-")
 		switch v := opt.Default.(type) {
 		case nil:
 			flagset.String(name, "", opt.Help)
@@ -208,7 +208,7 @@ func (f flagSource) Read() (DataSet, error) {
 		default:
 			value = v.String()
 		}
-		vs[strings.Replace(f.Name, "-", "_", -1)] = value
+		vs[strings.ReplaceAll(f.Name, "-", "_")] = value
 	})
 
 	data, err := json.Marshal(vs)

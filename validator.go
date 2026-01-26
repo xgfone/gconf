@@ -20,6 +20,7 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 )
 
@@ -127,10 +128,8 @@ func NewStrArrayValidator(array []string) Validator {
 			return errNotString
 		}
 
-		for _, v := range array {
-			if s == v {
-				return nil
-			}
+		if slices.Contains(array, s) {
+			return nil
 		}
 		return fmt.Errorf("the value '%s' is not in %v", s, array)
 	}
