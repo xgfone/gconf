@@ -65,7 +65,7 @@ func (f fileSource) Read() (DataSet, error) {
 		}
 		return DataSet{Source: f.id, Format: f.format}, err
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	data, err := io.ReadAll(file)
 	if err != nil {

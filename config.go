@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"sync/atomic"
@@ -157,7 +158,7 @@ func (c *Config) setOptAlias(old, new string) {
 		return
 	}
 
-	if opt, ok := c.options[new]; ok && !inString(old, opt.opt.Aliases) {
+	if opt, ok := c.options[new]; ok && !slices.Contains(opt.opt.Aliases, old) {
 		opt.opt.Aliases = append(opt.opt.Aliases, old)
 	}
 

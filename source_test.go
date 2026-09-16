@@ -24,15 +24,15 @@ import (
 const testfileflag = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 
 func TestNewEnvSource(t *testing.T) {
-	os.Setenv("ABC", "xyz")
-	os.Setenv("OPT1", "111")
-	os.Setenv("GROUP1_OPT2", "abc")
-	os.Setenv("GROUP1_GROUP2_OPT3", "222")
+	_ = os.Setenv("ABC", "xyz")
+	_ = os.Setenv("OPT1", "111")
+	_ = os.Setenv("GROUP1_OPT2", "abc")
+	_ = os.Setenv("GROUP1_GROUP2_OPT3", "222")
 
-	os.Setenv("TEST_ABC", "xyz")
-	os.Setenv("TEST_OPT1", "333")
-	os.Setenv("TEST_GROUP1_OPT2", "efg")
-	os.Setenv("TEST_GROUP1_GROUP2_OPT3", "444")
+	_ = os.Setenv("TEST_ABC", "xyz")
+	_ = os.Setenv("TEST_OPT1", "333")
+	_ = os.Setenv("TEST_GROUP1_OPT2", "efg")
+	_ = os.Setenv("TEST_GROUP1_GROUP2_OPT3", "444")
 
 	conf := New()
 	conf.RegisterOpts(IntOpt("opt1", ""))
@@ -79,9 +79,9 @@ func TestNewFileSource_INI(t *testing.T) {
 		opt2 = 0
 		opt3 = 3
 		`))
-		file.Close()
+		_ = file.Close()
 	}
-	defer os.Remove(filename)
+	defer os.Remove(filename) //nolint:errcheck
 
 	// Load the config
 	conf := New()
@@ -122,9 +122,9 @@ func TestNewFileSource_JSON(t *testing.T) {
 				}
 			}
 		}`))
-		file.Close()
+		_ = file.Close()
 	}
-	defer os.Remove(filename)
+	defer os.Remove(filename) //nolint:errcheck
 
 	// Load the config
 	conf := New()
@@ -146,7 +146,7 @@ func TestNewFileSource_JSON(t *testing.T) {
 func TestFileSourceWatch(t *testing.T) {
 	// Prepare the json file
 	filename := "_test_file_source_watch_.json"
-	defer os.Remove(filename)
+	defer os.Remove(filename) //nolint:errcheck
 
 	source := NewFileSource(filename).(fileSource)
 	source.timeout = time.Second * 2
@@ -159,7 +159,7 @@ func TestFileSourceWatch(t *testing.T) {
 			t.Error(err)
 		} else {
 			_, _ = file.Write([]byte(`{"opt": 1}`))
-			file.Close()
+			_ = file.Close()
 		}
 		time.Sleep(time.Second * 2)
 		close(exit)

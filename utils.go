@@ -209,12 +209,3 @@ func toDurationSlice(value any) ([]time.Duration, error) {
 	}
 	return toSlice(value, ToDuration)
 }
-
-func inString(s string, ss []string) bool {
-	for _, _s := range ss {
-		if _s == s {
-			return true
-		}
-	}
-	return false
-}

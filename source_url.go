@@ -71,7 +71,7 @@ func (u urlSource) String() string { return u.id }
 func (u urlSource) Read() (DataSet, error) {
 	resp, err := http.Get(u.url)
 	if resp != nil {
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 	}
 
 	if err != nil {
