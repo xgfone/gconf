@@ -20,12 +20,9 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/xgfone/go-toolkit/timex"
 )
 
 func TestOptProxy(t *testing.T) {
-	timex.Location = time.Local
 	Conf.reset()
 
 	boolopt := NewBool("bool", false, "bool")
@@ -162,7 +159,6 @@ func TestOptProxy(t *testing.T) {
 }
 
 func TestOptGroupProxy(t *testing.T) {
-	timex.Location = time.Local
 	config := New()
 	group := config.Group("group1.group2")
 	boolopt := group.NewBool("bool", false, "bool")

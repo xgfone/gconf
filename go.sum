@@ -1,4 +1,2 @@
-github.com/xgfone/go-cast v0.11.0 h1:/4eQIr58Tz/3RTjbRcLCPFlpE6r28HLYsV54VWXxSi8=
-github.com/xgfone/go-cast v0.11.0/go.mod h1:+F/Ak19U/MOY6lMvgo4IZfvVJSsACbZPo3TjpyUKWLo=
-github.com/xgfone/go-toolkit v0.20.0 h1:WEawcvtQPEIsj6WVIt02nGVdvZlApco1lMW2hU3N3Tk=
-github.com/xgfone/go-toolkit v0.20.0/go.mod h1:5okC8n/b3Qy4ryG071PLr6ixX/RZ7kP+2IFhsFFrh6Q=
+github.com/xgfone/go-cast v0.12.0 h1:cAFu5mIrqyHjjfojf33vqkBwzvtRRmTcimsaFwdhMik=
+github.com/xgfone/go-cast v0.12.0/go.mod h1:GA+1AuBguPRFIeBpSdTvHQt0A/Qgoc8jHcpqmgplWwI=
